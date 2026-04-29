@@ -1,0 +1,4374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAXIFER - Atención Post Venta v2</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="" defer></script>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #f5f7fa;
+        color: #2c3e50;
+        line-height: 1.4;
+        min-height: 100vh;
+        font-size: 14px;
+    }
+    .header {
+        background: linear-gradient(135deg, #c8102e 0%, #8b0000 100%);
+        color: white;
+        padding: 14px 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .header h1 { font-size: 1.3em; }
+    .header .subtitle { font-size: 0.85em; opacity: 0.9; }
+    .header-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .refresh-info { font-size: 0.75em; opacity: 0.85; }
+
+    .container { max-width: 1600px; margin: 0 auto; padding: 16px; }
+
+    /* Token screen */
+    .token-screen {
+        max-width: 500px;
+        margin: 60px auto;
+        background: white;
+        padding: 32px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .token-screen h2 { margin-bottom: 12px; color: #c8102e; }
+    .token-screen p { margin-bottom: 16px; color: #555; font-size: 0.9em; }
+    .help {
+        background: #fff8e1;
+        border-left: 4px solid #ffb300;
+        padding: 12px;
+        margin: 16px 0;
+        font-size: 0.85em;
+        border-radius: 4px;
+    }
+    .token-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 0.95em;
+        font-family: monospace;
+    }
+    .token-input:focus { outline: none; border-color: #c8102e; }
+
+    .btn {
+        background: #c8102e;
+        color: white;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.85em;
+        font-weight: 600;
+        transition: background 0.2s;
+        white-space: nowrap;
+    }
+    .btn:hover { background: #a00d24; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
+    .btn-block { width: 100%; padding: 12px; font-size: 0.95em; margin-top: 16px; }
+    .btn-secondary { background: #6c757d; }
+    .btn-secondary:hover { background: #5a6268; }
+    .btn-wa { background: #25d366; }
+    .btn-wa:hover { background: #1da851; }
+    .btn-small { padding: 4px 10px; font-size: 0.78em; }
+    .btn-light { background: #e9ecef; color: #333; }
+    .btn-light:hover { background: #d6d9dc; }
+
+    /* Tabs */
+    .tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 14px;
+        border-bottom: 2px solid #dee2e6;
+    }
+    .tab {
+        padding: 10px 18px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9em;
+        color: #666;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        font-weight: 600;
+    }
+    .tab.active {
+        color: #c8102e;
+        border-bottom-color: #c8102e;
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Panel */
+    .panel {
+        background: white;
+        border-radius: 10px;
+        padding: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        margin-bottom: 14px;
+    }
+
+    /* Filtros */
+    .filters-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label {
+        font-size: 0.75em;
+        font-weight: 600;
+        color: #666;
+        text-transform: uppercase;
+    }
+    .filter-input, .filter-select {
+        padding: 7px 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-size: 0.85em;
+        background: white;
+    }
+    .filter-input:focus, .filter-select:focus {
+        outline: none; border-color: #c8102e;
+    }
+
+    /* Multi-select predictivo */
+    .ms-wrap {
+        position: relative;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: white;
+        padding: 4px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        min-height: 32px;
+        align-items: center;
+    }
+    .ms-wrap:focus-within { border-color: #c8102e; }
+    .ms-chip {
+        background: #fff5f5;
+        color: #c8102e;
+        padding: 2px 7px;
+        border-radius: 10px;
+        font-size: 0.78em;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        border: 1px solid #fbb;
+    }
+    .ms-chip-x {
+        cursor: pointer;
+        font-weight: bold;
+        opacity: 0.6;
+    }
+    .ms-chip-x:hover { opacity: 1; color: #8b0000; }
+    .ms-input {
+        border: none;
+        outline: none;
+        flex: 1;
+        min-width: 80px;
+        padding: 3px 5px;
+        font-size: 0.85em;
+        background: transparent;
+    }
+    .ms-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        max-height: 220px;
+        overflow-y: auto;
+        z-index: 100;
+        margin-top: 2px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        display: none;
+    }
+    .ms-dropdown.active { display: block; }
+    .ms-option {
+        padding: 7px 10px;
+        cursor: pointer;
+        font-size: 0.85em;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .ms-option:hover, .ms-option.highlight {
+        background: #fff5f5;
+        color: #c8102e;
+    }
+    .ms-option-count {
+        color: #999;
+        font-size: 0.85em;
+        margin-left: 6px;
+    }
+
+    .filter-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+    .result-count {
+        font-size: 0.85em;
+        color: #666;
+        margin-left: auto;
+    }
+
+    /* Column toggle */
+    .col-toggle {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        margin-bottom: 10px;
+    }
+    .col-toggle-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.78em;
+        cursor: pointer;
+        padding: 3px 8px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    .col-toggle-item input { cursor: pointer; }
+
+    /* Tabla */
+    .table-wrap {
+        overflow-x: auto;
+        max-height: 70vh;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82em;
+    }
+    thead { background: #f8f9fa; position: sticky; top: 0; z-index: 10; }
+    th, td {
+        padding: 8px 10px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+        white-space: nowrap;
+    }
+    th {
+        font-weight: 600;
+        color: #444;
+        font-size: 0.78em;
+        text-transform: uppercase;
+        cursor: pointer;
+        user-select: none;
+    }
+    th:hover { background: #e9ecef; }
+    th .sort-arrow { opacity: 0.3; font-size: 0.8em; }
+    th.sorted .sort-arrow { opacity: 1; }
+    tbody tr { cursor: pointer; transition: background 0.1s; }
+    tbody tr:hover { background: #fff5f5; }
+    tbody tr.expanded { background: #fff0f0; }
+    td.truncate {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    td.actions { white-space: nowrap; }
+    td.actions button {
+        margin-right: 4px;
+    }
+
+    /* Subitems expandidos */
+    .subitems-row {
+        background: #fafafa !important;
+    }
+    .subitems-row td {
+        padding: 8px 16px;
+    }
+    .subitems-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .subitem-chip {
+        background: white;
+        border: 1px solid #ddd;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.78em;
+    }
+    .subitem-tipo { font-weight: 600; color: #c8102e; }
+    .subitem-status {
+        font-size: 0.72em;
+        padding: 1px 6px;
+        border-radius: 8px;
+        margin-left: 4px;
+    }
+    .subitems-loading {
+        padding: 12px;
+        color: #666;
+        font-style: italic;
+        font-size: 0.85em;
+    }
+
+    /* Badges */
+    .badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 10px;
+        font-size: 0.72em;
+        font-weight: 600;
+    }
+    .badge-dormido { background: #ffe0e0; color: #c8102e; }
+    .badge-reciente { background: #d4edda; color: #155724; }
+    .badge-medio { background: #fff3cd; color: #856404; }
+    .badge-entregado { background: #d4edda; color: #155724; }
+    .badge-curso { background: #fff3cd; color: #856404; }
+    .badge-detenido { background: #f8d7da; color: #721c24; }
+    .badge-gris { background: #e9ecef; color: #495057; }
+
+    /* Loading */
+    .loading-full {
+        text-align: center;
+        padding: 40px;
+        color: #666;
+    }
+    .progress-bar {
+        width: 100%;
+        max-width: 400px;
+        margin: 16px auto 8px;
+        height: 10px;
+        background: #e9ecef;
+        border-radius: 5px;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #c8102e, #dc3545);
+        transition: width 0.3s;
+    }
+    .spinner {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f0f0f0;
+        border-top-color: #c8102e;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Messages */
+    .error-msg, .info-msg, .warn-msg {
+        padding: 10px 14px;
+        border-radius: 6px;
+        margin-bottom: 12px;
+        font-size: 0.88em;
+    }
+    .error-msg { background: #f8d7da; color: #721c24; }
+    .info-msg { background: #d1ecf1; color: #0c5460; }
+    .warn-msg { background: #fff3cd; color: #856404; }
+
+    /* Seguimiento (tab 2) */
+    .client-track-layout {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 14px;
+    }
+    @media (max-width: 900px) { .client-track-layout { grid-template-columns: 1fr; } }
+
+    .client-list-track {
+        max-height: 75vh;
+        overflow-y: auto;
+    }
+    .client-card {
+        padding: 10px 12px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+        margin-bottom: 6px;
+        cursor: pointer;
+        transition: all 0.15s;
+    }
+    .client-card:hover { border-color: #c8102e; background: #fff5f5; }
+    .client-card.active { border-color: #c8102e; background: #fff5f5; box-shadow: 0 2px 4px rgba(200,16,46,0.15); }
+    .client-card-name { font-weight: 600; font-size: 0.88em; margin-bottom: 3px; }
+    .client-card-meta {
+        font-size: 0.75em;
+        color: #666;
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .client-detail {
+        min-height: 300px;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #999;
+    }
+    .empty-state .icon { font-size: 3em; margin-bottom: 12px; }
+    .client-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 14px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #f0f0f0;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    .client-info h3 { color: #c8102e; margin-bottom: 4px; }
+    .client-info .meta-line { color: #666; font-size: 0.85em; }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+    @media (max-width: 700px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    .stat-card {
+        background: #f8f9fa;
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+    }
+    .stat-value { font-size: 1.2em; font-weight: 700; color: #c8102e; }
+    .stat-label { font-size: 0.68em; color: #666; text-transform: uppercase; margin-top: 2px; line-height: 1.2; }
+
+    .section-title {
+        font-size: 0.95em;
+        font-weight: 600;
+        margin: 14px 0 8px;
+        color: #333;
+        padding-bottom: 4px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .surtidos-top {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        font-size: 0.85em;
+        margin-bottom: 4px;
+    }
+    .contact-icon { font-size: 1.1em; }
+    .contact-type { font-weight: 500; flex: 1; }
+    .contact-date { color: #666; font-size: 0.85em; }
+    .btn-delete-contact {
+        background: transparent;
+        border: none;
+        color: #c8102e;
+        cursor: pointer;
+        font-size: 0.9em;
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+    .btn-delete-contact:hover { background: #ffe0e0; }
+
+    /* ============ NOTAS ============ */
+    .note-type-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        border-radius: 16px;
+        font-size: 0.82em;
+        cursor: pointer;
+        border: 2px solid transparent;
+        background: #f0f0f0;
+        color: #666;
+        transition: all 0.15s;
+        font-weight: 500;
+    }
+    .note-type-chip:hover { opacity: 0.85; }
+    .note-type-chip.active {
+        border-color: #c8102e;
+        font-weight: 700;
+    }
+    .note-card {
+        background: white;
+        border-left: 4px solid #ccc;
+        padding: 12px 14px;
+        border-radius: 0 8px 8px 0;
+        margin-bottom: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .note-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 6px;
+    }
+    .note-card-client {
+        font-weight: 700;
+        color: #c8102e;
+        cursor: pointer;
+        text-decoration: underline;
+        text-decoration-color: transparent;
+        transition: text-decoration-color 0.15s;
+    }
+    .note-card-client:hover { text-decoration-color: #c8102e; }
+    .note-card-type {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.72em;
+        font-weight: 600;
+    }
+    .note-card-date {
+        font-size: 0.78em;
+        color: #888;
+        margin-left: auto;
+    }
+    .note-card-text {
+        font-size: 0.92em;
+        color: #333;
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.45;
+    }
+    .note-card-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+        justify-content: flex-end;
+    }
+    .note-card-actions button {
+        background: transparent;
+        border: 1px solid #ddd;
+        color: #666;
+        padding: 3px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.78em;
+    }
+    .note-card-actions button:hover { background: #f0f0f0; }
+    .note-card-actions button.delete-btn { color: #c8102e; border-color: #fbb; }
+    .note-card-edited { font-size: 0.7em; color: #999; margin-left: 6px; }
+    .surtido-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 10px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        font-size: 0.85em;
+    }
+    .surtido-name { font-weight: 500; }
+    .surtido-count {
+        background: #c8102e;
+        color: white;
+        padding: 1px 8px;
+        border-radius: 10px;
+        font-size: 0.75em;
+    }
+
+    .order-item {
+        border-left: 3px solid #c8102e;
+        padding: 8px 10px;
+        margin-bottom: 6px;
+        background: #fafafa;
+        border-radius: 0 6px 6px 0;
+    }
+    .order-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .order-name { font-weight: 600; font-size: 0.85em; }
+    .order-date { font-size: 0.78em; color: #666; }
+    .order-meta {
+        display: flex;
+        gap: 6px;
+        margin-top: 4px;
+        flex-wrap: wrap;
+        font-size: 0.72em;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+        background: white;
+        border-radius: 10px;
+        padding: 20px;
+        max-width: 500px;
+        width: 90%;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+    .modal h3 { margin-bottom: 14px; color: #c8102e; }
+    .template-btn {
+        text-align: left;
+        padding: 8px 12px;
+        background: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.82em;
+        margin-bottom: 6px;
+        display: block;
+        width: 100%;
+    }
+    .template-btn:hover { background: #e9ecef; }
+    .template-btn.active { background: #fff5f5; border-color: #c8102e; }
+    .modal textarea {
+        width: 100%;
+        min-height: 140px;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        font-family: inherit;
+        font-size: 0.88em;
+        resize: vertical;
+        margin-top: 6px;
+    }
+    .modal-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+
+    .hidden { display: none !important; }
+
+    /* ============ MAPA ============ */
+    .map-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: white;
+        z-index: 2000;
+        flex-direction: column;
+    }
+    .map-overlay.active { display: flex; }
+    .map-header {
+        background: linear-gradient(135deg, #c8102e 0%, #8b0000 100%);
+        color: white;
+        padding: 10px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .map-header h2 { font-size: 1em; margin: 0; }
+    .map-header .map-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .map-status {
+        font-size: 0.78em;
+        opacity: 0.9;
+        padding: 2px 8px;
+        background: rgba(255,255,255,0.15);
+        border-radius: 10px;
+    }
+    #mapContainer { flex: 1; position: relative; }
+    .map-progress {
+        position: absolute;
+        top: 10px; left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        padding: 8px 14px;
+        border-radius: 20px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        font-size: 0.82em;
+        z-index: 1000;
+        display: none;
+    }
+    .map-progress.active { display: block; }
+    .map-popup-name { font-weight: 700; color: #c8102e; margin-bottom: 4px; }
+    .map-popup-info { font-size: 0.85em; margin-bottom: 6px; color: #555; }
+    .map-popup-stats {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin: 6px 0;
+        font-size: 0.75em;
+    }
+    .map-popup-stat {
+        background: #f8f9fa;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+    .map-popup-actions {
+        display: flex;
+        gap: 6px;
+        margin-top: 8px;
+    }
+    .map-popup-actions button {
+        flex: 1;
+        padding: 6px 10px;
+        font-size: 0.8em;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        color: white;
+        font-weight: 600;
+    }
+    .map-popup-wa { background: #25d366; }
+    .map-popup-call { background: #007eb5; }
+    .map-popup-detail { background: #c8102e; }
+
+    /* Marker colores por zona */
+    .leaflet-marker-icon.marker-oeste { filter: hue-rotate(0deg); }
+    .leaflet-marker-icon.marker-norte { filter: hue-rotate(200deg); }
+    .leaflet-marker-icon.marker-sur { filter: hue-rotate(120deg); }
+    .leaflet-marker-icon.marker-caba { filter: hue-rotate(300deg); }
+
+    /* ============ CRÍTICOS ============ */
+    .criticos-resumen {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+    .crit-resumen-card {
+        background: white;
+        border: 2px solid #eee;
+        border-radius: 8px;
+        padding: 10px 12px;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: left;
+    }
+    .crit-resumen-card:hover { transform: translateY(-1px); box-shadow: 0 3px 8px rgba(0,0,0,0.08); }
+    .crit-resumen-card.active { box-shadow: 0 0 0 3px rgba(200,16,46,0.15); }
+    .crit-resumen-card .crc-count {
+        font-size: 1.6em;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 2px;
+    }
+    .crit-resumen-card .crc-label {
+        font-size: 0.75em;
+        font-weight: 600;
+        text-transform: uppercase;
+        opacity: 0.85;
+        line-height: 1.2;
+    }
+    .crit-resumen-card .crc-desc {
+        font-size: 0.72em;
+        color: #666;
+        margin-top: 4px;
+        line-height: 1.3;
+    }
+    .crit-card-rojo { border-color: #c8102e; }
+    .crit-card-rojo .crc-count, .crit-card-rojo .crc-label { color: #c8102e; }
+    .crit-card-naranja { border-color: #e67e22; }
+    .crit-card-naranja .crc-count, .crit-card-naranja .crc-label { color: #e67e22; }
+    .crit-card-amarillo { border-color: #f39c12; }
+    .crit-card-amarillo .crc-count, .crit-card-amarillo .crc-label { color: #b8770e; }
+    .crit-card-azul { border-color: #2980b9; }
+    .crit-card-azul .crc-count, .crit-card-azul .crc-label { color: #2980b9; }
+    .crit-card-negro { border-color: #34495e; }
+    .crit-card-negro .crc-count, .crit-card-negro .crc-label { color: #34495e; }
+
+    .criticos-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .crit-row {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-left: 5px solid #ccc;
+        border-radius: 8px;
+        padding: 12px 14px;
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 8px 16px;
+        align-items: start;
+        transition: all 0.15s;
+    }
+    .crit-row:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .crit-row.tipo-rojo { border-left-color: #c8102e; }
+    .crit-row.tipo-naranja { border-left-color: #e67e22; }
+    .crit-row.tipo-amarillo { border-left-color: #f39c12; }
+    .crit-row.tipo-azul { border-left-color: #2980b9; }
+    .crit-row.tipo-negro { border-left-color: #34495e; }
+
+    .crit-row-main { min-width: 0; }
+    .crit-row-name {
+        font-weight: 700;
+        font-size: 0.98em;
+        color: #2c3e50;
+        margin-bottom: 4px;
+    }
+    .crit-row-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 6px;
+    }
+    .crit-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.72em;
+        font-weight: 600;
+    }
+    .crit-tag-rojo { background: #ffe0e0; color: #c8102e; }
+    .crit-tag-naranja { background: #ffe8d1; color: #c0641c; }
+    .crit-tag-amarillo { background: #fff3cd; color: #856404; }
+    .crit-tag-azul { background: #d6eaf8; color: #1f5f8b; }
+    .crit-tag-negro { background: #d5dbdf; color: #2c3e50; }
+
+    .crit-row-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 0.82em;
+        color: #555;
+    }
+    .crit-row-meta strong { color: #2c3e50; }
+    .crit-row-stats {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+        font-size: 0.78em;
+    }
+    .crit-stat {
+        background: #f5f7fa;
+        padding: 3px 9px;
+        border-radius: 12px;
+        color: #555;
+    }
+    .crit-stat-warn { background: #fff3cd; color: #856404; font-weight: 600; }
+    .crit-stat-bad { background: #ffe0e0; color: #c8102e; font-weight: 600; }
+
+    .crit-row-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        align-items: stretch;
+        min-width: 110px;
+    }
+    .crit-row-actions .btn { padding: 6px 10px; font-size: 0.78em; }
+    .crit-row-reason {
+        font-size: 0.78em;
+        color: #666;
+        font-style: italic;
+        margin-top: 4px;
+        padding: 4px 8px;
+        background: #fafafa;
+        border-radius: 4px;
+    }
+
+    @media (max-width: 768px) {
+        .criticos-resumen { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .crit-resumen-card { padding: 8px; }
+        .crit-resumen-card .crc-count { font-size: 1.3em; }
+        .crit-resumen-card .crc-desc { display: none; }
+        .crit-row { grid-template-columns: 1fr; padding: 10px; }
+        .crit-row-actions { flex-direction: row; min-width: 0; }
+        .crit-row-actions .btn { flex: 1; min-height: 38px; }
+    }
+
+    @media (max-width: 768px) {
+        .map-header h2 { font-size: 0.85em; }
+        .map-status { font-size: 0.7em; }
+    }
+
+    /* ============ MOBILE RESPONSIVE ============ */
+    @media (max-width: 768px) {
+        body { font-size: 15px; }
+
+        .header {
+            padding: 10px 12px;
+            flex-direction: row;
+        }
+        .header h1 { font-size: 1.05em; }
+        .header .subtitle { display: none; }
+        .header-actions { gap: 4px; }
+        .header-actions .btn { padding: 6px 8px; font-size: 0.75em; }
+        .refresh-info { display: none; }
+
+        .container { padding: 8px; }
+
+        .tabs {
+            position: sticky;
+            top: 0;
+            background: #f5f7fa;
+            z-index: 50;
+            padding: 6px 0 0;
+            margin: -8px -8px 10px;
+        }
+        .tab { padding: 10px 16px; font-size: 0.9em; flex: 1; text-align: center; }
+
+        .panel { padding: 10px; border-radius: 8px; }
+
+        /* Filtros colapsables */
+        .filters-bar { display: none; }
+        .filters-bar.open {
+            display: flex !important;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .filters-bar.open .filter-group { width: 100%; }
+        .mobile-filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .mobile-filter-bar input.filter-input {
+            flex: 1;
+            padding: 10px 12px;
+            font-size: 0.9em;
+        }
+        .btn-toggle-filters {
+            background: #c8102e;
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            white-space: nowrap;
+            min-height: 42px;
+            cursor: pointer;
+        }
+        .btn-toggle-filters.has-filters { background: #8b0000; }
+        .btn-toggle-filters .filter-count {
+            background: white;
+            color: #c8102e;
+            border-radius: 10px;
+            padding: 1px 7px;
+            font-size: 0.75em;
+            margin-left: 4px;
+            font-weight: 700;
+        }
+        .filter-actions { flex-wrap: wrap; gap: 6px; }
+        .filter-actions .btn-small { padding: 8px 10px; font-size: 0.8em; }
+        .result-count {
+            margin-left: 0;
+            width: 100%;
+            text-align: center;
+            padding: 4px 0;
+        }
+
+        /* Tabla pedidos -> cards */
+        .table-wrap { border: none; max-height: none; overflow: visible; }
+        #pedidosTable thead { display: none; }
+        #pedidosTable, #pedidosTable tbody { display: block; width: 100%; }
+        #pedidosTable tr {
+            display: block;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            padding: 10px 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        #pedidosTable tr.expanded { background: #fff5f5; }
+        #pedidosTable tr.subitems-row {
+            background: #fafafa;
+            border-top: none;
+            margin-top: -8px;
+            border-radius: 0 0 10px 10px;
+        }
+        #pedidosTable td {
+            display: block;
+            padding: 2px 0;
+            border: none;
+            white-space: normal;
+            font-size: 0.85em;
+        }
+        #pedidosTable td:first-child { float: right; color: #999; }
+        #pedidosTable td::before {
+            content: attr(data-label) ": ";
+            font-weight: 600;
+            color: #666;
+            font-size: 0.78em;
+            text-transform: uppercase;
+        }
+        #pedidosTable td[data-label="Nombre"]::before,
+        #pedidosTable td[data-label="Cliente (Negocio)"]::before { display: none; }
+        #pedidosTable td[data-label="Nombre"] {
+            font-weight: 600;
+            font-size: 1em;
+            color: #c8102e;
+            margin-bottom: 4px;
+        }
+        #pedidosTable td[data-label="Cliente (Negocio)"] {
+            font-weight: 500;
+            font-size: 0.95em;
+        }
+        #pedidosTable td.actions {
+            display: flex;
+            gap: 8px;
+            padding-top: 10px;
+            margin-top: 6px;
+            border-top: 1px solid #f0f0f0;
+            justify-content: flex-end;
+        }
+        #pedidosTable td.actions::before { display: none; }
+        #pedidosTable td.actions button {
+            min-width: 44px;
+            min-height: 40px;
+            font-size: 0.9em;
+            padding: 8px 14px;
+        }
+
+        /* Seguimiento: layout 1 columna */
+        .client-track-layout { grid-template-columns: 1fr; gap: 10px; }
+        .client-list-track { max-height: 55vh; }
+        .client-card { padding: 12px; }
+
+        /* Detalle cliente */
+        .client-header {
+            position: sticky;
+            top: 48px;
+            background: white;
+            z-index: 40;
+            padding: 12px;
+            margin: -10px -10px 10px;
+            border-bottom: 2px solid #f0f0f0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+        .client-info h3 { font-size: 1.15em; margin-bottom: 6px; }
+        .meta-line { font-size: 0.82em; margin-bottom: 2px; }
+        .client-header > div[style*="display:flex"] {
+            margin-top: 10px;
+            width: 100%;
+        }
+        .client-header .btn {
+            flex: 1;
+            min-height: 44px;
+            font-size: 0.9em;
+            padding: 10px 8px;
+        }
+
+        /* Stats compactas */
+        .stats-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 6px; }
+        .stat-card { padding: 8px 6px; }
+        .stat-value { font-size: 1.1em; }
+        .stat-label { font-size: 0.62em; }
+
+        /* Secciones colapsables */
+        .section-title {
+            cursor: pointer;
+            user-select: none;
+            padding: 10px 8px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            margin: 10px 0 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: none;
+        }
+        .section-title::after {
+            content: "▼";
+            font-size: 0.7em;
+            color: #999;
+            transition: transform 0.15s;
+        }
+        .section-title.collapsed::after { transform: rotate(-90deg); }
+        .section-content.collapsed { display: none; }
+
+        .order-item { padding: 10px; }
+        .order-name { font-size: 0.9em; }
+        .order-date { font-size: 0.75em; }
+
+        .contact-item { flex-wrap: wrap; }
+        .contact-date { font-size: 0.78em; width: 100%; padding-left: 28px; color: #888; }
+
+        /* Modal full */
+        .modal { width: 100%; max-width: 100%; margin: 10px; max-height: 90vh; }
+
+        /* Multiselect */
+        .ms-wrap { min-height: 40px; }
+        .ms-input { font-size: 16px; padding: 6px 4px; }
+        .ms-dropdown { max-height: 200px; }
+        .ms-option { padding: 10px 12px; font-size: 0.9em; }
+        .ms-chip { font-size: 0.82em; padding: 4px 8px; }
+
+        /* No zoom iOS */
+        input[type="text"], input[type="password"], textarea, select {
+            font-size: 16px !important;
+        }
+
+        .col-toggle { padding: 6px; gap: 4px; }
+        .col-toggle-item { font-size: 0.75em; padding: 4px 8px; }
+        .subitems-list { gap: 4px; }
+        .subitem-chip { font-size: 0.72em; padding: 3px 8px; }
+    }
+
+    /* Desktop: ocultar elementos mobile */
+    @media (min-width: 769px) {
+        .mobile-filter-bar { display: none !important; }
+    }
+</style>
+</head>
+<body>
+
+<!-- Token -->
+<div id="tokenScreen" class="container">
+    <div class="token-screen">
+        <h2>Ingresá tu token de Monday</h2>
+        <p>Para traer los datos en vivo del board "Equipo MAXIFER" necesitamos tu token personal de Monday.</p>
+        <div class="help">
+            <strong>¿Cómo obtenerlo?</strong><br>
+            1. En Monday, foto de perfil (abajo a la izquierda)<br>
+            2. Developers → My access tokens<br>
+            3. Copiá y pegá el token acá.<br><br>
+            <strong>Seguridad:</strong> se guarda solo en tu navegador (localStorage).
+        </div>
+        <input type="password" id="tokenInput" class="token-input" placeholder="Pegá tu token de Monday acá">
+        <button class="btn btn-block" onclick="saveToken()">Guardar y conectar</button>
+    </div>
+</div>
+
+<!-- App principal -->
+<div id="app" class="hidden">
+    <div class="header">
+        <div>
+            <h1>MAXIFER - Atención Post Venta</h1>
+            <div class="subtitle">Seguimiento y contacto con clientes</div>
+        </div>
+        <div class="header-actions">
+            <span class="refresh-info" id="refreshInfo"></span>
+            <button class="btn btn-small btn-secondary" onclick="exportContactsLog()" title="Descargar log de contactos como JSON">💾 Backup</button>
+            <button class="btn btn-small btn-secondary" onclick="importContactsLog()" title="Importar backup">📥 Restaurar</button>
+            <button class="btn btn-small btn-secondary" onclick="loadData(false)">🔄 Actualizar</button>
+            <button class="btn btn-small btn-secondary" onclick="logout()">🚪 Salir</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="errorContainer"></div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('pedidos')">📋 Pedidos</button>
+            <button class="tab" onclick="switchTab('seguimiento')">👥 Seguimiento</button>
+            <button class="tab" onclick="switchTab('criticos')">🚨 Críticos</button>
+            <button class="tab" onclick="switchTab('notas')">📝 Notas</button>
+        </div>
+
+        <!-- ============ TAB PEDIDOS (TABLA) ============ -->
+        <div id="tab-pedidos" class="tab-panel active">
+            <div class="panel">
+                <div class="mobile-filter-bar">
+                    <input type="text" id="f-search-mobile" class="filter-input" placeholder="🔍 Buscar pedido, negocio...">
+                    <button class="btn-toggle-filters" id="btn-toggle-f1" onclick="toggleFilters(1)">
+                        Filtros <span class="filter-count" id="f1-count">0</span>
+                    </button>
+                </div>
+                <div class="filters-bar" id="filters-bar-1">
+                    <div class="filter-group">
+                        <label>🔍 Buscar</label>
+                        <input type="text" id="f-search" class="filter-input" placeholder="Pedido, negocio, contacto, tel...">
+                    </div>
+                    <div class="filter-group">
+                        <label>👤 Vendedor</label>
+                        <div id="ms-vendor" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>🏷️ Etiqueta</label>
+                        <div id="ms-etiqueta" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>🗺️ Zona AMBA</label>
+                        <div id="ms-zona" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>📍 Localidad</label>
+                        <div id="ms-localidad" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>🗺️ Provincia</label>
+                        <div id="ms-provincia" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>📊 Estado</label>
+                        <div id="ms-estado" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>📦 Tipo de surtido</label>
+                        <div id="ms-surtido" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>⏱️ Días desde última</label>
+                        <select id="f-dias" class="filter-select">
+                            <option value="">Todos</option>
+                            <option value="0-30">0 a 30 días</option>
+                            <option value="30-60">30 a 60 días</option>
+                            <option value="60-90">60 a 90 días</option>
+                            <option value="90-180">90 a 180 días</option>
+                            <option value="180-365">180 a 365 días</option>
+                            <option value="365+">Más de 365 días</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>💰 Pago</label>
+                        <select id="f-pago" class="filter-select">
+                            <option value="">Todos</option>
+                            <option value="SI">Pagado</option>
+                            <option value="NO">No pagado</option>
+                            <option value="UNA PARTE">Parcial</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📲 Último contacto</label>
+                        <select id="f-contacto" class="filter-select">
+                            <option value="">Todos</option>
+                            <option value="never">Nunca contactado</option>
+                            <option value="0-7">Contactado últimos 7d</option>
+                            <option value="7-30">Contactado 7-30d</option>
+                            <option value="30-90">Contactado 30-90d</option>
+                            <option value="90+">Sin contactar 90d+</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="btn btn-small btn-light" onclick="toggleColPanel()">⚙ Columnas</button>
+                    <button class="btn btn-small btn-light" onclick="clearFilters()">✖ Limpiar filtros</button>
+                    <button class="btn btn-small btn-light" onclick="exportCSV()">📥 Exportar CSV</button>
+                    <button class="btn btn-small" style="background:#27ae60;color:white;" onclick="openMap('pedidos')">🗺️ Ver mapa</button>
+                    <span class="result-count" id="resultCount"></span>
+                </div>
+
+                <div id="colPanel" class="col-toggle hidden"></div>
+
+                <div class="table-wrap">
+                    <table id="pedidosTable">
+                        <thead id="pedidosHead"></thead>
+                        <tbody id="pedidosBody">
+                            <tr><td colspan="10" class="loading-full">
+                                <div class="spinner"></div>
+                                <p id="loadingText">Cargando...</p>
+                                <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ TAB SEGUIMIENTO CLIENTE ============ -->
+        <div id="tab-seguimiento" class="tab-panel">
+            <div class="panel">
+                <div class="mobile-filter-bar">
+                    <input type="text" id="f2-search-mobile" class="filter-input" placeholder="🔍 Buscar negocio o contacto...">
+                    <button class="btn-toggle-filters" id="btn-toggle-f2" onclick="toggleFilters(2)">
+                        Filtros <span class="filter-count" id="f2-count">0</span>
+                    </button>
+                </div>
+                <div class="filters-bar" id="filters-bar-2">
+                    <div class="filter-group">
+                        <label>🔍 Buscar cliente</label>
+                        <input type="text" id="f2-search" class="filter-input" placeholder="Negocio o contacto...">
+                    </div>
+                    <div class="filter-group">
+                        <label>👤 Vendedor</label>
+                        <div id="ms2-vendor" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>🗺️ Zona AMBA</label>
+                        <div id="ms2-zona" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>📍 Localidad</label>
+                        <div id="ms2-localidad" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>🗺️ Provincia</label>
+                        <div id="ms2-provincia" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>📦 Tipo de surtido</label>
+                        <div id="ms2-surtido" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>⏱️ Días desde última</label>
+                        <select id="f2-dias" class="filter-select">
+                            <option value="">Todos</option>
+                            <option value="0-30">0 a 30</option>
+                            <option value="30-60">30 a 60</option>
+                            <option value="60-90">60 a 90</option>
+                            <option value="90-180">90 a 180</option>
+                            <option value="180-365">180 a 365</option>
+                            <option value="365+">Más de 365</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📲 Último contacto</label>
+                        <select id="f2-contacto" class="filter-select">
+                            <option value="">Todos</option>
+                            <option value="never">Nunca contactado</option>
+                            <option value="0-7">Últimos 7d</option>
+                            <option value="7-30">7-30d</option>
+                            <option value="30-90">30-90d</option>
+                            <option value="90+">Sin contactar 90d+</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>🔁 Reposición</label>
+                        <select id="f2-repo" class="filter-select">
+                            <option value="">Todos</option>
+                            <option value="nunca">Nunca repusieron (3+ compras)</option>
+                            <option value="baja">Baja repo (&lt;30%)</option>
+                            <option value="media">Media repo (30-60%)</option>
+                            <option value="alta">Alta repo (&gt;60%)</option>
+                            <option value="sin-repo-reciente">Sin reponer hace 90d+</option>
+                            <option value="sin-repo-180">Sin reponer hace 180d+</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📊 Ordenar</label>
+                        <select id="f2-sort" class="filter-select">
+                            <option value="days-asc">Más reciente primero</option>
+                            <option value="days-desc">Más antiguo primero</option>
+                            <option value="count-desc">Más pedidos primero</option>
+                            <option value="contact-asc">Contacto más reciente</option>
+                            <option value="contact-desc">Sin contactar hace más</option>
+                            <option value="repo-asc">Menos % reposición</option>
+                            <option value="repo-desc">Más % reposición</option>
+                            <option value="repo-days-desc">Sin reponer hace más</option>
+                            <option value="iniciales-desc">Más compras iniciales</option>
+                            <option value="alpha">Alfabético</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="margin-bottom:10px;">
+                    <button class="btn btn-small" style="background:#27ae60;color:white;" onclick="openMap('seguimiento')">🗺️ Ver mapa de clientes filtrados</button>
+                </div>
+
+                <div class="client-track-layout">
+                    <div>
+                        <div class="result-count" id="clientCount" style="margin-bottom:8px;"></div>
+                        <div id="clientListTrack" class="client-list-track"></div>
+                    </div>
+                    <div class="client-detail" id="clientDetail">
+                        <div class="empty-state">
+                            <div class="icon">👤</div>
+                            <p>Seleccioná un cliente de la lista</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ TAB CRÍTICOS ============ -->
+        <div id="tab-criticos" class="tab-panel">
+            <div class="panel">
+                <div style="background:#fff8e1;border-left:4px solid #ffb300;padding:10px 14px;margin-bottom:12px;border-radius:4px;font-size:0.85em;">
+                    <strong>Clientes que necesitan atención urgente.</strong> Identificados según patrones de compra: muchos surtidos sin reposición, reponedores históricos que se enfriaron, o clientes que dejaron de comprar.
+                </div>
+
+                <!-- Resumen por categoría -->
+                <div id="criticosResumen" class="criticos-resumen"></div>
+
+                <div class="mobile-filter-bar">
+                    <input type="text" id="fc-search-mobile" class="filter-input" placeholder="🔍 Buscar negocio o contacto...">
+                    <button class="btn-toggle-filters" id="btn-toggle-fc" onclick="toggleFilters('c')">
+                        Filtros <span class="filter-count" id="fc-count">0</span>
+                    </button>
+                </div>
+                <div class="filters-bar" id="filters-bar-c">
+                    <div class="filter-group">
+                        <label>🔍 Buscar cliente</label>
+                        <input type="text" id="fc-search" class="filter-input" placeholder="Negocio o contacto...">
+                    </div>
+                    <div class="filter-group">
+                        <label>🚨 Tipo de crítico</label>
+                        <div id="msc-tipo" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>👤 Vendedor</label>
+                        <div id="msc-vendor" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>🏷️ Etiqueta</label>
+                        <div id="msc-etiqueta" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>🗺️ Zona AMBA</label>
+                        <div id="msc-zona" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>📍 Localidad</label>
+                        <div id="msc-localidad" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>🗺️ Provincia</label>
+                        <div id="msc-provincia" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>📦 Tipo de surtido</label>
+                        <div id="msc-surtido" class="ms-wrap"></div>
+                    </div>
+                    <div class="filter-group">
+                        <label>📲 Último contacto</label>
+                        <select id="fc-contacto" class="filter-select">
+                            <option value="">Todos</option>
+                            <option value="never">Nunca contactado</option>
+                            <option value="0-7">Últimos 7d</option>
+                            <option value="7-30">7-30d</option>
+                            <option value="30-90">30-90d</option>
+                            <option value="90+">Sin contactar 90d+</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📊 Ordenar</label>
+                        <select id="fc-sort" class="filter-select">
+                            <option value="prio-desc">Prioridad (más urgente primero)</option>
+                            <option value="days-desc">Más días sin comprar</option>
+                            <option value="iniciales-desc">Más surtidos iniciales</option>
+                            <option value="repodays-desc">Más días sin reponer</option>
+                            <option value="alpha">Alfabético</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="btn btn-small btn-light" onclick="clearCriticosFilters()">✖ Limpiar filtros</button>
+                    <button class="btn btn-small btn-light" onclick="exportCriticosCSV()">📥 Exportar CSV</button>
+                    <button class="btn btn-small" style="background:#27ae60;color:white;" onclick="openMap('criticos')">🗺️ Ver mapa</button>
+                    <span class="result-count" id="criticosCount"></span>
+                </div>
+
+                <div id="criticosList" class="criticos-list"></div>
+            </div>
+        </div>
+
+        <!-- ============ TAB NOTAS ============ -->
+        <div id="tab-notas" class="tab-panel">
+            <div class="panel">
+                <div class="filters-bar">
+                    <div class="filter-group">
+                        <label>🔍 Buscar en notas</label>
+                        <input type="text" id="fn-search" class="filter-input" placeholder="Texto de la nota o cliente...">
+                    </div>
+                    <div class="filter-group">
+                        <label>🏷️ Tipo</label>
+                        <select id="fn-type" class="filter-select">
+                            <option value="">Todos</option>
+                            <option value="recordatorio">📌 Recordatorio</option>
+                            <option value="pendiente">⏳ Pendiente</option>
+                            <option value="info">ℹ️ Info</option>
+                            <option value="queja">⚠️ Queja</option>
+                            <option value="oportunidad">💰 Oportunidad</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>📅 Fecha</label>
+                        <select id="fn-date" class="filter-select">
+                            <option value="">Todas</option>
+                            <option value="hoy">Hoy</option>
+                            <option value="7d">Últimos 7 días</option>
+                            <option value="30d">Últimos 30 días</option>
+                            <option value="90d">Últimos 90 días</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="filter-actions">
+                    <button class="btn btn-small" style="background:#27ae60;color:white;" onclick="openNoteModal(null)">➕ Nota rápida</button>
+                    <button class="btn btn-small btn-light" onclick="exportNotesCSV()">📥 Exportar CSV</button>
+                    <span class="result-count" id="notasCount"></span>
+                </div>
+
+                <div id="notasList"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal WhatsApp -->
+<div id="waModal" class="modal-overlay">
+    <div class="modal">
+        <h3>💬 Mensaje WhatsApp</h3>
+        <div id="waClientInfo" style="margin-bottom:12px;color:#666;font-size:0.88em;"></div>
+        <strong style="font-size:0.88em;">Plantillas:</strong>
+        <div id="waTemplates" style="margin-top:8px;"></div>
+        <strong style="font-size:0.88em;">Mensaje:</strong>
+        <textarea id="waMessage"></textarea>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeWA()">Cancelar</button>
+            <button class="btn btn-wa" onclick="sendWA()">📱 Abrir WhatsApp</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Registrar Contacto -->
+<div id="contactModal" class="modal-overlay">
+    <div class="modal">
+        <h3>📝 Registrar contacto</h3>
+        <div id="contactClientInfo" style="margin-bottom:16px;color:#666;font-size:0.88em;"></div>
+        <strong style="font-size:0.88em;">Tipo de contacto:</strong>
+        <div id="contactTypes" style="margin-top:10px;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeContactModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nota -->
+<div id="noteModal" class="modal-overlay">
+    <div class="modal">
+        <h3 id="noteModalTitle">📝 Nueva nota</h3>
+        <div id="noteClientWrapper" style="margin-bottom:12px;">
+            <label style="font-size:0.82em;font-weight:600;color:#555;">Cliente:</label>
+            <div id="noteClientPicker" class="ms-wrap" style="margin-top:4px;"></div>
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:0.82em;font-weight:600;color:#555;">Tipo:</label>
+            <div id="noteTypes" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;"></div>
+        </div>
+        <div>
+            <label style="font-size:0.82em;font-weight:600;color:#555;">Texto:</label>
+            <textarea id="noteText" placeholder="Escribí tu nota..." style="margin-top:4px;"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeNoteModal()">Cancelar</button>
+            <button class="btn" style="background:#27ae60;color:white;" onclick="saveNoteFromModal()">💾 Guardar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const BOARD_ID = 7212937829;
+const API_URL = 'https://api.monday.com/v2';
+const CACHE_KEY = 'maxifer_postventa_cache_v4'; // v4: agregamos cálculo de criticidad
+const CACHE_TTL_MS = 3 * 60 * 60 * 1000; // 3 horas
+const CONTACTS_KEY = 'maxifer_postventa_contacts';
+
+// Tipos de contacto
+const CONTACT_TYPES = {
+    'wa_out':        { label: '💬 WhatsApp enviado',  color: '#25d366' },
+    'call_out':      { label: '📞 Llamada',           color: '#007eb5' },
+    'me_contacto':   { label: '📲 Me contactó',       color: '#fdab3d' },
+    'visita':        { label: '🤝 Visita',            color: '#9d50dd' }
+};
+let contactsLog = {}; // { clientNameLower: [{ ts, type }, ...] }
+
+// Tipos de notas
+const NOTE_TYPES = {
+    'recordatorio':   { label: '📌 Recordatorio',  color: '#007eb5', bg: '#e3f2fd' },
+    'pendiente':      { label: '⏳ Pendiente',     color: '#fdab3d', bg: '#fff3cd' },
+    'info':           { label: 'ℹ️ Info',          color: '#6c757d', bg: '#f0f0f0' },
+    'queja':          { label: '⚠️ Queja',         color: '#c8102e', bg: '#ffe0e0' },
+    'oportunidad':    { label: '💰 Oportunidad',   color: '#27ae60', bg: '#d4edda' }
+};
+const NOTES_KEY = 'maxifer_postventa_notes';
+let notesLog = {}; // { clientNameLower: [{ id, ts, text, type }, ...] }
+
+// Columns del board principal
+const COL = {
+    status: 'project_status',
+    fechaEntrega: 'date',
+    fechaInicio: 'date_mkq052j',
+    vendedor2: 'color_mkq17tse',
+    vendedorMirror: 'lookup_mkpzg5rd',
+    etiqueta: 'lookup_mkpz5epk',
+    baseClientes: 'board_relation_mkpzzjqf',
+    nombreCliente: 'lookup_mkpzmn01',
+    telefono: 'lookup_mkpzh2zz',
+    ubicacion: 'lookup_mkpztwy2',
+    notas: 'lookup_mkpzqqnh',
+    expreso: 'lookup_mkpzstfb',
+    surtidos: 'subelementos_tipo__1',
+    pago: 'color_mkpd637b',
+    facturado: 'color_mkpdxc04',
+    empapelado: 'color_mkpeqk67',
+    otsBs: 'text_mm0wyss6',
+    detalleEnv: 'color_mkwanspv'
+};
+const COL_IDS = Object.values(COL);
+
+// Subitem columns que interesan
+const SUB_COL = {
+    tipo: 'men__desplegable__1',
+    exhibidor: 'estado__1',
+    gavetaRepo: 'status',
+    detalles: 'men__desplegable8__1'
+};
+const SUB_COL_IDS = Object.values(SUB_COL);
+
+// Columnas configurables en la tabla
+const TABLE_COLUMNS = [
+    { id: 'name', label: 'Nombre', default: true, sortable: true, getValue: o => o.name },
+    { id: 'vendedor', label: 'Vendedor', default: true, sortable: true, getValue: o => o.vendedor },
+    { id: 'cliente', label: 'Cliente (Negocio)', default: true, sortable: true, getValue: o => o.clientName },
+    { id: 'contacto', label: 'Contacto', default: false, sortable: true, getValue: o => o.contactPerson || '' },
+    { id: 'etiqueta', label: 'Etiqueta', default: true, sortable: true, getValue: o => o.etiqueta },
+    { id: 'ubicacion', label: 'Ubicación', default: true, sortable: true, getValue: o => o.ubicacion },
+    { id: 'localidad', label: 'Localidad', default: false, sortable: true, getValue: o => o.localidad },
+    { id: 'provincia', label: 'Provincia', default: false, sortable: true, getValue: o => o.provincia },
+    { id: 'zona', label: 'Zona', default: true, sortable: true, getValue: o => o.zona },
+    { id: 'telefono', label: 'Teléfono', default: true, sortable: false, getValue: o => o.telefono },
+    { id: 'fecha', label: 'Fecha Entrega', default: true, sortable: true, getValue: o => o.fechaText, sortVal: o => o.fecha?.getTime() || 0 },
+    { id: 'dias', label: 'Días', default: true, sortable: true, getValue: o => o.daysSince < 9999 ? o.daysSince + 'd' : '—', sortVal: o => o.daysSince },
+    { id: 'ultContacto', label: 'Últ. Contacto', default: true, sortable: true, getValue: o => {
+        const lc = getLastContact(o.clientName);
+        if (!lc) return '—';
+        const d = daysSinceContact(o.clientName);
+        const icon = (CONTACT_TYPES[lc.type]?.label || '').split(' ')[0];
+        return `${icon} ${d}d`;
+    }, sortVal: o => daysSinceContact(o.clientName) },
+    { id: 'estado', label: 'Estado', default: true, sortable: true, getValue: o => o.estado },
+    { id: 'pago', label: 'Pago', default: false, sortable: true, getValue: o => o.pago },
+    { id: 'surtidos', label: 'Surtidos (resumen)', default: false, sortable: false, getValue: o => o.surtidosResumen },
+    { id: 'ots', label: 'OT BS', default: false, sortable: false, getValue: o => o.ots },
+    { id: 'acciones', label: 'Acciones', default: true, sortable: false, getValue: null }
+];
+
+// ============ STATE ============
+let token = null;
+let allOrders = [];
+let subitemsMap = new Map(); // item_id -> [subitems]
+let clientsMap = new Map();
+let visibleCols = new Set();
+let sortState = { col: 'fecha', dir: 'desc' };
+let expandedRows = new Set();
+let selectedClientName = null;
+
+// ============ PROVINCIAS ============
+const PROVINCIAS = [
+    'Buenos Aires', 'CABA', 'Capital Federal', 'Ciudad Autónoma de Buenos Aires',
+    'Ciudad Autonoma de Buenos Aires', 'Catamarca', 'Chaco', 'Chubut',
+    'Córdoba', 'Cordoba', 'Corrientes', 'Entre Ríos', 'Entre Rios', 'Formosa',
+    'Jujuy', 'La Pampa', 'La Rioja', 'Mendoza', 'Misiones', 'Neuquén', 'Neuquen',
+    'Río Negro', 'Rio Negro', 'Salta', 'San Juan', 'San Luis', 'Santa Cruz',
+    'Santa Fe', 'Santiago del Estero', 'Tierra del Fuego', 'Tucumán', 'Tucuman',
+    'Provincia de Buenos Aires'
+];
+const PROV_NORMALIZE = {
+    'Cordoba': 'Córdoba', 'Entre Rios': 'Entre Ríos', 'Neuquen': 'Neuquén',
+    'Rio Negro': 'Río Negro', 'Tucuman': 'Tucumán',
+    'Capital Federal': 'CABA',
+    'Ciudad Autónoma de Buenos Aires': 'CABA',
+    'Ciudad Autonoma de Buenos Aires': 'CABA',
+    'Provincia de Buenos Aires': 'Buenos Aires'
+};
+
+// Clasificación de zonas del AMBA tomando El Palomar como referencia
+const ZONA_AMBA = {
+    // OESTE
+    'Morón': 'Oeste', 'Moron': 'Oeste', 'Haedo': 'Oeste', 'El Palomar': 'Oeste',
+    'Palomar': 'Oeste', 'Castelar': 'Oeste', 'Ituzaingó': 'Oeste', 'Ituzaingo': 'Oeste',
+    'Hurlingham': 'Oeste', 'Villa Tesei': 'Oeste', 'William Morris': 'Oeste',
+    'Ramos Mejía': 'Oeste', 'Ramos Mejia': 'Oeste', 'San Justo': 'Oeste',
+    'La Matanza': 'Oeste', 'Isidro Casanova': 'Oeste', 'Laferrere': 'Oeste',
+    'González Catán': 'Oeste', 'Gonzalez Catan': 'Oeste', 'Merlo': 'Oeste',
+    'Moreno': 'Oeste', 'Luján': 'Oeste', 'Lujan': 'Oeste',
+    'General Rodríguez': 'Oeste', 'General Rodriguez': 'Oeste',
+    'Gral. Rodríguez': 'Oeste', 'Gral. Rodriguez': 'Oeste',
+    'Caseros': 'Oeste', 'Ciudadela': 'Oeste', 'Tres de Febrero': 'Oeste',
+    'Santos Lugares': 'Oeste', 'Villa Bosch': 'Oeste', 'Pablo Podestá': 'Oeste',
+    'Pablo Podesta': 'Oeste', 'Morón Sur': 'Oeste', 'Libertad': 'Oeste',
+    'Marcos Paz': 'Oeste', 'Paso del Rey': 'Oeste', 'Padua': 'Oeste',
+    'San Antonio de Padua': 'Oeste', 'Rafael Castillo': 'Oeste',
+    'Villa Luzuriaga': 'Oeste', 'Aldo Bonzi': 'Oeste', 'Tapiales': 'Oeste',
+    'Lomas del Mirador': 'Oeste',
+    // NORTE
+    'San Isidro': 'Norte', 'Vicente López': 'Norte', 'Vicente Lopez': 'Norte',
+    'Olivos': 'Norte', 'Tigre': 'Norte', 'San Fernando': 'Norte',
+    'Pilar': 'Norte', 'Escobar': 'Norte', 'Belén de Escobar': 'Norte',
+    'Belen de Escobar': 'Norte', 'José C. Paz': 'Norte', 'Jose C. Paz': 'Norte',
+    'José C Paz': 'Norte', 'San Miguel': 'Norte', 'Malvinas Argentinas': 'Norte',
+    'Los Polvorines': 'Norte', 'Don Torcuato': 'Norte', 'Benavídez': 'Norte',
+    'Benavidez': 'Norte', 'Nordelta': 'Norte', 'Martínez': 'Norte',
+    'Martinez': 'Norte', 'Acassuso': 'Norte', 'Béccar': 'Norte', 'Beccar': 'Norte',
+    'Boulogne': 'Norte', 'Florida': 'Norte', 'Munro': 'Norte',
+    'Villa Adelina': 'Norte', 'Villa Martelli': 'Norte', 'Carapachay': 'Norte',
+    'Pacheco': 'Norte', 'General Pacheco': 'Norte', 'Villa Ballester': 'Norte',
+    'San Martín': 'Norte', 'San Martin': 'Norte', 'Gral. San Martín': 'Norte',
+    'Gral. San Martin': 'Norte', 'Zárate': 'Norte', 'Zarate': 'Norte',
+    'Campana': 'Norte', 'Villa de Mayo': 'Norte', 'Grand Bourg': 'Norte',
+    'Bella Vista': 'Norte', 'Muñiz': 'Norte', 'Muniz': 'Norte',
+    // SUR
+    'Avellaneda': 'Sur', 'Lanús': 'Sur', 'Lanus': 'Sur', 'Lomas de Zamora': 'Sur',
+    'Quilmes': 'Sur', 'Berazategui': 'Sur', 'Florencio Varela': 'Sur',
+    'Almirante Brown': 'Sur', 'Adrogué': 'Sur', 'Adrogue': 'Sur',
+    'Burzaco': 'Sur', 'Esteban Echeverría': 'Sur', 'Esteban Echeverria': 'Sur',
+    'Monte Grande': 'Sur', 'Ezeiza': 'Sur', 'La Plata': 'Sur',
+    'Bernal': 'Sur', 'Wilde': 'Sur', 'Sarandí': 'Sur', 'Sarandi': 'Sur',
+    'Banfield': 'Sur', 'Temperley': 'Sur', 'Lomas': 'Sur',
+    'Villa Domínico': 'Sur', 'Villa Dominico': 'Sur', 'Ranelagh': 'Sur',
+    'Hudson': 'Sur', 'City Bell': 'Sur', 'Gonnet': 'Sur', 'Tolosa': 'Sur',
+    'Claypole': 'Sur', 'Glew': 'Sur', 'Longchamps': 'Sur',
+    'Rafael Calzada': 'Sur', 'San Francisco Solano': 'Sur', 'Lavallol': 'Sur',
+    'Llavallol': 'Sur', 'Lavallol': 'Sur', 'Turdera': 'Sur',
+    'Villa Centenario': 'Sur', 'Villa Fiorito': 'Sur', 'Piñeyro': 'Sur',
+    'Pineyro': 'Sur'
+};
+
+function classifyZone(localidad, provincia) {
+    if (!provincia) return '';
+    const provN = provincia.trim();
+    if (provN === 'CABA') return 'CABA';
+    if (provN !== 'Buenos Aires') return 'Interior del país';
+    // Provincia es Buenos Aires
+    if (!localidad) return 'Interior BsAs';
+    // Match exacto primero
+    if (ZONA_AMBA[localidad]) return ZONA_AMBA[localidad];
+    // Match case-insensitive
+    const locN = localidad.toLowerCase();
+    for (const [k, v] of Object.entries(ZONA_AMBA)) {
+        if (k.toLowerCase() === locN) return v;
+    }
+    return 'Interior BsAs';
+}
+
+// ============ MULTISELECT PREDICTIVO ============
+class MultiSelect {
+    constructor(wrapEl, onChange) {
+        this.wrap = wrapEl;
+        this.onChange = onChange;
+        this.options = []; // [{value, count}]
+        this.selected = new Set();
+        this.highlightIdx = -1;
+        this._build();
+    }
+    _build() {
+        this.wrap.innerHTML = '';
+        this.input = document.createElement('input');
+        this.input.type = 'text';
+        this.input.className = 'ms-input';
+        this.input.placeholder = 'Todos';
+        this.wrap.appendChild(this.input);
+        this.dropdown = document.createElement('div');
+        this.dropdown.className = 'ms-dropdown';
+        this.wrap.appendChild(this.dropdown);
+        this.input.addEventListener('input', () => this._renderDropdown());
+        this.input.addEventListener('focus', () => this._renderDropdown());
+        this.input.addEventListener('keydown', (e) => this._onKey(e));
+        document.addEventListener('click', (e) => {
+            if (!this.wrap.contains(e.target)) this.dropdown.classList.remove('active');
+        });
+    }
+    setOptions(opts) {
+        // opts: Set | Array | Map<value,count>
+        if (opts instanceof Map) {
+            this.options = [...opts.entries()].map(([v, c]) => ({ value: v, count: c }));
+        } else {
+            this.options = [...opts].map(v => ({ value: v, count: null }));
+        }
+        this.options.sort((a, b) => a.value.localeCompare(b.value));
+        // NOTA: NO removemos seleccionados aunque no estén en las opciones actuales,
+        // porque con filtros cascada un chip seleccionado es justo lo que está filtrando
+        // y puede no aparecer en las opciones disponibles de su propio filtro.
+        this._renderChips();
+    }
+    _renderChips() {
+        // remover chips anteriores
+        this.wrap.querySelectorAll('.ms-chip').forEach(c => c.remove());
+        const frag = document.createDocumentFragment();
+        for (const v of this.selected) {
+            const chip = document.createElement('span');
+            chip.className = 'ms-chip';
+            chip.innerHTML = `${escapeHtml(v)} <span class="ms-chip-x">✕</span>`;
+            chip.querySelector('.ms-chip-x').addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.selected.delete(v);
+                this._renderChips();
+                this.onChange();
+            });
+            frag.appendChild(chip);
+        }
+        this.wrap.insertBefore(frag, this.input);
+        this.input.placeholder = this.selected.size === 0 ? 'Todos' : '';
+    }
+    _renderDropdown() {
+        const q = this.input.value.toLowerCase().trim();
+        const norm = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const qN = norm(q);
+        const filtered = this.options.filter(o =>
+            !this.selected.has(o.value) && (!qN || norm(o.value).includes(qN))
+        ).slice(0, 50);
+        if (filtered.length === 0) {
+            this.dropdown.classList.remove('active');
+            return;
+        }
+        this.dropdown.innerHTML = filtered.map((o, i) => `
+            <div class="ms-option ${i === this.highlightIdx ? 'highlight' : ''}" data-val="${escapeHtml(o.value)}">
+                ${escapeHtml(o.value)}${o.count !== null ? `<span class="ms-option-count">(${o.count})</span>` : ''}
+            </div>
+        `).join('');
+        this.dropdown.querySelectorAll('.ms-option').forEach(el => {
+            el.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this._pick(el.getAttribute('data-val'));
+            });
+        });
+        this.dropdown.classList.add('active');
+    }
+    _onKey(e) {
+        const opts = this.dropdown.querySelectorAll('.ms-option');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            this.highlightIdx = Math.min(this.highlightIdx + 1, opts.length - 1);
+            this._renderDropdown();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            this.highlightIdx = Math.max(this.highlightIdx - 1, 0);
+            this._renderDropdown();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            const sel = opts[this.highlightIdx] || opts[0];
+            if (sel) this._pick(sel.getAttribute('data-val'));
+        } else if (e.key === 'Escape') {
+            this.dropdown.classList.remove('active');
+        } else if (e.key === 'Backspace' && !this.input.value && this.selected.size > 0) {
+            const last = [...this.selected].pop();
+            this.selected.delete(last);
+            this._renderChips();
+            this.onChange();
+        }
+    }
+    _pick(val) {
+        this.selected.add(val);
+        this.input.value = '';
+        this.highlightIdx = -1;
+        this._renderChips();
+        this._renderDropdown();
+        this.onChange();
+    }
+    getSelected() { return [...this.selected]; }
+    clear() { this.selected.clear(); this._renderChips(); }
+}
+
+let ms = {}; // map of MultiSelect instances
+
+function extractLocation(ubi) {
+    if (!ubi) return { localidad: '', provincia: '', zona: '' };
+    // Separar por comas
+    let parts = ubi.split(',').map(s => s.trim()).filter(Boolean);
+    // Quitar "Argentina" si aparece al final
+    parts = parts.filter(p => !/^argentina$/i.test(p));
+    if (parts.length === 0) return { localidad: '', provincia: '', zona: '' };
+
+    // Encontrar índice de la provincia (puede ser cualquiera de las últimas partes)
+    let provIdx = -1, provincia = '';
+    for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        // Quitar códigos postales tipo "B7607 Miramar" o "1708 Morón" -> quedarse con la parte texto
+        const pClean = p.replace(/^[A-Z]?\d{4,5}\s+/, '').trim();
+        for (const prov of PROVINCIAS) {
+            if (pClean.toLowerCase() === prov.toLowerCase() ||
+                pClean.toLowerCase().includes(prov.toLowerCase())) {
+                provincia = PROV_NORMALIZE[prov] || prov;
+                provIdx = i;
+                break;
+            }
+        }
+        if (provIdx !== -1) break;
+    }
+
+    let localidad = '';
+    if (provIdx === -1) {
+        // No encontramos provincia, agarramos la última como provincia por si acaso
+        provincia = parts[parts.length - 1] || '';
+        provIdx = parts.length - 1;
+    }
+
+    // Buscar localidad: la parte INMEDIATA anterior a la provincia
+    // PERO si solo hay calle + provincia (2 partes), la localidad es "{Provincia} Centro"
+    if (provIdx === 0) {
+        // Solo provincia, sin calle ni localidad
+        localidad = provincia + ' Centro';
+    } else if (provIdx === 1) {
+        // Solo calle + provincia => Centro de la provincia
+        localidad = provincia + ' Centro';
+    } else {
+        // Hay algo entre calle y provincia => es la localidad
+        localidad = parts[provIdx - 1];
+        // Limpiar código postal al principio
+        localidad = localidad.replace(/^[A-Z]?\d{4,5}\s+/, '').trim();
+    }
+
+    // Casos especiales
+    if (provincia === 'CABA') {
+        localidad = 'CABA';
+    }
+
+    const zona = classifyZone(localidad, provincia);
+    return { localidad, provincia, zona };
+}
+
+// ============ CONTACTOS LOG ============
+function loadContactsLog() {
+    try {
+        const raw = localStorage.getItem(CONTACTS_KEY);
+        contactsLog = raw ? JSON.parse(raw) : {};
+    } catch (e) { contactsLog = {}; }
+}
+function saveContactsLog() {
+    try { localStorage.setItem(CONTACTS_KEY, JSON.stringify(contactsLog)); }
+    catch (e) { console.warn('No se pudo guardar log de contactos', e); }
+}
+function addContact(clientName, type) {
+    if (!clientName) return;
+    const key = clientName.toLowerCase();
+    if (!contactsLog[key]) contactsLog[key] = [];
+    contactsLog[key].push({ ts: Date.now(), type });
+    saveContactsLog();
+}
+function removeContact(clientName, ts) {
+    const key = clientName.toLowerCase();
+    if (!contactsLog[key]) return;
+    contactsLog[key] = contactsLog[key].filter(c => c.ts !== ts);
+    if (contactsLog[key].length === 0) delete contactsLog[key];
+    saveContactsLog();
+}
+function getLastContact(clientName) {
+    if (!clientName) return null;
+    const list = contactsLog[clientName.toLowerCase()];
+    if (!list || list.length === 0) return null;
+    return list.reduce((max, c) => c.ts > max.ts ? c : max, list[0]);
+}
+function getContactsFor(clientName) {
+    if (!clientName) return [];
+    const list = contactsLog[clientName.toLowerCase()] || [];
+    return [...list].sort((a, b) => b.ts - a.ts);
+}
+function daysSinceContact(clientName) {
+    const last = getLastContact(clientName);
+    if (!last) return 9999;
+    return Math.floor((Date.now() - last.ts) / 86400000);
+}
+function formatContactDate(ts) {
+    const d = new Date(ts);
+    return d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ============ NOTES LOG ============
+function loadNotesLog() {
+    try {
+        const raw = localStorage.getItem(NOTES_KEY);
+        notesLog = raw ? JSON.parse(raw) : {};
+    } catch (e) { notesLog = {}; }
+}
+function saveNotesLog() {
+    try { localStorage.setItem(NOTES_KEY, JSON.stringify(notesLog)); }
+    catch (e) { console.warn('No se pudo guardar notas', e); }
+}
+function addNote(clientName, text, type) {
+    if (!clientName || !text) return;
+    const key = clientName.toLowerCase();
+    if (!notesLog[key]) notesLog[key] = [];
+    notesLog[key].push({
+        id: Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+        ts: Date.now(),
+        text: text.trim(),
+        type: type || 'info'
+    });
+    saveNotesLog();
+}
+function removeNote(clientName, id) {
+    const key = clientName.toLowerCase();
+    if (!notesLog[key]) return;
+    notesLog[key] = notesLog[key].filter(n => n.id !== id);
+    if (notesLog[key].length === 0) delete notesLog[key];
+    saveNotesLog();
+}
+function updateNote(clientName, id, text, type) {
+    const key = clientName.toLowerCase();
+    if (!notesLog[key]) return;
+    const n = notesLog[key].find(x => x.id === id);
+    if (n) {
+        n.text = text.trim();
+        n.type = type || n.type;
+        n.editedTs = Date.now();
+        saveNotesLog();
+    }
+}
+function getNotesFor(clientName) {
+    if (!clientName) return [];
+    const list = notesLog[clientName.toLowerCase()] || [];
+    return [...list].sort((a, b) => b.ts - a.ts);
+}
+function getAllNotesFlat() {
+    const out = [];
+    for (const [key, list] of Object.entries(notesLog)) {
+        for (const n of list) {
+            out.push({ ...n, clientKey: key });
+        }
+    }
+    return out.sort((a, b) => b.ts - a.ts);
+}
+
+// ============ PLANTILLAS WA ============
+const WA_TEMPLATES = [
+    { id: 'seguimiento', label: '🤝 Seguimiento post entrega', text: c => `Hola ${c.name}, te escribo de MAXIFER. Queríamos saber cómo te llegó el pedido y si está todo bien con los surtidos. Cualquier consulta, quedamos a disposición. ¡Saludos!` },
+    { id: 'reposicion', label: '📦 Ofrecer reposición', text: c => `Hola ${c.name}, soy de MAXIFER. Vi que hace un tiempo que no hacés reposición de surtidos. ¿Querés que te arme una lista de lo que te conviene reponer según lo que más te sale? Saludos!` },
+    { id: 'novedades', label: '🆕 Novedades / promos', text: c => `Hola ${c.name}! Soy de MAXIFER. Te cuento que tenemos novedades en la línea de exhibidores y algunas promos especiales este mes. ¿Te mando el catálogo actualizado? Saludos!` },
+    { id: 'reactivacion', label: '💤 Reactivar dormido', text: c => `Hola ${c.name}, ¿cómo andás? Hace un tiempo que no nos vemos. Soy de MAXIFER, quería saber cómo te está yendo con los surtidos y si puedo ayudarte con algo. ¡Saludos!` },
+    { id: 'zona', label: '📍 Visita a zona', text: c => `Hola ${c.name}! Soy de MAXIFER. La próxima semana vamos a estar visitando la zona de ${c.localidad || 'tu localidad'}. ¿Querés que te pase a ver? Saludos!` },
+    { id: 'custom', label: '✏️ Mensaje en blanco', text: () => '' }
+];
+
+// ============ INIT ============
+window.addEventListener('DOMContentLoaded', () => {
+    loadContactsLog();
+    loadNotesLog();
+    loadGeocodeCache();
+    token = localStorage.getItem('maxifer_monday_token');
+    if (token) {
+        document.getElementById('tokenScreen').classList.add('hidden');
+        document.getElementById('app').classList.remove('hidden');
+    }
+
+    // Columnas visibles
+    const savedCols = localStorage.getItem('maxifer_postventa_cols');
+    if (savedCols) {
+        visibleCols = new Set(JSON.parse(savedCols));
+    } else {
+        visibleCols = new Set(TABLE_COLUMNS.filter(c => c.default).map(c => c.id));
+    }
+
+    // Eventos filtros tab 1
+    ['f-search', 'f-dias', 'f-pago', 'f-contacto']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', renderPedidosTable);
+            el.addEventListener('change', renderPedidosTable);
+        });
+
+    // Inicializar MultiSelects tab 1
+    ms.vendor = new MultiSelect(document.getElementById('ms-vendor'), renderPedidosTable);
+    ms.etiqueta = new MultiSelect(document.getElementById('ms-etiqueta'), renderPedidosTable);
+    ms.localidad = new MultiSelect(document.getElementById('ms-localidad'), renderPedidosTable);
+    ms.provincia = new MultiSelect(document.getElementById('ms-provincia'), renderPedidosTable);
+    ms.estado = new MultiSelect(document.getElementById('ms-estado'), renderPedidosTable);
+    ms.zona = new MultiSelect(document.getElementById('ms-zona'), renderPedidosTable);
+    ms.surtido = new MultiSelect(document.getElementById('ms-surtido'), renderPedidosTable);
+
+    // Eventos filtros tab 2
+    ['f2-search', 'f2-dias', 'f2-contacto', 'f2-repo', 'f2-sort']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('input', renderClientListTrack);
+            el.addEventListener('change', renderClientListTrack);
+        });
+
+    // Inicializar MultiSelects tab 2
+    ms.vendor2 = new MultiSelect(document.getElementById('ms2-vendor'), renderClientListTrack);
+    ms.localidad2 = new MultiSelect(document.getElementById('ms2-localidad'), renderClientListTrack);
+    ms.provincia2 = new MultiSelect(document.getElementById('ms2-provincia'), renderClientListTrack);
+    ms.zona2 = new MultiSelect(document.getElementById('ms2-zona'), renderClientListTrack);
+    ms.surtido2 = new MultiSelect(document.getElementById('ms2-surtido'), renderClientListTrack);
+
+    // Listeners del tab Notas
+    ['fn-search', 'fn-type', 'fn-date'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', renderNotesTab);
+            el.addEventListener('change', renderNotesTab);
+        }
+    });
+
+    // Eventos filtros tab Críticos
+    ['fc-search', 'fc-contacto', 'fc-sort'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', renderCriticosTab);
+            el.addEventListener('change', renderCriticosTab);
+        }
+    });
+
+    // Inicializar MultiSelects tab Críticos
+    ms.tipoC = new MultiSelect(document.getElementById('msc-tipo'), renderCriticosTab);
+    ms.vendorC = new MultiSelect(document.getElementById('msc-vendor'), renderCriticosTab);
+    ms.etiquetaC = new MultiSelect(document.getElementById('msc-etiqueta'), renderCriticosTab);
+    ms.localidadC = new MultiSelect(document.getElementById('msc-localidad'), renderCriticosTab);
+    ms.provinciaC = new MultiSelect(document.getElementById('msc-provincia'), renderCriticosTab);
+    ms.zonaC = new MultiSelect(document.getElementById('msc-zona'), renderCriticosTab);
+    ms.surtidoC = new MultiSelect(document.getElementById('msc-surtido'), renderCriticosTab);
+
+    // Ahora sí: arrancar la app (cache o fetch)
+    syncSearchInputs();
+    if (token) initApp();
+});
+
+function saveToken() {
+    const t = document.getElementById('tokenInput').value.trim();
+    if (!t) { alert('Pegá el token primero.'); return; }
+    localStorage.setItem('maxifer_monday_token', t);
+    token = t;
+    document.getElementById('tokenScreen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    initApp();
+}
+function logout() {
+    if (!confirm('¿Cerrar sesión y borrar el token del navegador?')) return;
+    localStorage.removeItem('maxifer_monday_token');
+    localStorage.removeItem(CACHE_KEY);
+    location.reload();
+}
+
+async function initApp() {
+    // Intentar cargar cache
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+        try {
+            const obj = JSON.parse(cached);
+            if (obj.ts && (Date.now() - obj.ts) < CACHE_TTL_MS) {
+                allOrders = obj.orders.map(o => ({
+                    ...o,
+                    fecha: o.fechaText ? new Date(o.fechaText) : null
+                }));
+                subitemsMap = new Map(obj.subitems || []);
+                recomputeDerived();
+                buildClientsMap();
+                populateFilters();
+                renderPedidosTable();
+                const age = Math.round((Date.now() - obj.ts) / 60000);
+                document.getElementById('refreshInfo').textContent =
+                    `Cache: ${age}min • ${allOrders.length} pedidos`;
+                return;
+            }
+        } catch (e) { /* ignore */ }
+    }
+    await loadData(true);
+}
+
+function switchTab(id) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('tab-' + id).classList.add('active');
+    if (id === 'seguimiento') {
+        populateTrackFilters();
+        renderClientListTrack();
+    } else if (id === 'notas') {
+        renderNotesTab();
+    } else if (id === 'criticos') {
+        populateCriticosFilters();
+        renderCriticosTab();
+    }
+}
+
+// ============ MONDAY API ============
+async function mondayQuery(query) {
+    const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token,
+            'API-Version': '2024-10'
+        },
+        body: JSON.stringify({ query })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data.errors) throw new Error(data.errors[0]?.message || 'Error API');
+    return data.data;
+}
+
+function setProgress(pct, text) {
+    const fill = document.getElementById('progressFill');
+    if (fill) fill.style.width = pct + '%';
+    const txt = document.getElementById('loadingText');
+    if (text && txt) txt.textContent = text;
+}
+
+async function loadData(useCache = true) {
+    document.getElementById('errorContainer').innerHTML = '';
+    document.getElementById('pedidosBody').innerHTML = `
+        <tr><td colspan="10" class="loading-full">
+            <div class="spinner"></div>
+            <p id="loadingText">Cargando...</p>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        </td></tr>`;
+
+    try {
+        // FASE 1: items principales
+        allOrders = [];
+        let cursor = null, pageNum = 0;
+        const colIdsStr = JSON.stringify(COL_IDS);
+
+        do {
+            pageNum++;
+            setProgress(5 + pageNum * 3, `Pedidos: página ${pageNum}...`);
+            const query = cursor ? `
+                query { next_items_page(limit: 500, cursor: "${cursor}") {
+                    cursor
+                    items {
+                        id name group { id title }
+                        column_values(ids: ${colIdsStr}) {
+                            id text value
+                            ... on MirrorValue { display_value }
+                            ... on BoardRelationValue { display_value }
+                        }
+                    }
+                }}` : `
+                query { boards(ids: ${BOARD_ID}) {
+                    items_page(limit: 500) {
+                        cursor
+                        items {
+                            id name group { id title }
+                            column_values(ids: ${colIdsStr}) {
+                                id text value
+                                ... on MirrorValue { display_value }
+                                ... on BoardRelationValue { display_value }
+                            }
+                        }
+                    }
+                }}`;
+            const data = await mondayQuery(query);
+            const page = cursor ? data.next_items_page : data.boards[0].items_page;
+            for (const item of page.items) {
+                const o = parseOrder(item);
+                if (o) allOrders.push(o);
+            }
+            cursor = page.cursor;
+        } while (cursor && pageNum < 30);
+
+        setProgress(30, `${allOrders.length} pedidos. Cargando subitems...`);
+
+        // FASE 2: subitems - por lotes de itemIds (100 por query)
+        subitemsMap = new Map();
+        const ids = allOrders.map(o => o.id);
+        const BATCH = 100;
+        const totalBatches = Math.ceil(ids.length / BATCH);
+        const subColIdsStr = JSON.stringify(SUB_COL_IDS);
+
+        for (let i = 0; i < ids.length; i += BATCH) {
+            const batchIds = ids.slice(i, i + BATCH);
+            const batchNum = Math.floor(i / BATCH) + 1;
+            setProgress(30 + (batchNum / totalBatches) * 65,
+                `Subitems: lote ${batchNum}/${totalBatches}...`);
+
+            const q = `
+                query { items(ids: [${batchIds.join(',')}]) {
+                    id
+                    subitems {
+                        id name
+                        column_values(ids: ${subColIdsStr}) {
+                            id text value
+                        }
+                    }
+                }}`;
+            try {
+                const data = await mondayQuery(q);
+                for (const item of (data.items || [])) {
+                    const subs = (item.subitems || []).map(s => {
+                        const cv = {};
+                        for (const c of s.column_values) cv[c.id] = c;
+                        return {
+                            id: s.id,
+                            name: s.name,
+                            tipo: cv[SUB_COL.tipo]?.text || '',
+                            exhibidor: cv[SUB_COL.exhibidor]?.text || '',
+                            gavetaRepo: cv[SUB_COL.gavetaRepo]?.text || '',
+                            detalles: cv[SUB_COL.detalles]?.text || ''
+                        };
+                    });
+                    subitemsMap.set(item.id, subs);
+                }
+            } catch (e) {
+                console.warn('Error lote subitems', batchNum, e);
+            }
+        }
+
+        setProgress(97, 'Procesando...');
+        recomputeDerived();
+        buildClientsMap();
+        populateFilters();
+        renderPedidosTable();
+        saveCache();
+        setProgress(100, 'Listo');
+
+        const now = new Date();
+        document.getElementById('refreshInfo').textContent =
+            `Actualizado: ${now.toLocaleTimeString('es-AR')} • ${allOrders.length} pedidos`;
+
+    } catch (err) {
+        document.getElementById('pedidosBody').innerHTML = '';
+        showError('Error al cargar: ' + err.message + ' <a href="#" onclick="logout();return false;">(cambiar token)</a>');
+    }
+}
+
+function parseOrder(item) {
+    const cv = {};
+    for (const c of item.column_values) cv[c.id] = c;
+
+    // Nombre del negocio: viene del board_relation (Base Clientes).
+    // El display_value del relation es el `name` del item referenciado = nombre del negocio.
+    // Fallback a nombreCliente (mirror a texto0__1 = persona de contacto) si no hay relation.
+    const clientName = (cv[COL.baseClientes]?.display_value ||
+                        cv[COL.nombreCliente]?.display_value ||
+                        cv[COL.nombreCliente]?.text || '').trim();
+    // Persona de contacto (campo texto0__1 del Base Clientes = mirror nombreCliente)
+    const contactPerson = (cv[COL.nombreCliente]?.display_value ||
+                           cv[COL.nombreCliente]?.text || '').trim();
+    const fechaText = cv[COL.fechaEntrega]?.text || '';
+    const fecha = fechaText ? new Date(fechaText) : null;
+    const ubicacion = (cv[COL.ubicacion]?.display_value || cv[COL.ubicacion]?.text || '').trim();
+    const { localidad, provincia, zona } = extractLocation(ubicacion);
+
+    return {
+        id: item.id,
+        name: item.name,
+        group: item.group?.title || '',
+        clientName,
+        contactPerson,
+        telefono: (cv[COL.telefono]?.display_value || cv[COL.telefono]?.text || '').trim(),
+        ubicacion, localidad, provincia, zona,
+        notas: (cv[COL.notas]?.display_value || cv[COL.notas]?.text || '').trim(),
+        expreso: (cv[COL.expreso]?.display_value || cv[COL.expreso]?.text || '').trim(),
+        etiqueta: (cv[COL.etiqueta]?.display_value || cv[COL.etiqueta]?.text || '').trim(),
+        fecha, fechaText,
+        estado: cv[COL.status]?.text || '',
+        vendedor: cv[COL.vendedor2]?.text || cv[COL.vendedorMirror]?.display_value || '',
+        surtidosResumen: (cv[COL.surtidos]?.display_value || cv[COL.surtidos]?.text || '').trim(),
+        pago: cv[COL.pago]?.text || '',
+        facturado: cv[COL.facturado]?.text || '',
+        ots: cv[COL.otsBs]?.text || '',
+        daysSince: 0 // se recalcula
+    };
+}
+
+function recomputeDerived() {
+    const now = Date.now();
+    for (const o of allOrders) {
+        o.daysSince = o.fecha ? Math.floor((now - o.fecha.getTime()) / 86400000) : 9999;
+    }
+}
+
+function saveCache() {
+    try {
+        const obj = {
+            ts: Date.now(),
+            orders: allOrders.map(o => ({ ...o, fecha: undefined })),
+            subitems: [...subitemsMap.entries()]
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(obj));
+    } catch (e) {
+        console.warn('No se pudo guardar cache (probable: quota)', e);
+    }
+}
+
+// ============ CLIENTES MAP ============
+function buildClientsMap() {
+    clientsMap = new Map();
+    for (const o of allOrders) {
+        if (!o.clientName) continue;
+        const key = o.clientName.toLowerCase();
+        if (!clientsMap.has(key)) {
+            clientsMap.set(key, {
+                name: o.clientName, telefono: o.telefono, ubicacion: o.ubicacion,
+                localidad: o.localidad, provincia: o.provincia, zona: o.zona,
+                notas: o.notas, contactPerson: o.contactPerson || '',
+                contactPersons: new Set(),
+                vendedor: o.vendedor, etiqueta: o.etiqueta, orders: []
+            });
+        }
+        const c = clientsMap.get(key);
+        c.orders.push(o);
+        if (o.contactPerson) c.contactPersons.add(o.contactPerson);
+        // enriquecer
+        if (!c.telefono && o.telefono) c.telefono = o.telefono;
+        if (!c.ubicacion && o.ubicacion) {
+            c.ubicacion = o.ubicacion;
+            c.localidad = o.localidad;
+            c.provincia = o.provincia;
+            c.zona = o.zona;
+        }
+        if (!c.contactPerson && o.contactPerson) c.contactPerson = o.contactPerson;
+        if (!c.notas && o.notas) c.notas = o.notas;
+        if (!c.vendedor && o.vendedor) c.vendedor = o.vendedor;
+        if (!c.etiqueta && o.etiqueta) c.etiqueta = o.etiqueta;
+    }
+    for (const c of clientsMap.values()) {
+        c.orders.sort((a, b) => (b.fecha?.getTime() || 0) - (a.fecha?.getTime() || 0));
+        c.lastDate = c.orders[0]?.fecha || null;
+        c.daysSince = c.lastDate ? Math.floor((Date.now() - c.lastDate.getTime()) / 86400000) : 9999;
+        c.totalOrders = c.orders.length;
+
+        // Intervalos entre compras
+        if (c.orders.length > 1) {
+            const dates = c.orders.filter(o => o.fecha).map(o => o.fecha.getTime()).sort((a, b) => b - a);
+            let sumDiff = 0, count = 0;
+            for (let i = 0; i < dates.length - 1; i++) {
+                sumDiff += (dates[i] - dates[i + 1]) / 86400000;
+                count++;
+            }
+            c.avgInterval = count > 0 ? Math.round(sumDiff / count) : null;
+        } else {
+            c.avgInterval = null;
+        }
+
+        // Detectar si un pedido es de reposición: mirar
+        // (a) nombre del pedido (ej: "FERRETERIA LIO - REPOSICIÓN")
+        // (b) campo SURTIDOS del pedido (mirror de los tipos de subitems)
+        // (c) tipo de cada subitem (prefijo "RE -" o palabra "REPOSIC")
+        const isReposicion = (o) => {
+            const nom = (o.name || '').toUpperCase();
+            if (nom.includes('REPOSIC') || nom.includes(' REPO') || / REPO$/.test(nom)) return true;
+            const resumen = (o.surtidosResumen || '').toUpperCase();
+            if (resumen.includes('REPOSIC') || /\bRE\s?-\s/.test(resumen)) return true;
+            const subs = subitemsMap.get(o.id) || [];
+            return subs.some(s => {
+                if (!s.tipo) return false;
+                const t = s.tipo.toUpperCase();
+                return t.includes('REPOSIC') || t.startsWith('RE -') || t.startsWith('RE-');
+            });
+        };
+
+        // Marcar cada pedido con su flag
+        for (const o of c.orders) {
+            o.esReposicion = isReposicion(o);
+        }
+
+        // Último pedido de reposición
+        c.lastRepo = c.orders.find(o => o.esReposicion) || null;
+
+        // Contar reposiciones vs pedidos iniciales
+        c.reposiciones = c.orders.filter(o => o.esReposicion).length;
+        c.pedidosIniciales = c.totalOrders - c.reposiciones;
+        // Ratio: % de pedidos que son reposición
+        c.ratioRepo = c.totalOrders > 0 ? (c.reposiciones / c.totalOrders) : 0;
+        // Días desde última reposición (útil para ordenar y filtrar)
+        // Si la reposición tiene fecha futura (pedido programado) -> 0 días
+        c.daysSinceRepo = c.lastRepo?.fecha
+            ? Math.max(0, Math.floor((Date.now() - c.lastRepo.fecha.getTime()) / 86400000))
+            : 9999;
+
+        // Top surtidos
+        const surtidoCount = new Map();
+        for (const o of c.orders) {
+            const subs = subitemsMap.get(o.id) || [];
+            for (const s of subs) {
+                if (s.tipo) {
+                    surtidoCount.set(s.tipo, (surtidoCount.get(s.tipo) || 0) + 1);
+                }
+            }
+        }
+        c.topSurtidos = [...surtidoCount.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10);
+
+        // ============ CÁLCULO DE CRITICIDAD ============
+        // Subitems totales en pedidos INICIALES (excluye reposiciones)
+        // y subitems por pedido inicial individual.
+        let subItemsInicialesTotal = 0;
+        let maxSubsEnUnPedidoInicial = 0;
+        const ordersIniciales = c.orders.filter(o => !o.esReposicion);
+        for (const o of ordersIniciales) {
+            const subs = subitemsMap.get(o.id) || [];
+            // Solo contar subitems que NO sean de reposición a nivel subitem
+            const subsIniciales = subs.filter(s => {
+                if (!s.tipo) return false;
+                const t = s.tipo.toUpperCase();
+                return !(t.includes('REPOSIC') || t.startsWith('RE -') || t.startsWith('RE-'));
+            });
+            subItemsInicialesTotal += subsIniciales.length;
+            if (subsIniciales.length > maxSubsEnUnPedidoInicial) {
+                maxSubsEnUnPedidoInicial = subsIniciales.length;
+            }
+        }
+        c.subItemsInicialesTotal = subItemsInicialesTotal;
+        c.maxSubsEnUnPedidoInicial = maxSubsEnUnPedidoInicial;
+
+        // Intervalo promedio entre reposiciones
+        let intervaloRepoPromedio = null;
+        const fechasRepo = c.orders.filter(o => o.esReposicion && o.fecha)
+            .map(o => o.fecha.getTime()).sort((a, b) => b - a);
+        if (fechasRepo.length >= 2) {
+            let suma = 0;
+            for (let i = 0; i < fechasRepo.length - 1; i++) {
+                suma += (fechasRepo[i] - fechasRepo[i + 1]) / 86400000;
+            }
+            intervaloRepoPromedio = Math.round(suma / (fechasRepo.length - 1));
+        }
+        c.intervaloRepoPromedio = intervaloRepoPromedio;
+
+        // Determinar tipos de crítico (puede ser uno solo - se elige por prioridad)
+        // Prioridad: rojo > naranja > amarillo > azul > negro
+        // Pero permitimos detección múltiple para mostrarlo correctamente
+        c.criticoTipos = [];
+        c.criticoRazon = '';
+
+        // ROJO: 4+ surtidos iniciales TOTALES, 0 reposiciones, 90+ días desde última compra
+        // (descartamos clientes con 1 solo pedido inicial — esos van a NARANJA)
+        if (c.subItemsInicialesTotal >= 4 && c.reposiciones === 0 &&
+            c.daysSince >= 90 && ordersIniciales.length >= 2) {
+            c.criticoTipos.push('rojo');
+        }
+
+        // NARANJA: 1 solo pedido inicial con 4+ subitems, 0 repo, 90+ días
+        if (ordersIniciales.length === 1 && c.maxSubsEnUnPedidoInicial >= 4 &&
+            c.reposiciones === 0 && c.daysSince >= 90) {
+            c.criticoTipos.push('naranja');
+        }
+
+        // AMARILLO: 3+ pedidos iniciales separados, 0 repo, 90+ días
+        if (ordersIniciales.length >= 3 && c.reposiciones === 0 && c.daysSince >= 90) {
+            c.criticoTipos.push('amarillo');
+        }
+
+        // AZUL: 3+ reposiciones históricas, última repo hace 120+ días,
+        // y el intervalo promedio entre repos era menor a esos 120 días (cadencia rota)
+        if (c.reposiciones >= 3 && c.daysSinceRepo >= 120 &&
+            (intervaloRepoPromedio === null || intervaloRepoPromedio < 120)) {
+            c.criticoTipos.push('azul');
+        }
+
+        // NEGRO: 5+ pedidos totales (iniciales + repos), 180+ días sin comprar nada
+        if (c.totalOrders >= 5 && c.daysSince >= 180) {
+            c.criticoTipos.push('negro');
+        }
+
+        // Razón legible para mostrar (toma el tipo más prioritario)
+        if (c.criticoTipos.length > 0) {
+            const t = c.criticoTipos[0];
+            if (t === 'rojo') c.criticoRazon = `${c.subItemsInicialesTotal} surtidos iniciales en ${ordersIniciales.length} pedidos, sin repo, ${c.daysSince}d sin comprar`;
+            else if (t === 'naranja') c.criticoRazon = `1 solo pedido con ${c.maxSubsEnUnPedidoInicial} surtidos, no volvió hace ${c.daysSince}d`;
+            else if (t === 'amarillo') c.criticoRazon = `${ordersIniciales.length} pedidos iniciales en distintas fechas, nunca repuso`;
+            else if (t === 'azul') c.criticoRazon = `Reponía cada ${intervaloRepoPromedio || '?'}d, hace ${c.daysSinceRepo}d que no repone`;
+            else if (t === 'negro') c.criticoRazon = `${c.totalOrders} pedidos en total, ${c.daysSince}d sin comprar nada`;
+        }
+    }
+}
+
+// ============ FILTROS ============
+function populateFilters() {
+    const count = {
+        vendor: new Map(), etiqueta: new Map(), localidad: new Map(),
+        provincia: new Map(), estado: new Map(), zona: new Map(), surtido: new Map()
+    };
+    for (const o of allOrders) {
+        if (o.vendedor) count.vendor.set(o.vendedor, (count.vendor.get(o.vendedor) || 0) + 1);
+        if (o.etiqueta) count.etiqueta.set(o.etiqueta, (count.etiqueta.get(o.etiqueta) || 0) + 1);
+        if (o.localidad) count.localidad.set(o.localidad, (count.localidad.get(o.localidad) || 0) + 1);
+        if (o.provincia) count.provincia.set(o.provincia, (count.provincia.get(o.provincia) || 0) + 1);
+        if (o.estado) count.estado.set(o.estado, (count.estado.get(o.estado) || 0) + 1);
+        if (o.zona) count.zona.set(o.zona, (count.zona.get(o.zona) || 0) + 1);
+        // Tipos de surtido desde subitems
+        const subs = subitemsMap.get(o.id) || [];
+        const tiposVistos = new Set();
+        for (const s of subs) {
+            if (s.tipo && !tiposVistos.has(s.tipo)) {
+                tiposVistos.add(s.tipo);
+                count.surtido.set(s.tipo, (count.surtido.get(s.tipo) || 0) + 1);
+            }
+        }
+    }
+    ms.vendor.setOptions(count.vendor);
+    ms.etiqueta.setOptions(count.etiqueta);
+    ms.localidad.setOptions(count.localidad);
+    ms.provincia.setOptions(count.provincia);
+    ms.estado.setOptions(count.estado);
+    ms.zona.setOptions(count.zona);
+    ms.surtido.setOptions(count.surtido);
+}
+function populateTrackFilters() {
+    const count = {
+        vendor: new Map(), localidad: new Map(), provincia: new Map(),
+        zona: new Map(), surtido: new Map()
+    };
+    for (const c of clientsMap.values()) {
+        if (c.vendedor) count.vendor.set(c.vendedor, (count.vendor.get(c.vendedor) || 0) + 1);
+        if (c.localidad) count.localidad.set(c.localidad, (count.localidad.get(c.localidad) || 0) + 1);
+        if (c.provincia) count.provincia.set(c.provincia, (count.provincia.get(c.provincia) || 0) + 1);
+        if (c.zona) count.zona.set(c.zona, (count.zona.get(c.zona) || 0) + 1);
+        // Tipos de surtido del cliente (todos sus pedidos)
+        const tiposCliente = new Set();
+        for (const o of c.orders) {
+            const subs = subitemsMap.get(o.id) || [];
+            for (const s of subs) if (s.tipo) tiposCliente.add(s.tipo);
+        }
+        for (const t of tiposCliente) count.surtido.set(t, (count.surtido.get(t) || 0) + 1);
+    }
+    ms.vendor2.setOptions(count.vendor);
+    ms.localidad2.setOptions(count.localidad);
+    ms.provincia2.setOptions(count.provincia);
+    ms.zona2.setOptions(count.zona);
+    ms.surtido2.setOptions(count.surtido);
+}
+
+function clearFilters() {
+    document.getElementById('f-search').value = '';
+    document.getElementById('f-dias').value = '';
+    document.getElementById('f-pago').value = '';
+    document.getElementById('f-contacto').value = '';
+    ['vendor', 'etiqueta', 'localidad', 'provincia', 'estado', 'zona', 'surtido'].forEach(k => ms[k]?.clear());
+    renderPedidosTable();
+}
+
+function inDaysRange(days, range) {
+    if (!range) return true;
+    if (days >= 9999) return false;
+    if (range === '0-30') return days <= 30;
+    if (range === '30-60') return days > 30 && days <= 60;
+    if (range === '60-90') return days > 60 && days <= 90;
+    if (range === '90-180') return days > 90 && days <= 180;
+    if (range === '180-365') return days > 180 && days <= 365;
+    if (range === '365+') return days > 365;
+    return true;
+}
+function inContactRange(clientName, range) {
+    if (!range) return true;
+    const d = daysSinceContact(clientName);
+    if (range === 'never') return d >= 9999;
+    if (d >= 9999) return false;
+    if (range === '0-7') return d <= 7;
+    if (range === '7-30') return d > 7 && d <= 30;
+    if (range === '30-90') return d > 30 && d <= 90;
+    if (range === '90+') return d > 90;
+    return true;
+}
+
+// ============ TABLA PEDIDOS ============
+function renderPedidosTable() {
+    const search = document.getElementById('f-search').value.toLowerCase().trim();
+    const vendor = new Set(ms.vendor?.getSelected() || []);
+    const etiqueta = new Set(ms.etiqueta?.getSelected() || []);
+    const localidad = new Set(ms.localidad?.getSelected() || []);
+    const provincia = new Set(ms.provincia?.getSelected() || []);
+    const estado = new Set(ms.estado?.getSelected() || []);
+    const zona = new Set(ms.zona?.getSelected() || []);
+    const surtido = new Set(ms.surtido?.getSelected() || []);
+    const dias = document.getElementById('f-dias').value;
+    const pago = document.getElementById('f-pago').value;
+    const contactoR = document.getElementById('f-contacto').value;
+
+    const norm = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const searchN = norm(search);
+
+    // Función reutilizable: checkea si un pedido pasa un subconjunto de filtros
+    // `skip` es el set de nombres de filtros que queremos ignorar (para cascada)
+    function passes(o, skip = new Set()) {
+        if (!skip.has('search') && searchN && !(norm(o.name).includes(searchN) ||
+                         norm(o.clientName).includes(searchN) ||
+                         norm(o.contactPerson || '').includes(searchN) ||
+                         norm(o.telefono).includes(searchN) ||
+                         norm(o.ubicacion).includes(searchN))) return false;
+        if (!skip.has('vendor') && vendor.size && !vendor.has(o.vendedor)) return false;
+        if (!skip.has('etiqueta') && etiqueta.size && !etiqueta.has(o.etiqueta)) return false;
+        if (!skip.has('localidad') && localidad.size && !localidad.has(o.localidad)) return false;
+        if (!skip.has('provincia') && provincia.size && !provincia.has(o.provincia)) return false;
+        if (!skip.has('estado') && estado.size && !estado.has(o.estado)) return false;
+        if (!skip.has('zona') && zona.size && !zona.has(o.zona)) return false;
+        if (!skip.has('pago') && pago && o.pago !== pago) return false;
+        if (!skip.has('dias') && !inDaysRange(o.daysSince, dias)) return false;
+        if (!skip.has('contacto') && !inContactRange(o.clientName, contactoR)) return false;
+        if (!skip.has('surtido') && surtido.size) {
+            const subs = subitemsMap.get(o.id) || [];
+            if (!subs.some(s => s.tipo && surtido.has(s.tipo))) return false;
+        }
+        return true;
+    }
+
+    let rows = allOrders.filter(o => passes(o));
+
+    // Actualizar las opciones disponibles en cada multiselect (cascada)
+    updatePedidosFilterOptions(passes);
+
+    // Sort
+    const colDef = TABLE_COLUMNS.find(c => c.id === sortState.col);
+    if (colDef && colDef.sortable) {
+        const getter = colDef.sortVal || colDef.getValue;
+        rows.sort((a, b) => {
+            const va = getter(a), vb = getter(b);
+            if (va == null) return 1;
+            if (vb == null) return -1;
+            if (typeof va === 'number') return sortState.dir === 'asc' ? va - vb : vb - va;
+            return sortState.dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+        });
+    }
+
+    document.getElementById('resultCount').textContent = `${rows.length} pedidos`;
+    renderColPanel();
+    renderTableHead();
+    renderTableBody(rows);
+    updateFilterBadges();
+}
+
+// Re-calcula las opciones de cada multiselect mostrando solo las que quedan
+// tras aplicar los DEMÁS filtros (cascada)
+function updatePedidosFilterOptions(passes) {
+    const filterKeys = ['vendor', 'etiqueta', 'localidad', 'provincia', 'estado', 'zona', 'surtido'];
+    for (const key of filterKeys) {
+        if (!ms[key]) continue;
+        const skip = new Set([key]);
+        const count = new Map();
+        for (const o of allOrders) {
+            if (!passes(o, skip)) continue;
+            if (key === 'surtido') {
+                const subs = subitemsMap.get(o.id) || [];
+                const vistos = new Set();
+                for (const s of subs) {
+                    if (s.tipo && !vistos.has(s.tipo)) {
+                        vistos.add(s.tipo);
+                        count.set(s.tipo, (count.get(s.tipo) || 0) + 1);
+                    }
+                }
+            } else {
+                const val = {
+                    vendor: o.vendedor, etiqueta: o.etiqueta, localidad: o.localidad,
+                    provincia: o.provincia, estado: o.estado, zona: o.zona
+                }[key];
+                if (val) count.set(val, (count.get(val) || 0) + 1);
+            }
+        }
+        ms[key].setOptions(count);
+    }
+}
+
+function updateSeguimientoFilterOptions(passes) {
+    const map = {
+        vendor2: c => c.vendedor ? [c.vendedor] : [],
+        localidad2: c => c.localidad ? [c.localidad] : [],
+        provincia2: c => c.provincia ? [c.provincia] : [],
+        zona2: c => c.zona ? [c.zona] : [],
+        surtido2: c => {
+            const tipos = new Set();
+            for (const o of c.orders) {
+                const subs = subitemsMap.get(o.id) || [];
+                for (const s of subs) if (s.tipo) tipos.add(s.tipo);
+            }
+            return [...tipos];
+        }
+    };
+    const keyMap = {
+        vendor2: 'vendor', localidad2: 'localidad', provincia2: 'provincia',
+        zona2: 'zona', surtido2: 'surtido'
+    };
+    for (const msKey of Object.keys(map)) {
+        if (!ms[msKey]) continue;
+        const skip = new Set([keyMap[msKey]]);
+        const count = new Map();
+        for (const c of clientsMap.values()) {
+            if (!passes(c, skip)) continue;
+            for (const val of map[msKey](c)) {
+                count.set(val, (count.get(val) || 0) + 1);
+            }
+        }
+        ms[msKey].setOptions(count);
+    }
+}
+
+function renderColPanel() {
+    const panel = document.getElementById('colPanel');
+    panel.innerHTML = TABLE_COLUMNS.map(c => `
+        <label class="col-toggle-item">
+            <input type="checkbox" ${visibleCols.has(c.id) ? 'checked' : ''} onchange="toggleCol('${c.id}', this.checked)">
+            ${c.label}
+        </label>
+    `).join('');
+}
+function toggleColPanel() {
+    document.getElementById('colPanel').classList.toggle('hidden');
+}
+function toggleCol(id, checked) {
+    if (checked) visibleCols.add(id); else visibleCols.delete(id);
+    localStorage.setItem('maxifer_postventa_cols', JSON.stringify([...visibleCols]));
+    renderPedidosTable();
+}
+
+function renderTableHead() {
+    const head = document.getElementById('pedidosHead');
+    const cols = TABLE_COLUMNS.filter(c => visibleCols.has(c.id));
+    head.innerHTML = '<tr><th style="width:30px;"></th>' + cols.map(c => {
+        const sorted = sortState.col === c.id;
+        const arrow = sorted ? (sortState.dir === 'asc' ? '▲' : '▼') : '';
+        return `<th class="${sorted ? 'sorted' : ''}" ${c.sortable ? `onclick="sortBy('${c.id}')"` : ''}>
+            ${c.label} <span class="sort-arrow">${arrow || '↕'}</span>
+        </th>`;
+    }).join('') + '</tr>';
+}
+
+function sortBy(colId) {
+    if (sortState.col === colId) {
+        sortState.dir = sortState.dir === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortState.col = colId;
+        sortState.dir = 'desc';
+    }
+    renderPedidosTable();
+}
+
+function renderTableBody(rows) {
+    const body = document.getElementById('pedidosBody');
+    if (rows.length === 0) {
+        body.innerHTML = `<tr><td colspan="20" style="text-align:center;padding:40px;color:#999;">Sin resultados</td></tr>`;
+        return;
+    }
+    const cols = TABLE_COLUMNS.filter(c => visibleCols.has(c.id));
+    const html = rows.slice(0, 500).map(o => {
+        const expanded = expandedRows.has(o.id);
+        let row = `<tr class="${expanded ? 'expanded' : ''}" onclick="toggleRow('${o.id}')">`;
+        row += `<td style="width:30px;">${expanded ? '▼' : '▶'}</td>`;
+        for (const c of cols) {
+            const lbl = escapeHtml(c.label);
+            if (c.id === 'acciones') {
+                row += `<td class="actions" data-label="${lbl}" onclick="event.stopPropagation()">
+                    ${o.telefono ? `<button class="btn btn-small btn-wa" onclick="openWAFromOrder('${o.id}')">💬</button>` : ''}
+                    ${o.telefono ? `<button class="btn btn-small btn-secondary" onclick="callOrder('${o.id}')">📞</button>` : ''}
+                </td>`;
+            } else if (c.id === 'dias') {
+                row += `<td data-label="${lbl}">${renderDiasBadge(o.daysSince)}</td>`;
+            } else if (c.id === 'estado') {
+                row += `<td data-label="${lbl}">${renderEstadoBadge(o.estado)}</td>`;
+            } else if (c.id === 'pago') {
+                row += `<td data-label="${lbl}">${renderPagoBadge(o.pago)}</td>`;
+            } else {
+                const val = c.getValue(o) || '';
+                const needsTruncate = ['ubicacion', 'surtidos'].includes(c.id);
+                row += `<td class="${needsTruncate ? 'truncate' : ''}" data-label="${lbl}" title="${escapeHtml(val)}">${escapeHtml(val)}</td>`;
+            }
+        }
+        row += `</tr>`;
+
+        if (expanded) {
+            row += renderSubitemsRow(o, cols.length + 1);
+        }
+        return row;
+    }).join('');
+    body.innerHTML = html + (rows.length > 500 ? `<tr><td colspan="20" style="text-align:center;padding:10px;color:#999;font-size:0.85em;">Mostrando 500 de ${rows.length}. Afiná filtros para ver más.</td></tr>` : '');
+}
+
+function renderSubitemsRow(o, colspan) {
+    const subs = subitemsMap.get(o.id) || [];
+    let content = '';
+    if (subs.length === 0) {
+        content = `<div class="subitems-loading">Sin subitems</div>`;
+    } else {
+        content = `<div class="subitems-list">` + subs.map(s => `
+            <div class="subitem-chip">
+                <span class="subitem-tipo">${escapeHtml(s.tipo || '—')}</span>
+                ${s.exhibidor ? `<span class="subitem-status badge-gris">Exhib: ${escapeHtml(s.exhibidor)}</span>` : ''}
+                ${s.gavetaRepo ? `<span class="subitem-status badge-gris">Gav/Repo: ${escapeHtml(s.gavetaRepo)}</span>` : ''}
+                ${s.detalles ? `<span class="subitem-status badge-gris">${escapeHtml(s.detalles)}</span>` : ''}
+            </div>
+        `).join('') + `</div>`;
+    }
+    return `<tr class="subitems-row"><td colspan="${colspan}">${content}</td></tr>`;
+}
+
+function toggleRow(id) {
+    if (expandedRows.has(id)) expandedRows.delete(id);
+    else expandedRows.add(id);
+    renderPedidosTable();
+}
+
+function renderDiasBadge(d) {
+    if (d >= 9999) return '<span class="badge badge-gris">—</span>';
+    if (d <= 30) return `<span class="badge badge-reciente">${d}d</span>`;
+    if (d <= 90) return `<span class="badge badge-medio">${d}d</span>`;
+    return `<span class="badge badge-dormido">${d}d</span>`;
+}
+function renderEstadoBadge(e) {
+    if (!e) return '';
+    if (e === 'Entregado' || e === 'Terminado') return `<span class="badge badge-entregado">${e}</span>`;
+    if (e === 'Detenido') return `<span class="badge badge-detenido">${e}</span>`;
+    return `<span class="badge badge-curso">${e}</span>`;
+}
+function renderPagoBadge(p) {
+    if (!p) return '';
+    if (p === 'SI') return `<span class="badge badge-entregado">Pagado</span>`;
+    if (p === 'NO') return `<span class="badge badge-detenido">Sin pagar</span>`;
+    return `<span class="badge badge-medio">${p}</span>`;
+}
+
+// ============ SEGUIMIENTO CLIENTE ============
+function renderClientListTrack() {
+    const search = document.getElementById('f2-search').value.toLowerCase().trim();
+    const vendor = new Set(ms.vendor2?.getSelected() || []);
+    const localidad = new Set(ms.localidad2?.getSelected() || []);
+    const provincia = new Set(ms.provincia2?.getSelected() || []);
+    const zona = new Set(ms.zona2?.getSelected() || []);
+    const surtido = new Set(ms.surtido2?.getSelected() || []);
+    const dias = document.getElementById('f2-dias').value;
+    const contactoR = document.getElementById('f2-contacto').value;
+    const repoF = document.getElementById('f2-repo').value;
+    const sort = document.getElementById('f2-sort').value;
+
+    const norm = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const searchN = norm(search);
+
+    function passes(c, skip = new Set()) {
+        if (!skip.has('search') && searchN) {
+            const personas = [...(c.contactPersons || [])].map(norm).join(' ');
+            if (!norm(c.name).includes(searchN) && !personas.includes(searchN)) return false;
+        }
+        if (!skip.has('vendor') && vendor.size && !vendor.has(c.vendedor)) return false;
+        if (!skip.has('localidad') && localidad.size && !localidad.has(c.localidad)) return false;
+        if (!skip.has('provincia') && provincia.size && !provincia.has(c.provincia)) return false;
+        if (!skip.has('zona') && zona.size && !zona.has(c.zona)) return false;
+        if (!skip.has('dias') && !inDaysRange(c.daysSince, dias)) return false;
+        if (!skip.has('contacto') && !inContactRange(c.name, contactoR)) return false;
+        if (!skip.has('repo') && repoF) {
+            if (repoF === 'nunca' && !(c.reposiciones === 0 && c.pedidosIniciales >= 3)) return false;
+            if (repoF === 'baja' && !(c.ratioRepo < 0.3 && c.pedidosIniciales >= 3)) return false;
+            if (repoF === 'media' && !(c.ratioRepo >= 0.3 && c.ratioRepo <= 0.6)) return false;
+            if (repoF === 'alta' && !(c.ratioRepo > 0.6)) return false;
+            if (repoF === 'sin-repo-reciente' && !(c.daysSinceRepo >= 90)) return false;
+            if (repoF === 'sin-repo-180' && !(c.daysSinceRepo >= 180)) return false;
+        }
+        if (!skip.has('surtido') && surtido.size) {
+            let tiene = false;
+            for (const o of c.orders) {
+                const subs = subitemsMap.get(o.id) || [];
+                if (subs.some(s => s.tipo && surtido.has(s.tipo))) { tiene = true; break; }
+            }
+            if (!tiene) return false;
+        }
+        return true;
+    }
+
+    let clients = [...clientsMap.values()].filter(c => passes(c));
+    updateSeguimientoFilterOptions(passes);
+
+    if (sort === 'days-asc') clients.sort((a, b) => a.daysSince - b.daysSince);
+    else if (sort === 'days-desc') clients.sort((a, b) => b.daysSince - a.daysSince);
+    else if (sort === 'count-desc') clients.sort((a, b) => b.totalOrders - a.totalOrders);
+    else if (sort === 'contact-asc') clients.sort((a, b) => daysSinceContact(a.name) - daysSinceContact(b.name));
+    else if (sort === 'contact-desc') clients.sort((a, b) => daysSinceContact(b.name) - daysSinceContact(a.name));
+    else if (sort === 'repo-asc') clients.sort((a, b) => a.ratioRepo - b.ratioRepo || b.pedidosIniciales - a.pedidosIniciales);
+    else if (sort === 'repo-desc') clients.sort((a, b) => b.ratioRepo - a.ratioRepo);
+    else if (sort === 'repo-days-desc') clients.sort((a, b) => b.daysSinceRepo - a.daysSinceRepo);
+    else if (sort === 'iniciales-desc') clients.sort((a, b) => b.pedidosIniciales - a.pedidosIniciales);
+    else if (sort === 'alpha') clients.sort((a, b) => a.name.localeCompare(b.name));
+
+    document.getElementById('clientCount').textContent = `${clients.length} clientes`;
+    updateFilterBadges();
+
+    const list = document.getElementById('clientListTrack');
+    if (clients.length === 0) {
+        list.innerHTML = '<div class="empty-state"><p>Sin resultados</p></div>';
+        return;
+    }
+    list.innerHTML = clients.slice(0, 300).map(c => {
+        const active = selectedClientName === c.name.toLowerCase() ? 'active' : '';
+        let repoBadge = '';
+        if (c.reposiciones === 0 && c.pedidosIniciales >= 3) {
+            repoBadge = '<span class="badge badge-dormido">🚨 0% repo</span>';
+        } else if (c.ratioRepo < 0.3 && c.pedidosIniciales >= 3) {
+            repoBadge = `<span class="badge badge-medio">⚠ ${(c.ratioRepo*100).toFixed(0)}% repo</span>`;
+        } else if (c.reposiciones > 0) {
+            repoBadge = `<span class="badge badge-reciente">🔁 ${c.reposiciones} repo</span>`;
+        }
+        return `
+            <div class="client-card ${active}" onclick="selectClientTrack('${c.name.replace(/'/g,"\\'")}')">
+                <div class="client-card-name">${escapeHtml(c.name)}</div>
+                <div class="client-card-meta">
+                    ${renderDiasBadge(c.daysSince)}
+                    <span>📦 ${c.totalOrders}</span>
+                    ${repoBadge}
+                    ${c.localidad ? `<span>📍 ${escapeHtml(c.localidad)}</span>` : ''}
+                </div>
+            </div>`;
+    }).join('') + (clients.length > 300 ? `<div style="text-align:center;padding:10px;color:#999;font-size:0.8em;">Mostrando 300 de ${clients.length}</div>` : '');
+}
+
+function selectClientTrack(name) {
+    selectedClientName = name.toLowerCase();
+    const c = clientsMap.get(selectedClientName);
+    if (!c) return;
+    renderClientListTrack();
+    renderClientDetail(c);
+}
+
+function renderClientDetail(c) {
+    const entregados = c.orders.filter(o => o.estado === 'Entregado' || o.estado === 'Terminado').length;
+    const enCurso = c.orders.filter(o => o.estado && o.estado !== 'Entregado' && o.estado !== 'Terminado' && o.estado !== 'Detenido').length;
+    const sinPagar = c.orders.filter(o => o.pago === 'NO' || o.pago === 'UNA PARTE').length;
+
+    document.getElementById('clientDetail').innerHTML = `
+        <div class="client-header">
+            <div class="client-info">
+                <h3>${escapeHtml(c.name)}</h3>
+                ${(() => {
+                    const personas = [...(c.contactPersons || [])].filter(Boolean);
+                    if (personas.length === 0) return '';
+                    if (personas.length === 1) return `<div class="meta-line">🙋 Contacto: ${escapeHtml(personas[0])}</div>`;
+                    return `<div class="meta-line">🙋 Contactos: ${escapeHtml(personas.join(', '))}</div>`;
+                })()}
+                ${c.telefono ? `<div class="meta-line">📞 ${escapeHtml(c.telefono)}</div>` : '<div class="meta-line" style="color:#c8102e;">⚠ Sin teléfono</div>'}
+                ${c.ubicacion ? `<div class="meta-line">📍 ${escapeHtml(c.ubicacion)}</div>` : ''}
+                ${c.zona ? `<div class="meta-line">🗺️ Zona: <strong>${escapeHtml(c.zona)}</strong>${c.localidad ? ' — ' + escapeHtml(c.localidad) : ''}</div>` : ''}
+                ${c.vendedor ? `<div class="meta-line">👤 Vendedor: ${escapeHtml(c.vendedor)}</div>` : ''}
+                ${c.etiqueta ? `<div class="meta-line">🏷️ ${escapeHtml(c.etiqueta)}</div>` : ''}
+                ${c.notas ? `<div class="meta-line" style="margin-top:4px;font-style:italic;">📝 ${escapeHtml(c.notas)}</div>` : ''}
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                ${c.telefono ? `<button class="btn btn-wa" onclick="openWAFromClient()">💬 WhatsApp</button>` : ''}
+                ${c.telefono ? `<button class="btn btn-secondary" onclick="callClientTrack()">📞 Llamar</button>` : ''}
+                <button class="btn btn-light" onclick="openContactModal()">📝 Contacto</button>
+                <button class="btn" style="background:#27ae60;color:white;" onclick="openNoteModal(null, '${c.name.toLowerCase().replace(/'/g,"\\'")}')">➕ Nota</button>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">${c.totalOrders}</div>
+                <div class="stat-label">Pedidos totales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${c.pedidosIniciales}</div>
+                <div class="stat-label">Compras iniciales</div>
+            </div>
+            <div class="stat-card" style="${c.reposiciones === 0 && c.pedidosIniciales >= 3 ? 'background:#ffe0e0;' : ''}">
+                <div class="stat-value">${c.reposiciones}</div>
+                <div class="stat-label">Reposiciones</div>
+            </div>
+            <div class="stat-card" style="${c.ratioRepo < 0.3 && c.pedidosIniciales >= 3 ? 'background:#fff3cd;' : ''}">
+                <div class="stat-value">${(c.ratioRepo * 100).toFixed(0)}%</div>
+                <div class="stat-label">% Reposición</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${c.daysSince < 9999 ? c.daysSince + 'd' : '—'}</div>
+                <div class="stat-label">Último pedido</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${c.daysSinceRepo < 9999 ? c.daysSinceRepo + 'd' : '—'}</div>
+                <div class="stat-label">Últ. reposición</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${entregados}</div>
+                <div class="stat-label">Entregados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">${c.avgInterval ? c.avgInterval + 'd' : '—'}</div>
+                <div class="stat-label">Intervalo promedio</div>
+            </div>
+        </div>
+
+        ${c.reposiciones === 0 && c.pedidosIniciales >= 3 ? `<div class="warn-msg">🚨 Cliente con ${c.pedidosIniciales} compras iniciales y <strong>CERO reposiciones</strong>. Candidato ideal para llamar y ofrecer reposición.</div>` : ''}
+        ${c.ratioRepo > 0 && c.ratioRepo < 0.3 && c.pedidosIniciales >= 3 ? `<div class="info-msg">💡 Solo ${(c.ratioRepo*100).toFixed(0)}% de sus compras son reposición. Tiene margen para vender más repos.</div>` : ''}
+
+        ${sinPagar > 0 ? `<div class="warn-msg">⚠ ${sinPagar} pedido${sinPagar > 1 ? 's' : ''} con pago pendiente o parcial</div>` : ''}
+
+        <div class="section-title" onclick="toggleSection(this)">📝 Notas ${(() => {
+            const lst = getNotesFor(c.name);
+            return lst.length > 0 ? '(' + lst.length + ')' : '';
+        })()}</div>
+        <div class="section-content">
+        ${(() => {
+            const lst = getNotesFor(c.name);
+            if (lst.length === 0) return '<div style="font-size:0.88em;color:#999;font-style:italic;margin-bottom:10px;">Sin notas. Tocá "➕ Nota" arriba para agregar una.</div>';
+            return '<div style="margin-bottom:10px;">' + lst.map(n => renderNoteCard(n, false)).join('') + '</div>';
+        })()}
+        </div>
+
+        <div class="section-title" onclick="toggleSection(this)">📲 Historial de contactos ${(() => {
+            const lst = getContactsFor(c.name);
+            return lst.length > 0 ? '(' + lst.length + ')' : '';
+        })()}</div>
+        <div class="section-content">
+        ${(() => {
+            const lst = getContactsFor(c.name);
+            if (lst.length === 0) return '<div style="font-size:0.88em;color:#999;font-style:italic;margin-bottom:10px;">Sin contactos registrados</div>';
+            return '<div style="margin-bottom:10px;">' + lst.map(ct => `
+                <div class="contact-item">
+                    <span class="contact-icon">${(CONTACT_TYPES[ct.type]?.label || '?').split(' ')[0]}</span>
+                    <span class="contact-type">${escapeHtml((CONTACT_TYPES[ct.type]?.label || ct.type).replace(/^\S+\s/, ''))}</span>
+                    <span class="contact-date">${formatContactDate(ct.ts)}</span>
+                    <button class="btn-delete-contact" onclick="deleteContact('${c.name.replace(/'/g,"\\'")}', ${ct.ts})" title="Borrar">✕</button>
+                </div>
+            `).join('') + '</div>';
+        })()}
+        </div>
+
+        <div class="section-title" onclick="toggleSection(this)">🔁 Última reposición</div>
+        <div class="section-content">
+        <div style="font-size:0.88em;color:#555;margin-bottom:10px;">
+            ${c.lastRepo ? `${escapeHtml(c.lastRepo.name)} — ${c.lastRepo.fechaText || '—'} ${c.daysSinceRepo < 9999 ? '(' + c.daysSinceRepo + 'd)' : ''}` : '<em style="color:#c8102e;">🚨 Nunca pidió reposición</em>'}
+        </div>
+        </div>
+
+        ${c.topSurtidos.length > 0 ? `
+            <div class="section-title" onclick="toggleSection(this)">🏆 Top surtidos (${c.topSurtidos.length})</div>
+            <div class="section-content">
+            <div class="surtidos-top">
+                ${c.topSurtidos.map(([name, count]) => `
+                    <div class="surtido-row">
+                        <span class="surtido-name">${escapeHtml(name)}</span>
+                        <span class="surtido-count">${count}</span>
+                    </div>
+                `).join('')}
+            </div>
+            </div>
+        ` : ''}
+
+        <div class="section-title" onclick="toggleSection(this)">📋 Historial (${c.orders.length})</div>
+        <div class="section-content">
+        ${c.orders.map(o => `
+            <div class="order-item" style="${o.esReposicion ? 'border-left-color:#9d50dd;background:#f9f5ff;' : ''}">
+                <div class="order-header">
+                    <div class="order-name">${o.esReposicion ? '🔁 ' : ''}${escapeHtml(o.name)}</div>
+                    <div class="order-date">${o.fechaText || 'sin fecha'} ${o.daysSince < 9999 ? '(' + o.daysSince + 'd)' : ''}</div>
+                </div>
+                ${o.surtidosResumen ? `<div style="font-size:0.78em;color:#555;margin-top:3px;font-style:italic;">${escapeHtml(o.surtidosResumen)}</div>` : ''}
+                <div class="order-meta">
+                    ${o.esReposicion ? '<span class="badge" style="background:#e9d5ff;color:#6b21a8;">Reposición</span>' : ''}
+                    ${renderEstadoBadge(o.estado)}
+                    ${renderPagoBadge(o.pago)}
+                    ${o.ots ? `<span style="color:#666;">OT: ${escapeHtml(o.ots)}</span>` : ''}
+                </div>
+            </div>
+        `).join('')}
+        </div>
+    `;
+}
+
+// ============ ACCIONES ============
+function openWAFromOrder(id) {
+    const o = allOrders.find(x => x.id === id);
+    if (!o) return;
+    openWA({
+        name: o.clientName || o.name,
+        telefono: o.telefono,
+        localidad: o.localidad
+    });
+}
+function callOrder(id) {
+    const o = allOrders.find(x => x.id === id);
+    if (!o?.telefono) return;
+    addContact(o.clientName || o.name, 'call_out');
+    window.location.href = 'tel:' + o.telefono.replace(/[^0-9+]/g, '');
+    refreshAfterContact();
+}
+function openWAFromClient() {
+    const c = clientsMap.get(selectedClientName);
+    if (!c) return;
+    openWA({ name: c.name, telefono: c.telefono, localidad: c.localidad });
+}
+function callClientTrack() {
+    const c = clientsMap.get(selectedClientName);
+    if (!c?.telefono) return;
+    addContact(c.name, 'call_out');
+    window.location.href = 'tel:' + c.telefono.replace(/[^0-9+]/g, '');
+    refreshAfterContact();
+}
+
+// ============ MOBILE HELPERS ============
+function toggleFilters(tab) {
+    const bar = document.getElementById('filters-bar-' + tab);
+    if (bar) bar.classList.toggle('open');
+}
+
+function countActiveFilters(tab) {
+    let n = 0;
+    if (tab === 1) {
+        if (ms.vendor?.getSelected().length) n += ms.vendor.getSelected().length;
+        if (ms.etiqueta?.getSelected().length) n += ms.etiqueta.getSelected().length;
+        if (ms.localidad?.getSelected().length) n += ms.localidad.getSelected().length;
+        if (ms.provincia?.getSelected().length) n += ms.provincia.getSelected().length;
+        if (ms.estado?.getSelected().length) n += ms.estado.getSelected().length;
+        if (ms.zona?.getSelected().length) n += ms.zona.getSelected().length;
+        if (ms.surtido?.getSelected().length) n += ms.surtido.getSelected().length;
+        if (document.getElementById('f-dias')?.value) n++;
+        if (document.getElementById('f-pago')?.value) n++;
+        if (document.getElementById('f-contacto')?.value) n++;
+    } else {
+        if (ms.vendor2?.getSelected().length) n += ms.vendor2.getSelected().length;
+        if (ms.localidad2?.getSelected().length) n += ms.localidad2.getSelected().length;
+        if (ms.provincia2?.getSelected().length) n += ms.provincia2.getSelected().length;
+        if (ms.zona2?.getSelected().length) n += ms.zona2.getSelected().length;
+        if (ms.surtido2?.getSelected().length) n += ms.surtido2.getSelected().length;
+        if (document.getElementById('f2-dias')?.value) n++;
+        if (document.getElementById('f2-contacto')?.value) n++;
+        if (document.getElementById('f2-repo')?.value) n++;
+    }
+    return n;
+}
+
+function updateFilterBadges() {
+    const n1 = countActiveFilters(1);
+    const n2 = countActiveFilters(2);
+    const el1 = document.getElementById('f1-count');
+    const el2 = document.getElementById('f2-count');
+    if (el1) el1.textContent = n1;
+    if (el2) el2.textContent = n2;
+    document.getElementById('btn-toggle-f1')?.classList.toggle('has-filters', n1 > 0);
+    document.getElementById('btn-toggle-f2')?.classList.toggle('has-filters', n2 > 0);
+}
+
+// Sincronizar inputs de búsqueda mobile <-> desktop
+function syncSearchInputs() {
+    const f1 = document.getElementById('f-search');
+    const f1m = document.getElementById('f-search-mobile');
+    const f2 = document.getElementById('f2-search');
+    const f2m = document.getElementById('f2-search-mobile');
+    const fc = document.getElementById('fc-search');
+    const fcm = document.getElementById('fc-search-mobile');
+    if (f1 && f1m) {
+        f1m.addEventListener('input', () => {
+            f1.value = f1m.value;
+            renderPedidosTable();
+        });
+        f1.addEventListener('input', () => { f1m.value = f1.value; });
+    }
+    if (f2 && f2m) {
+        f2m.addEventListener('input', () => {
+            f2.value = f2m.value;
+            renderClientListTrack();
+        });
+        f2.addEventListener('input', () => { f2m.value = f2.value; });
+    }
+    if (fc && fcm) {
+        fcm.addEventListener('input', () => {
+            fc.value = fcm.value;
+            renderCriticosTab();
+        });
+        fc.addEventListener('input', () => { fcm.value = fc.value; });
+    }
+}
+
+// Toggle colapsable de secciones en detalle cliente (solo mobile)
+function toggleSection(el) {
+    if (window.innerWidth > 768) return;
+    el.classList.toggle('collapsed');
+    const next = el.nextElementSibling;
+    if (next) next.classList.toggle('collapsed');
+}
+
+function refreshAfterContact() {
+    renderPedidosTable();
+    renderClientListTrack();
+    if (selectedClientName) {
+        const c = clientsMap.get(selectedClientName);
+        if (c) renderClientDetail(c);
+    }
+}
+
+let waTarget = null;
+function openWA(target) {
+    if (!target.telefono) { alert('Sin teléfono'); return; }
+    waTarget = target;
+    document.getElementById('waClientInfo').innerHTML =
+        `<strong>${escapeHtml(target.name)}</strong> • ${escapeHtml(target.telefono)}`;
+    document.getElementById('waTemplates').innerHTML = WA_TEMPLATES.map((t, i) =>
+        `<button class="template-btn" onclick="pickTemplate(${i})">${t.label}</button>`
+    ).join('');
+    pickTemplate(0);
+    document.getElementById('waModal').classList.add('active');
+}
+function pickTemplate(idx) {
+    document.getElementById('waMessage').value = WA_TEMPLATES[idx].text(waTarget);
+    document.querySelectorAll('#waTemplates .template-btn').forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+    });
+}
+function sendWA() {
+    const msg = document.getElementById('waMessage').value.trim();
+    if (!msg) { alert('El mensaje está vacío'); return; }
+    const phone = waTarget.telefono.replace(/[^0-9]/g, '');
+    if (!phone) { alert('Teléfono inválido'); return; }
+    let finalPhone = phone;
+    if (!finalPhone.startsWith('54')) finalPhone = '54' + finalPhone.replace(/^0/, '');
+    addContact(waTarget.name, 'wa_out');
+    window.open(`https://wa.me/${finalPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+    closeWA();
+    refreshAfterContact();
+}
+function closeWA() { document.getElementById('waModal').classList.remove('active'); }
+
+// ============ MODAL REGISTRAR CONTACTO ============
+function openContactModal() {
+    const c = clientsMap.get(selectedClientName);
+    if (!c) return;
+    document.getElementById('contactClientInfo').innerHTML =
+        `<strong>${escapeHtml(c.name)}</strong>`;
+    document.getElementById('contactTypes').innerHTML = Object.entries(CONTACT_TYPES).map(([key, info]) => `
+        <button class="template-btn" onclick="registerManualContact('${key}')" style="border-left:3px solid ${info.color};">
+            ${info.label}
+        </button>
+    `).join('');
+    document.getElementById('contactModal').classList.add('active');
+}
+function closeContactModal() {
+    document.getElementById('contactModal').classList.remove('active');
+}
+function registerManualContact(type) {
+    const c = clientsMap.get(selectedClientName);
+    if (!c) return;
+    addContact(c.name, type);
+    closeContactModal();
+    refreshAfterContact();
+}
+function deleteContact(clientName, ts) {
+    if (!confirm('¿Borrar este registro de contacto?')) return;
+    removeContact(clientName, ts);
+    refreshAfterContact();
+}
+
+// ============ TAB NOTAS ============
+let noteEditingId = null;
+let noteModalSelectedType = 'info';
+let noteModalClientName = null; // null = picker, string = cliente fijo
+
+function renderNotesTab() {
+    const search = document.getElementById('fn-search').value.toLowerCase().trim();
+    const type = document.getElementById('fn-type').value;
+    const dateF = document.getElementById('fn-date').value;
+    const norm = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const searchN = norm(search);
+    const now = Date.now();
+    const DAY = 86400000;
+
+    let notes = getAllNotesFlat();
+    if (searchN) {
+        notes = notes.filter(n =>
+            norm(n.text).includes(searchN) || norm(n.clientKey).includes(searchN)
+        );
+    }
+    if (type) notes = notes.filter(n => n.type === type);
+    if (dateF) {
+        notes = notes.filter(n => {
+            const age = (now - n.ts) / DAY;
+            if (dateF === 'hoy') return age < 1;
+            if (dateF === '7d') return age <= 7;
+            if (dateF === '30d') return age <= 30;
+            if (dateF === '90d') return age <= 90;
+            return true;
+        });
+    }
+
+    document.getElementById('notasCount').textContent = `${notes.length} notas`;
+
+    const list = document.getElementById('notasList');
+    if (notes.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="icon">📝</div><p>No hay notas con estos filtros</p><p style="font-size:0.85em;margin-top:8px;">Agregá una con el botón "➕ Nota rápida" o desde la ficha de un cliente.</p></div>';
+        return;
+    }
+    list.innerHTML = notes.map(n => renderNoteCard(n, true)).join('');
+}
+
+function renderNoteCard(n, showClient) {
+    const t = NOTE_TYPES[n.type] || NOTE_TYPES.info;
+    const clientDisplay = showClient ? (() => {
+        const c = clientsMap.get(n.clientKey);
+        return c ? c.name : n.clientKey;
+    })() : null;
+    return `
+        <div class="note-card" style="border-left-color:${t.color};">
+            <div class="note-card-header">
+                ${showClient ? `<span class="note-card-client" onclick="goToClientDetailFromNote('${n.clientKey.replace(/'/g,"\\'")}')">${escapeHtml(clientDisplay)}</span>` : ''}
+                <span class="note-card-type" style="background:${t.bg};color:${t.color};">${t.label}</span>
+                <span class="note-card-date">${formatContactDate(n.ts)}${n.editedTs ? '<span class="note-card-edited">(editado)</span>' : ''}</span>
+            </div>
+            <div class="note-card-text">${escapeHtml(n.text)}</div>
+            <div class="note-card-actions">
+                <button onclick="openNoteModal('${n.id.replace(/'/g,"\\'")}', '${n.clientKey.replace(/'/g,"\\'")}')">✏️ Editar</button>
+                <button class="delete-btn" onclick="deleteNoteConfirm('${n.clientKey.replace(/'/g,"\\'")}', '${n.id.replace(/'/g,"\\'")}')">🗑️ Borrar</button>
+            </div>
+        </div>
+    `;
+}
+
+function goToClientDetailFromNote(clientKey) {
+    // Cambiar al tab seguimiento y abrir el cliente
+    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === 1));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-seguimiento').classList.add('active');
+    populateTrackFilters();
+    renderClientListTrack();
+    const c = clientsMap.get(clientKey);
+    if (c) selectClientTrack(c.name);
+}
+
+function deleteNoteConfirm(clientKey, noteId) {
+    if (!confirm('¿Borrar esta nota?')) return;
+    const c = clientsMap.get(clientKey);
+    const name = c ? c.name : clientKey;
+    removeNote(name, noteId);
+    renderNotesTab();
+    if (selectedClientName === clientKey) {
+        const cc = clientsMap.get(selectedClientName);
+        if (cc) renderClientDetail(cc);
+    }
+}
+
+// ============ MODAL NOTA ============
+let noteModalPicker = null;
+
+function openNoteModal(noteId, clientKey) {
+    noteEditingId = noteId;
+    noteModalSelectedType = 'info';
+
+    // Titulo
+    document.getElementById('noteModalTitle').textContent = noteId ? '✏️ Editar nota' : '📝 Nueva nota';
+
+    // Cliente: si vino de detalle o nota existente, fijo. Si no, picker.
+    let fixedClient = null;
+    if (clientKey) {
+        const c = clientsMap.get(clientKey);
+        if (c) fixedClient = c.name;
+    } else if (selectedClientName && !noteId) {
+        // Si hay cliente seleccionado en detalle y es nota nueva
+        const c = clientsMap.get(selectedClientName);
+        if (c) fixedClient = c.name;
+    }
+    noteModalClientName = fixedClient;
+
+    const wrapper = document.getElementById('noteClientWrapper');
+    if (fixedClient) {
+        wrapper.innerHTML = `<label style="font-size:0.82em;font-weight:600;color:#555;">Cliente:</label>
+            <div style="padding:8px 10px;background:#fff5f5;border-radius:6px;margin-top:4px;color:#c8102e;font-weight:600;">${escapeHtml(fixedClient)}</div>`;
+    } else {
+        wrapper.innerHTML = `<label style="font-size:0.82em;font-weight:600;color:#555;">Cliente:</label>
+            <div id="noteClientPicker" class="ms-wrap" style="margin-top:4px;"></div>`;
+        // Crear picker con todos los clientes
+        const clientNames = [...clientsMap.values()].map(c => c.name).sort();
+        noteModalPicker = new MultiSelect(document.getElementById('noteClientPicker'), () => {});
+        noteModalPicker.setOptions(new Set(clientNames));
+    }
+
+    // Si es edición, cargar datos
+    if (noteId) {
+        const ck = clientKey || (fixedClient && fixedClient.toLowerCase());
+        const list = notesLog[ck] || [];
+        const n = list.find(x => x.id === noteId);
+        if (n) {
+            document.getElementById('noteText').value = n.text;
+            noteModalSelectedType = n.type;
+        }
+    } else {
+        document.getElementById('noteText').value = '';
+    }
+
+    // Renderizar tipos
+    renderNoteTypeChips();
+
+    document.getElementById('noteModal').classList.add('active');
+    setTimeout(() => document.getElementById('noteText').focus(), 100);
+}
+
+function renderNoteTypeChips() {
+    const container = document.getElementById('noteTypes');
+    container.innerHTML = Object.entries(NOTE_TYPES).map(([key, info]) => `
+        <span class="note-type-chip ${noteModalSelectedType === key ? 'active' : ''}"
+              style="background:${info.bg};color:${info.color};"
+              onclick="selectNoteType('${key}')">${info.label}</span>
+    `).join('');
+}
+
+function selectNoteType(key) {
+    noteModalSelectedType = key;
+    renderNoteTypeChips();
+}
+
+function closeNoteModal() {
+    document.getElementById('noteModal').classList.remove('active');
+    noteEditingId = null;
+    noteModalPicker = null;
+}
+
+function saveNoteFromModal() {
+    const text = document.getElementById('noteText').value.trim();
+    if (!text) { alert('Escribí algo en la nota'); return; }
+
+    let clientName = noteModalClientName;
+    if (!clientName && noteModalPicker) {
+        const sel = noteModalPicker.getSelected();
+        if (sel.length === 0) { alert('Seleccioná un cliente'); return; }
+        clientName = sel[0];
+    }
+    if (!clientName) { alert('Falta cliente'); return; }
+
+    if (noteEditingId) {
+        updateNote(clientName, noteEditingId, text, noteModalSelectedType);
+    } else {
+        addNote(clientName, text, noteModalSelectedType);
+    }
+    closeNoteModal();
+    renderNotesTab();
+    if (selectedClientName) {
+        const cc = clientsMap.get(selectedClientName);
+        if (cc) renderClientDetail(cc);
+    }
+}
+
+function exportNotesCSV() {
+    const notes = getAllNotesFlat();
+    const csvEsc = s => `"${String(s || '').replace(/"/g, '""')}"`;
+    let csv = 'Fecha,Cliente,Tipo,Nota\n';
+    for (const n of notes) {
+        const c = clientsMap.get(n.clientKey);
+        const clientName = c ? c.name : n.clientKey;
+        const typeLabel = (NOTE_TYPES[n.type]?.label || n.type).replace(/^\S+\s/, '');
+        csv += [
+            csvEsc(formatContactDate(n.ts)),
+            csvEsc(clientName),
+            csvEsc(typeLabel),
+            csvEsc(n.text)
+        ].join(',') + '\n';
+    }
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `maxifer_notas_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ============ MAPA ============
+const GEOCODE_CACHE_KEY = 'maxifer_geocode_cache';
+let geocodeCache = {};
+let mapInstance = null;
+let mapMarkers = [];
+let geocodingActive = false;
+let geocodingQueue = [];
+let currentMapMode = 'pedidos'; // 'pedidos' | 'seguimiento'
+
+function loadGeocodeCache() {
+    try {
+        const raw = localStorage.getItem(GEOCODE_CACHE_KEY);
+        geocodeCache = raw ? JSON.parse(raw) : {};
+    } catch (e) { geocodeCache = {}; }
+}
+function saveGeocodeCache() {
+    try { localStorage.setItem(GEOCODE_CACHE_KEY, JSON.stringify(geocodeCache)); }
+    catch (e) { console.warn('No se pudo guardar cache geocoding', e); }
+}
+
+async function geocodeAddress(address) {
+    if (!address) return null;
+    if (geocodeCache[address]) return geocodeCache[address];
+
+    const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(address);
+    try {
+        const res = await fetch(url, {
+            headers: { 'Accept-Language': 'es' }
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        if (data && data.length > 0) {
+            const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+            geocodeCache[address] = result;
+            saveGeocodeCache();
+            return result;
+        }
+        // Guardar intento fallido para no reintentar
+        geocodeCache[address] = { failed: true, ts: Date.now() };
+        saveGeocodeCache();
+        return null;
+    } catch (e) {
+        console.warn('Error geocoding', address, e);
+        return null;
+    }
+}
+
+function getMapCandidates() {
+    // Devuelve lista de objetos {key, name, address, client} para mapear
+    if (currentMapMode === 'pedidos') {
+        // Agrupa pedidos por cliente tomando solo los filtrados
+        const search = document.getElementById('f-search').value.toLowerCase().trim();
+        const vendor = new Set(ms.vendor?.getSelected() || []);
+        const etiqueta = new Set(ms.etiqueta?.getSelected() || []);
+        const localidad = new Set(ms.localidad?.getSelected() || []);
+        const provincia = new Set(ms.provincia?.getSelected() || []);
+        const estado = new Set(ms.estado?.getSelected() || []);
+        const zona = new Set(ms.zona?.getSelected() || []);
+        const surtido = new Set(ms.surtido?.getSelected() || []);
+        const dias = document.getElementById('f-dias').value;
+        const pago = document.getElementById('f-pago').value;
+        const contactoR = document.getElementById('f-contacto').value;
+        const norm = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const searchN = norm(search);
+
+        const clientes = new Set();
+        for (const o of allOrders) {
+            if (searchN && !(norm(o.name).includes(searchN) || norm(o.clientName).includes(searchN) ||
+                             norm(o.contactPerson || '').includes(searchN) || norm(o.telefono).includes(searchN) ||
+                             norm(o.ubicacion).includes(searchN))) continue;
+            if (vendor.size && !vendor.has(o.vendedor)) continue;
+            if (etiqueta.size && !etiqueta.has(o.etiqueta)) continue;
+            if (localidad.size && !localidad.has(o.localidad)) continue;
+            if (provincia.size && !provincia.has(o.provincia)) continue;
+            if (estado.size && !estado.has(o.estado)) continue;
+            if (zona.size && !zona.has(o.zona)) continue;
+            if (pago && o.pago !== pago) continue;
+            if (!inDaysRange(o.daysSince, dias)) continue;
+            if (!inContactRange(o.clientName, contactoR)) continue;
+            if (surtido.size) {
+                const subs = subitemsMap.get(o.id) || [];
+                if (!subs.some(s => s.tipo && surtido.has(s.tipo))) continue;
+            }
+            if (o.clientName) clientes.add(o.clientName.toLowerCase());
+        }
+        const out = [];
+        for (const k of clientes) {
+            const c = clientsMap.get(k);
+            if (c && c.ubicacion) out.push({ key: k, client: c });
+        }
+        return out;
+    } else if (currentMapMode === 'criticos') {
+        // Mapa de clientes críticos filtrados
+        const search = document.getElementById('fc-search').value.toLowerCase().trim();
+        const contactoR = document.getElementById('fc-contacto').value;
+        const tipoSel = new Set(ms.tipoC?.getSelected() || []);
+        const vendor = new Set(ms.vendorC?.getSelected() || []);
+        const etiqueta = new Set(ms.etiquetaC?.getSelected() || []);
+        const localidad = new Set(ms.localidadC?.getSelected() || []);
+        const provincia = new Set(ms.provinciaC?.getSelected() || []);
+        const zona = new Set(ms.zonaC?.getSelected() || []);
+        const surtido = new Set(ms.surtidoC?.getSelected() || []);
+        const norm = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const searchN = norm(search);
+
+        const out = [];
+        for (const c of getCriticosClients()) {
+            if (searchN) {
+                const personas = [...(c.contactPersons || [])].map(norm).join(' ');
+                if (!norm(c.name).includes(searchN) && !personas.includes(searchN)) continue;
+            }
+            if (tipoSel.size) {
+                const labels = c.criticoTipos.map(t => CRITICO_TIPOS[t].label);
+                if (!labels.some(l => tipoSel.has(l))) continue;
+            }
+            if (vendor.size && !vendor.has(c.vendedor)) continue;
+            if (etiqueta.size && !etiqueta.has(c.etiqueta)) continue;
+            if (localidad.size && !localidad.has(c.localidad)) continue;
+            if (provincia.size && !provincia.has(c.provincia)) continue;
+            if (zona.size && !zona.has(c.zona)) continue;
+            if (!inContactRange(c.name, contactoR)) continue;
+            if (surtido.size) {
+                let tiene = false;
+                for (const o of c.orders) {
+                    const subs = subitemsMap.get(o.id) || [];
+                    if (subs.some(s => s.tipo && surtido.has(s.tipo))) { tiene = true; break; }
+                }
+                if (!tiene) continue;
+            }
+            if (c.ubicacion) out.push({ key: c.name.toLowerCase(), client: c });
+        }
+        return out;
+    } else {
+        // Tab seguimiento: tomar lo filtrado
+        const search = document.getElementById('f2-search').value.toLowerCase().trim();
+        const vendor = new Set(ms.vendor2?.getSelected() || []);
+        const localidad = new Set(ms.localidad2?.getSelected() || []);
+        const provincia = new Set(ms.provincia2?.getSelected() || []);
+        const zona = new Set(ms.zona2?.getSelected() || []);
+        const surtido = new Set(ms.surtido2?.getSelected() || []);
+        const dias = document.getElementById('f2-dias').value;
+        const contactoR = document.getElementById('f2-contacto').value;
+        const repoF = document.getElementById('f2-repo')?.value;
+        const norm = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const searchN = norm(search);
+
+        const out = [];
+        for (const c of clientsMap.values()) {
+            if (searchN) {
+                const personas = [...(c.contactPersons || [])].map(norm).join(' ');
+                if (!norm(c.name).includes(searchN) && !personas.includes(searchN)) continue;
+            }
+            if (vendor.size && !vendor.has(c.vendedor)) continue;
+            if (localidad.size && !localidad.has(c.localidad)) continue;
+            if (provincia.size && !provincia.has(c.provincia)) continue;
+            if (zona.size && !zona.has(c.zona)) continue;
+            if (!inDaysRange(c.daysSince, dias)) continue;
+            if (!inContactRange(c.name, contactoR)) continue;
+            if (repoF) {
+                if (repoF === 'nunca' && !(c.reposiciones === 0 && c.pedidosIniciales >= 3)) continue;
+                if (repoF === 'baja' && !(c.ratioRepo < 0.3 && c.pedidosIniciales >= 3)) continue;
+                if (repoF === 'media' && !(c.ratioRepo >= 0.3 && c.ratioRepo <= 0.6)) continue;
+                if (repoF === 'alta' && !(c.ratioRepo > 0.6)) continue;
+                if (repoF === 'sin-repo-reciente' && !(c.daysSinceRepo >= 90)) continue;
+                if (repoF === 'sin-repo-180' && !(c.daysSinceRepo >= 180)) continue;
+            }
+            if (surtido.size) {
+                let tiene = false;
+                for (const o of c.orders) {
+                    const subs = subitemsMap.get(o.id) || [];
+                    if (subs.some(s => s.tipo && surtido.has(s.tipo))) { tiene = true; break; }
+                }
+                if (!tiene) continue;
+            }
+            if (c.ubicacion) out.push({ key: c.name.toLowerCase(), client: c });
+        }
+        return out;
+    }
+}
+
+async function openMap(mode) {
+    currentMapMode = mode;
+    loadGeocodeCache();
+    document.getElementById('mapOverlay').classList.add('active');
+
+    // Inicializar mapa si no existe
+    if (!mapInstance) {
+        mapInstance = L.map('mapContainer').setView([-34.603, -58.381], 10); // CABA default
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '© OpenStreetMap © CARTO',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(mapInstance);
+    } else {
+        setTimeout(() => mapInstance.invalidateSize(), 100);
+    }
+
+    // Limpiar markers previos
+    for (const m of mapMarkers) mapInstance.removeLayer(m);
+    mapMarkers = [];
+
+    const candidates = getMapCandidates();
+    document.getElementById('mapStatus').textContent = `${candidates.length} clientes`;
+
+    // Mostrar markers cacheados inmediatamente
+    let cached = 0, pending = 0, failed = 0;
+    geocodingQueue = [];
+    for (const cand of candidates) {
+        const addr = cand.client.ubicacion;
+        const entry = geocodeCache[addr];
+        if (entry && entry.lat && entry.lng) {
+            addMarker(cand.client, entry);
+            cached++;
+        } else if (entry && entry.failed) {
+            failed++;
+        } else {
+            geocodingQueue.push(cand);
+            pending++;
+        }
+    }
+
+    if (cached > 0) fitMapToMarkers();
+
+    updateProgress(cached, candidates.length, pending, failed);
+
+    // Arrancar geocoding secuencial de los pendientes
+    if (pending > 0) {
+        document.getElementById('btnStopGeo').style.display = 'inline-block';
+        runGeocodingQueue(candidates.length);
+    } else if (failed > 0) {
+        document.getElementById('btnRetryGeo').style.display = 'inline-block';
+    }
+}
+
+async function runGeocodingQueue(total) {
+    geocodingActive = true;
+    const startTotal = geocodingQueue.length;
+    let processed = 0;
+    while (geocodingQueue.length > 0 && geocodingActive) {
+        const cand = geocodingQueue.shift();
+        const addr = cand.client.ubicacion;
+        const coord = await geocodeAddress(addr);
+        if (coord && coord.lat) {
+            addMarker(cand.client, coord);
+            if (mapMarkers.length === 1) fitMapToMarkers();
+        }
+        processed++;
+        const cached = total - geocodingQueue.length - (startTotal - processed);
+        updateProgress(mapMarkers.length, total, geocodingQueue.length, 0);
+        // Respetar rate limit 1/s de Nominatim
+        await new Promise(r => setTimeout(r, 1100));
+    }
+    geocodingActive = false;
+    document.getElementById('btnStopGeo').style.display = 'none';
+    updateProgress(mapMarkers.length, total, 0, 0);
+}
+
+function stopGeocoding() {
+    geocodingActive = false;
+    document.getElementById('btnStopGeo').style.display = 'none';
+}
+
+function retryFailedGeo() {
+    // Limpiar marcas de fallido del cache
+    for (const k of Object.keys(geocodeCache)) {
+        if (geocodeCache[k].failed) delete geocodeCache[k];
+    }
+    saveGeocodeCache();
+    openMap(currentMapMode);
+}
+
+function updateProgress(shown, total, pending, failed) {
+    const el = document.getElementById('mapProgress');
+    if (!el) return;
+    if (pending > 0) {
+        el.classList.add('active');
+        el.innerHTML = `🔄 Geocodificando: ${shown}/${total} mostrados · ${pending} pendientes · ~${Math.ceil(pending * 1.1 / 60)} min`;
+    } else if (shown === 0) {
+        el.classList.add('active');
+        el.innerHTML = `Sin clientes con ubicación geocodificable`;
+    } else {
+        el.innerHTML = `✓ ${shown}/${total} clientes en el mapa`;
+        setTimeout(() => el.classList.remove('active'), 3000);
+        el.classList.add('active');
+    }
+}
+
+function addMarker(client, coord) {
+    const zoneClass = {
+        'Oeste': 'marker-oeste', 'Norte': 'marker-norte',
+        'Sur': 'marker-sur', 'CABA': 'marker-caba'
+    }[client.zona] || '';
+    const marker = L.marker([coord.lat, coord.lng], { title: client.name });
+    if (zoneClass) {
+        marker.on('add', () => {
+            const el = marker.getElement();
+            if (el) el.classList.add(zoneClass);
+        });
+    }
+    const daysRepo = client.daysSinceRepo < 9999 ? client.daysSinceRepo + 'd' : '—';
+    const phoneClean = (client.telefono || '').replace(/[^0-9+]/g, '');
+    const waPhone = phoneClean ? (phoneClean.startsWith('54') ? phoneClean : '54' + phoneClean.replace(/^0/, '')) : '';
+    const popupHtml = `
+        <div class="map-popup-name">${escapeHtml(client.name)}</div>
+        <div class="map-popup-info">
+            ${client.localidad ? '📍 ' + escapeHtml(client.localidad) : ''}
+            ${client.zona ? ' · 🗺️ ' + escapeHtml(client.zona) : ''}
+            ${client.telefono ? '<br>📞 ' + escapeHtml(client.telefono) : ''}
+        </div>
+        <div class="map-popup-stats">
+            <span class="map-popup-stat">📦 ${client.totalOrders || 0}</span>
+            <span class="map-popup-stat">🔁 ${client.reposiciones || 0}</span>
+            <span class="map-popup-stat">${(client.ratioRepo * 100).toFixed(0)}% repo</span>
+            <span class="map-popup-stat">Últ: ${client.daysSince < 9999 ? client.daysSince + 'd' : '—'}</span>
+        </div>
+        <div class="map-popup-actions">
+            ${waPhone ? `<button class="map-popup-wa" onclick="window.open('https://wa.me/${waPhone}','_blank')">💬 WA</button>` : ''}
+            ${phoneClean ? `<button class="map-popup-call" onclick="window.location.href='tel:${phoneClean}'">📞</button>` : ''}
+            <button class="map-popup-detail" onclick="goToClientDetail('${client.name.replace(/'/g,"\\'")}')">Ver ficha</button>
+        </div>
+    `;
+    marker.bindPopup(popupHtml);
+    marker.addTo(mapInstance);
+    mapMarkers.push(marker);
+}
+
+function fitMapToMarkers() {
+    if (mapMarkers.length === 0) return;
+    const group = L.featureGroup(mapMarkers);
+    mapInstance.fitBounds(group.getBounds(), { padding: [40, 40], maxZoom: 13 });
+}
+
+function closeMap() {
+    document.getElementById('mapOverlay').classList.remove('active');
+    stopGeocoding();
+}
+
+function goToClientDetail(name) {
+    closeMap();
+    // Cambiar al tab seguimiento
+    document.querySelectorAll('.tab').forEach((t, i) => {
+        t.classList.toggle('active', i === 1);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-seguimiento').classList.add('active');
+    populateTrackFilters();
+    renderClientListTrack();
+    selectClientTrack(name);
+}
+
+// ============ BACKUP / RESTORE LOG ============
+function exportContactsLog() {
+    const blob = new Blob([JSON.stringify(contactsLog, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `maxifer_contactos_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+function importContactsLog() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json,application/json';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            try {
+                const imported = JSON.parse(ev.target.result);
+                if (typeof imported !== 'object') throw new Error('Formato inválido');
+                if (!confirm('¿Reemplazar todos los contactos actuales con el backup?\n\nSi cancelás, se van a MERGEAR (combinar) en vez de reemplazar.')) {
+                    // Merge
+                    for (const [key, list] of Object.entries(imported)) {
+                        if (!contactsLog[key]) contactsLog[key] = [];
+                        for (const c of list) {
+                            if (!contactsLog[key].some(x => x.ts === c.ts)) {
+                                contactsLog[key].push(c);
+                            }
+                        }
+                    }
+                } else {
+                    contactsLog = imported;
+                }
+                saveContactsLog();
+                refreshAfterContact();
+                alert('Importado correctamente');
+            } catch (err) {
+                alert('Error al importar: ' + err.message);
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+// ============ MÓDULO CRÍTICOS ============
+const CRITICO_TIPOS = {
+    rojo:     { label: '🔴 Volumen sin repo',      color: '#c8102e', desc: '4+ surtidos en 2+ pedidos, nunca repuso' },
+    naranja:  { label: '🟠 Cargó fuerte 1 vez',    color: '#e67e22', desc: '1 solo pedido con 4+ surtidos, no volvió' },
+    amarillo: { label: '🟡 Compró varias, 0 repo', color: '#f39c12', desc: '3+ pedidos iniciales separados, 0 repo' },
+    azul:     { label: '🔵 Reponedor enfriado',    color: '#2980b9', desc: 'Reponía seguido y dejó de hacerlo' },
+    negro:    { label: '⚫ Ex-cliente fuerte',     color: '#34495e', desc: '5+ pedidos totales, 180d+ sin comprar' }
+};
+
+// Plantillas WA específicas por tipo de crítico
+const WA_TEMPLATES_CRITICOS = {
+    rojo:     c => `Hola ${c.contactPerson || c.name}! Te escribo de MAXIFER. Veo que llevaste varios surtidos pero todavía no hicimos ninguna reposición. Quería saber cómo te están saliendo, qué se está moviendo más y qué podemos reponer. ¿Te paso a ver o te armo lista? Saludos!`,
+    naranja:  c => `Hola ${c.contactPerson || c.name}! Soy de MAXIFER. Hace un tiempo te llevaste un buen kit de surtidos y no nos volvimos a cruzar. ¿Cómo te fueron saliendo? Si querés te armo una reposición de lo que más se vendió. Saludos!`,
+    amarillo: c => `Hola ${c.contactPerson || c.name}! Soy de MAXIFER. Veo que ya nos compraste varias veces surtidos pero nunca hicimos reposición. Quizás te está faltando algo puntual o querés que te visite y revisamos juntos. Avisame!`,
+    azul:     c => `Hola ${c.contactPerson || c.name}! Soy de MAXIFER. Hace bastante que no hacés reposición y antes pedías seguido. ¿Está todo bien? ¿Cambiaste de proveedor o solo está parado el movimiento? Quería saber cómo ayudarte. Saludos!`,
+    negro:    c => `Hola ${c.contactPerson || c.name}, ¿cómo andás? Te escribo de MAXIFER. Hace mucho que no nos vemos y quería retomar contacto. ¿Seguís con el negocio? ¿Qué tal si te paso novedades y vemos cómo reactivar? Saludos!`
+};
+
+function getCriticosClients() {
+    return [...clientsMap.values()].filter(c => c.criticoTipos && c.criticoTipos.length > 0);
+}
+
+function populateCriticosFilters() {
+    const criticos = getCriticosClients();
+    const count = {
+        tipo: new Map(), vendor: new Map(), etiqueta: new Map(),
+        localidad: new Map(), provincia: new Map(), zona: new Map(), surtido: new Map()
+    };
+    for (const c of criticos) {
+        for (const t of c.criticoTipos) {
+            const label = CRITICO_TIPOS[t].label;
+            count.tipo.set(label, (count.tipo.get(label) || 0) + 1);
+        }
+        if (c.vendedor) count.vendor.set(c.vendedor, (count.vendor.get(c.vendedor) || 0) + 1);
+        if (c.etiqueta) count.etiqueta.set(c.etiqueta, (count.etiqueta.get(c.etiqueta) || 0) + 1);
+        if (c.localidad) count.localidad.set(c.localidad, (count.localidad.get(c.localidad) || 0) + 1);
+        if (c.provincia) count.provincia.set(c.provincia, (count.provincia.get(c.provincia) || 0) + 1);
+        if (c.zona) count.zona.set(c.zona, (count.zona.get(c.zona) || 0) + 1);
+        const tiposCliente = new Set();
+        for (const o of c.orders) {
+            const subs = subitemsMap.get(o.id) || [];
+            for (const s of subs) if (s.tipo) tiposCliente.add(s.tipo);
+        }
+        for (const t of tiposCliente) count.surtido.set(t, (count.surtido.get(t) || 0) + 1);
+    }
+    if (ms.tipoC) ms.tipoC.setOptions(count.tipo);
+    if (ms.vendorC) ms.vendorC.setOptions(count.vendor);
+    if (ms.etiquetaC) ms.etiquetaC.setOptions(count.etiqueta);
+    if (ms.localidadC) ms.localidadC.setOptions(count.localidad);
+    if (ms.provinciaC) ms.provinciaC.setOptions(count.provincia);
+    if (ms.zonaC) ms.zonaC.setOptions(count.zona);
+    if (ms.surtidoC) ms.surtidoC.setOptions(count.surtido);
+}
+
+function clearCriticosFilters() {
+    document.getElementById('fc-search').value = '';
+    document.getElementById('fc-contacto').value = '';
+    ['tipoC', 'vendorC', 'etiquetaC', 'localidadC', 'provinciaC', 'zonaC', 'surtidoC'].forEach(k => ms[k]?.clear());
+    renderCriticosTab();
+}
+
+// Prioridad para ordenamiento "más urgente primero"
+// Cuanto MÁS BAJO el número, MÁS urgente.
+// Negro (ex-cliente fuerte) y Rojo son top.
+const PRIO_TIPO = { rojo: 1, negro: 2, naranja: 3, azul: 4, amarillo: 5 };
+
+function getPrioCliente(c) {
+    if (!c.criticoTipos || c.criticoTipos.length === 0) return 99;
+    return Math.min(...c.criticoTipos.map(t => PRIO_TIPO[t] || 99));
+}
+
+function renderCriticosTab() {
+    const search = document.getElementById('fc-search').value.toLowerCase().trim();
+    const contactoR = document.getElementById('fc-contacto').value;
+    const sort = document.getElementById('fc-sort').value;
+    const tipoSel = new Set(ms.tipoC?.getSelected() || []);
+    const vendor = new Set(ms.vendorC?.getSelected() || []);
+    const etiqueta = new Set(ms.etiquetaC?.getSelected() || []);
+    const localidad = new Set(ms.localidadC?.getSelected() || []);
+    const provincia = new Set(ms.provinciaC?.getSelected() || []);
+    const zona = new Set(ms.zonaC?.getSelected() || []);
+    const surtido = new Set(ms.surtidoC?.getSelected() || []);
+
+    const norm = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const searchN = norm(search);
+
+    let criticos = getCriticosClients();
+
+    // Renderizar resumen ANTES del filtrado (totales globales)
+    renderCriticosResumen(criticos);
+
+    criticos = criticos.filter(c => {
+        if (searchN) {
+            const personas = [...(c.contactPersons || [])].map(norm).join(' ');
+            if (!norm(c.name).includes(searchN) && !personas.includes(searchN)) return false;
+        }
+        if (tipoSel.size) {
+            const labels = c.criticoTipos.map(t => CRITICO_TIPOS[t].label);
+            if (!labels.some(l => tipoSel.has(l))) return false;
+        }
+        if (vendor.size && !vendor.has(c.vendedor)) return false;
+        if (etiqueta.size && !etiqueta.has(c.etiqueta)) return false;
+        if (localidad.size && !localidad.has(c.localidad)) return false;
+        if (provincia.size && !provincia.has(c.provincia)) return false;
+        if (zona.size && !zona.has(c.zona)) return false;
+        if (!inContactRange(c.name, contactoR)) return false;
+        if (surtido.size) {
+            let tiene = false;
+            for (const o of c.orders) {
+                const subs = subitemsMap.get(o.id) || [];
+                if (subs.some(s => s.tipo && surtido.has(s.tipo))) { tiene = true; break; }
+            }
+            if (!tiene) return false;
+        }
+        return true;
+    });
+
+    // Sort
+    if (sort === 'prio-desc') {
+        criticos.sort((a, b) => {
+            const pa = getPrioCliente(a), pb = getPrioCliente(b);
+            if (pa !== pb) return pa - pb;
+            return b.daysSince - a.daysSince;
+        });
+    } else if (sort === 'days-desc') {
+        criticos.sort((a, b) => b.daysSince - a.daysSince);
+    } else if (sort === 'iniciales-desc') {
+        criticos.sort((a, b) => (b.subItemsInicialesTotal || 0) - (a.subItemsInicialesTotal || 0));
+    } else if (sort === 'repodays-desc') {
+        criticos.sort((a, b) => b.daysSinceRepo - a.daysSinceRepo);
+    } else if (sort === 'alpha') {
+        criticos.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    document.getElementById('criticosCount').textContent = `${criticos.length} clientes críticos`;
+    updateCriticosFilterBadges();
+
+    const list = document.getElementById('criticosList');
+    if (criticos.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="icon">✅</div><p>Sin clientes críticos con estos filtros</p></div>';
+        return;
+    }
+
+    list.innerHTML = criticos.slice(0, 500).map(c => renderCriticoRow(c)).join('') +
+        (criticos.length > 500 ? `<div style="text-align:center;padding:10px;color:#999;font-size:0.8em;">Mostrando 500 de ${criticos.length}</div>` : '');
+}
+
+function renderCriticosResumen(criticos) {
+    const counts = { rojo: 0, naranja: 0, amarillo: 0, azul: 0, negro: 0 };
+    for (const c of criticos) {
+        for (const t of c.criticoTipos) {
+            if (counts[t] !== undefined) counts[t]++;
+        }
+    }
+    const tipoSel = ms.tipoC?.getSelected() || [];
+    const cards = ['rojo', 'naranja', 'amarillo', 'azul', 'negro'].map(t => {
+        const isActive = tipoSel.length === 1 && tipoSel[0] === CRITICO_TIPOS[t].label;
+        return `
+            <div class="crit-resumen-card crit-card-${t} ${isActive ? 'active' : ''}" onclick="toggleCriticoFilter('${t}')">
+                <div class="crc-count">${counts[t]}</div>
+                <div class="crc-label">${CRITICO_TIPOS[t].label}</div>
+                <div class="crc-desc">${CRITICO_TIPOS[t].desc}</div>
+            </div>
+        `;
+    }).join('');
+    document.getElementById('criticosResumen').innerHTML = cards;
+}
+
+function toggleCriticoFilter(tipo) {
+    if (!ms.tipoC) return;
+    const label = CRITICO_TIPOS[tipo].label;
+    const sel = ms.tipoC.getSelected();
+    if (sel.length === 1 && sel[0] === label) {
+        // Click otra vez en la card activa -> destildar
+        ms.tipoC.clear();
+    } else {
+        ms.tipoC.clear();
+        ms.tipoC.selected.add(label);
+        ms.tipoC._renderChips();
+    }
+    renderCriticosTab();
+}
+
+function renderCriticoRow(c) {
+    // tipo principal (más prioritario) define el color de la barra
+    const tipoMain = c.criticoTipos.sort((a, b) => (PRIO_TIPO[a] || 99) - (PRIO_TIPO[b] || 99))[0];
+    const tags = c.criticoTipos.map(t =>
+        `<span class="crit-tag crit-tag-${t}">${CRITICO_TIPOS[t].label}</span>`
+    ).join('');
+
+    const phoneClean = (c.telefono || '').replace(/[^0-9+]/g, '');
+    const waPhone = phoneClean ? (phoneClean.startsWith('54') ? phoneClean : '54' + phoneClean.replace(/^0/, '')) : '';
+
+    // Stats
+    const stats = [];
+    if (c.daysSince < 9999) {
+        const cls = c.daysSince >= 180 ? 'crit-stat-bad' : c.daysSince >= 90 ? 'crit-stat-warn' : '';
+        stats.push(`<span class="crit-stat ${cls}">⏱ ${c.daysSince}d sin comprar</span>`);
+    }
+    stats.push(`<span class="crit-stat">📦 ${c.totalOrders} pedidos</span>`);
+    if (c.subItemsInicialesTotal > 0) {
+        stats.push(`<span class="crit-stat">🎯 ${c.subItemsInicialesTotal} surtidos iniciales</span>`);
+    }
+    if (c.reposiciones === 0) {
+        stats.push(`<span class="crit-stat crit-stat-bad">🚫 0 reposiciones</span>`);
+    } else {
+        stats.push(`<span class="crit-stat">🔁 ${c.reposiciones} repo · últ ${c.daysSinceRepo}d</span>`);
+    }
+    const lc = getLastContact(c.name);
+    if (lc) {
+        const dc = daysSinceContact(c.name);
+        const icon = (CONTACT_TYPES[lc.type]?.label || '').split(' ')[0];
+        stats.push(`<span class="crit-stat">${icon} ${dc}d</span>`);
+    } else {
+        stats.push(`<span class="crit-stat crit-stat-warn">📲 nunca contactado</span>`);
+    }
+
+    const contactPersons = [...(c.contactPersons || [])].filter(Boolean);
+    const contactoLine = contactPersons.length > 0 ? `🙋 ${escapeHtml(contactPersons.join(', '))}` : '';
+
+    return `
+        <div class="crit-row tipo-${tipoMain}">
+            <div class="crit-row-main">
+                <div class="crit-row-name">${escapeHtml(c.name)}</div>
+                <div class="crit-row-tags">${tags}</div>
+                <div class="crit-row-meta">
+                    ${contactoLine ? `<span>${contactoLine}</span>` : ''}
+                    ${c.telefono ? `<span>📞 <strong>${escapeHtml(c.telefono)}</strong></span>` : '<span style="color:#c8102e;">⚠ sin teléfono</span>'}
+                    ${c.localidad ? `<span>📍 ${escapeHtml(c.localidad)}</span>` : ''}
+                    ${c.zona ? `<span>🗺 ${escapeHtml(c.zona)}</span>` : ''}
+                    ${c.vendedor ? `<span>👤 ${escapeHtml(c.vendedor)}</span>` : ''}
+                </div>
+                <div class="crit-row-stats">${stats.join('')}</div>
+                <div class="crit-row-reason">${escapeHtml(c.criticoRazon)}</div>
+            </div>
+            <div class="crit-row-actions">
+                ${waPhone ? `<button class="btn btn-wa" onclick="openCriticoWA('${c.name.replace(/'/g,"\\'")}','${tipoMain}')">💬 WhatsApp</button>` : `<button class="btn btn-light" disabled title="Sin teléfono">💬 WhatsApp</button>`}
+                ${phoneClean ? `<button class="btn btn-secondary" onclick="window.location.href='tel:${phoneClean}'">📞 Llamar</button>` : ''}
+                <button class="btn btn-light" onclick="goToClientFromCriticos('${c.name.replace(/'/g,"\\'")}')">📂 Ver ficha</button>
+            </div>
+        </div>
+    `;
+}
+
+function openCriticoWA(clientName, tipo) {
+    const c = clientsMap.get(clientName.toLowerCase());
+    if (!c) return;
+    const phoneClean = (c.telefono || '').replace(/[^0-9+]/g, '');
+    if (!phoneClean) return;
+    const waPhone = phoneClean.startsWith('54') ? phoneClean : '54' + phoneClean.replace(/^0/, '');
+    // Plantilla específica del tipo de crítico
+    const template = WA_TEMPLATES_CRITICOS[tipo];
+    const text = template ? template(c) : '';
+    const url = `https://wa.me/${waPhone}?text=${encodeURIComponent(text)}`;
+    addContact(c.name, 'wa_out');
+    window.open(url, '_blank');
+    // refrescar para que aparezca el badge "contactado"
+    renderCriticosTab();
+}
+
+function goToClientFromCriticos(name) {
+    // Cambiar al tab seguimiento (es el segundo tab → índice 1)
+    document.querySelectorAll('.tab').forEach((t, i) => {
+        t.classList.toggle('active', i === 1);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-seguimiento').classList.add('active');
+    populateTrackFilters();
+    renderClientListTrack();
+    selectClientTrack(name);
+}
+
+function updateCriticosFilterBadges() {
+    let n = 0;
+    if (document.getElementById('fc-search')?.value) n++;
+    if (document.getElementById('fc-contacto')?.value) n++;
+    ['tipoC', 'vendorC', 'etiquetaC', 'localidadC', 'provinciaC', 'zonaC', 'surtidoC'].forEach(k => {
+        if (ms[k]?.getSelected().length) n++;
+    });
+    const el = document.getElementById('fc-count');
+    if (el) el.textContent = n;
+    const btn = document.getElementById('btn-toggle-fc');
+    if (btn) btn.classList.toggle('has-filters', n > 0);
+}
+
+function exportCriticosCSV() {
+    const search = document.getElementById('fc-search').value.toLowerCase().trim();
+    const contactoR = document.getElementById('fc-contacto').value;
+    const tipoSel = new Set(ms.tipoC?.getSelected() || []);
+    const vendor = new Set(ms.vendorC?.getSelected() || []);
+    const etiqueta = new Set(ms.etiquetaC?.getSelected() || []);
+    const localidad = new Set(ms.localidadC?.getSelected() || []);
+    const provincia = new Set(ms.provinciaC?.getSelected() || []);
+    const zona = new Set(ms.zonaC?.getSelected() || []);
+    const surtido = new Set(ms.surtidoC?.getSelected() || []);
+    const norm = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const searchN = norm(search);
+
+    let criticos = getCriticosClients().filter(c => {
+        if (searchN) {
+            const personas = [...(c.contactPersons || [])].map(norm).join(' ');
+            if (!norm(c.name).includes(searchN) && !personas.includes(searchN)) return false;
+        }
+        if (tipoSel.size) {
+            const labels = c.criticoTipos.map(t => CRITICO_TIPOS[t].label);
+            if (!labels.some(l => tipoSel.has(l))) return false;
+        }
+        if (vendor.size && !vendor.has(c.vendedor)) return false;
+        if (etiqueta.size && !etiqueta.has(c.etiqueta)) return false;
+        if (localidad.size && !localidad.has(c.localidad)) return false;
+        if (provincia.size && !provincia.has(c.provincia)) return false;
+        if (zona.size && !zona.has(c.zona)) return false;
+        if (!inContactRange(c.name, contactoR)) return false;
+        if (surtido.size) {
+            let tiene = false;
+            for (const o of c.orders) {
+                const subs = subitemsMap.get(o.id) || [];
+                if (subs.some(s => s.tipo && surtido.has(s.tipo))) { tiene = true; break; }
+            }
+            if (!tiene) return false;
+        }
+        return true;
+    });
+
+    const csvEsc = s => `"${String(s == null ? '' : s).replace(/"/g, '""')}"`;
+    const headers = ['Negocio', 'Contacto', 'Teléfono', 'Localidad', 'Provincia', 'Zona', 'Vendedor',
+        'Etiqueta', 'Tipos crítico', 'Razón', 'Pedidos totales', 'Pedidos iniciales', 'Reposiciones',
+        'Surtidos iniciales', 'Días sin comprar', 'Días sin reponer', 'Últ. contacto (días)'];
+    let csv = headers.map(csvEsc).join(',') + '\n';
+    for (const c of criticos) {
+        const personas = [...(c.contactPersons || [])].filter(Boolean).join('; ');
+        const tipos = c.criticoTipos.map(t => CRITICO_TIPOS[t].label).join(' / ');
+        const dc = daysSinceContact(c.name);
+        csv += [
+            c.name, personas, c.telefono, c.localidad, c.provincia, c.zona, c.vendedor,
+            c.etiqueta, tipos, c.criticoRazon,
+            c.totalOrders, c.pedidosIniciales, c.reposiciones,
+            c.subItemsInicialesTotal,
+            c.daysSince < 9999 ? c.daysSince : '',
+            c.daysSinceRepo < 9999 ? c.daysSinceRepo : '',
+            dc < 9999 ? dc : 'nunca'
+        ].map(csvEsc).join(',') + '\n';
+    }
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `maxifer_criticos_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ============ EXPORT CSV ============
+function exportCSV() {
+    const visible = TABLE_COLUMNS.filter(c => visibleCols.has(c.id) && c.id !== 'acciones');
+    const search = document.getElementById('f-search').value.toLowerCase().trim();
+    const norm = s => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const searchN = norm(search);
+    const vendor = new Set(ms.vendor?.getSelected() || []);
+    const etiqueta = new Set(ms.etiqueta?.getSelected() || []);
+    const localidad = new Set(ms.localidad?.getSelected() || []);
+    const provincia = new Set(ms.provincia?.getSelected() || []);
+    const estado = new Set(ms.estado?.getSelected() || []);
+    const zona = new Set(ms.zona?.getSelected() || []);
+    const surtido = new Set(ms.surtido?.getSelected() || []);
+    const dias = document.getElementById('f-dias').value;
+    const pago = document.getElementById('f-pago').value;
+    const contacto = document.getElementById('f-contacto').value;
+    const rows = allOrders.filter(o => {
+        if (searchN && !(norm(o.name).includes(searchN) || norm(o.clientName).includes(searchN) || norm(o.telefono).includes(searchN) || norm(o.ubicacion).includes(searchN))) return false;
+        if (vendor.size && !vendor.has(o.vendedor)) return false;
+        if (etiqueta.size && !etiqueta.has(o.etiqueta)) return false;
+        if (localidad.size && !localidad.has(o.localidad)) return false;
+        if (provincia.size && !provincia.has(o.provincia)) return false;
+        if (estado.size && !estado.has(o.estado)) return false;
+        if (zona.size && !zona.has(o.zona)) return false;
+        if (pago && o.pago !== pago) return false;
+        if (!inDaysRange(o.daysSince, dias)) return false;
+        if (!inContactRange(o.clientName, contacto)) return false;
+        if (surtido.size) {
+            const subs = subitemsMap.get(o.id) || [];
+            if (!subs.some(s => s.tipo && surtido.has(s.tipo))) return false;
+        }
+        return true;
+    });
+
+    const csvEsc = s => `"${String(s || '').replace(/"/g, '""')}"`;
+    let csv = visible.map(c => csvEsc(c.label)).join(',') + '\n';
+    for (const o of rows) {
+        csv += visible.map(c => csvEsc(c.getValue(o))).join(',') + '\n';
+    }
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `postventa_maxifer_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// ============ UTILS ============
+function showError(msg) {
+    document.getElementById('errorContainer').innerHTML = `<div class="error-msg">${msg}</div>`;
+}
+function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+</script>
+
+<!-- Overlay Mapa -->
+<div id="mapOverlay" class="map-overlay">
+    <div class="map-header">
+        <h2>🗺️ Mapa de clientes <span class="map-status" id="mapStatus"></span></h2>
+        <div class="map-actions">
+            <button class="btn btn-small btn-light" onclick="stopGeocoding()" id="btnStopGeo" style="display:none;">⏸ Detener</button>
+            <button class="btn btn-small btn-light" onclick="retryFailedGeo()" id="btnRetryGeo" style="display:none;">🔄 Reintentar fallidos</button>
+            <button class="btn btn-small" style="background:white;color:#c8102e;font-weight:600;" onclick="closeMap()">✕ Cerrar</button>
+        </div>
+    </div>
+    <div id="mapContainer">
+        <div class="map-progress" id="mapProgress"></div>
+    </div>
+</div>
+
+</body>
+</html>
