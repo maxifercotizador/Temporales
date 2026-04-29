@@ -1,60 +1,52 @@
 # Archivos del Análisis Financiero
 
-Acá guardás los archivos crudos que alimentan a `analisis_financiero.html`. Una subcarpeta por mes.
+Este sistema arranca **a partir de abril 2026**. Los meses anteriores ya están cargados en `analisis_financiero_datos.js` y no hace falta tocar nada.
 
-**Formato carpeta:** `AAAA-MM` (ej. `2026-04` para abril 2026).
+## Cómo se usa cada mes
 
-## Qué va en cada carpeta del mes
+1. Abrís la carpeta del mes (ej. `2026-04/`).
+2. Vas tirando los archivos a medida que los tenés. **Respetá los nombres de archivo** de la lista de abajo, así el sistema los reconoce.
+3. Cuando termines de cargar todo el mes, push a `main`. El análisis se regenera con esos datos.
 
-Lista para alimentar **un solo mes** (ejemplo abril):
+## Archivos que van en cada carpeta del mes
 
-1. **Facturación del mes** — `facturacion.xlsx`
-   - Exportar de **BS Gestión → Comprobantes emitidos** del 01/MM al fin de mes.
+Estos son los **nombres exactos** que tienen que tener los archivos. Si los nombrás distinto, no se levantan.
 
-2. **Excel de gastos del mes** — `gastos_excel.xlsx`
-   - Tu archivo `Gastos_2026.xlsx` recortado a la hoja del mes (o el mes correspondiente).
+| # | Archivo (nombre exacto) | Origen | Para qué sirve |
+|---|---|---|---|
+| 1 | `facturacion.xlsx` | BS Gestión → Comprobantes emitidos del 01/MM al fin de mes | Facturación del mes (FA, FB, NC), por vendedor, volumen |
+| 2 | `gastos_excel.xlsx` | Tu `Gastos_2026.xlsx`, hoja del mes | Mercadería, fijos, varios, sueldos |
+| 3 | `gastos_bs.xlsx` | BS Gestión, gastos del 01/MM al fin de mes | Comisiones reales del mes |
+| 4 | `extracto_galicia.xlsx` | Home banking Galicia, movimientos del 01/MM al fin de mes | Pagos tarjetas Galicia, gastos bancarios |
+| 5 | `resumen_santander.pdf` | PDF del resumen Santander del mes | Pagos tarjetas Santander |
+| 6 | `cobranzas.txt` | Tres números (ver abajo) | Cobranzas del mes |
+| 7 | `saldos.txt` | Tres números (ver abajo) | Saldos al cierre del mes |
 
-3. **Gastos BS Gestión del mes** — `gastos_bs.xlsx`
-   - BS Gestión, gastos del 01/MM al fin de mes. Sirve para sacar **comisiones reales**.
+### Formato de `cobranzas.txt`
+```
+total_cobrado: 9100000
+cantidad: 30
+cobrado_papa: 1200000
+```
 
-4. **Extracto Galicia del mes** — `extracto_galicia.xlsx`
-   - Home banking Galicia, movimientos del 01/MM al fin de mes.
+### Formato de `saldos.txt`
+```
+galicia: 2529212
+santander: 7613
+usd: 44.62
+```
 
-5. **Resumen Santander del mes** — `resumen_santander.pdf`
-   - PDF tal cual lo manda el banco (cierra ~26 del mes siguiente).
-
-6. **Screenshot dashboard cobranzas** — `cobranzas.png` (o `.jpg`)
-   - Captura del dashboard con totales actualizados al fin del mes.
-
-7. **Saldos al cierre del mes** — `saldos.txt`
-   - Tres números, uno por línea:
-     ```
-     galicia: 2529212
-     santander: 7613
-     usd: 44.62
-     ```
-
-> Si te falta alguno, dejalo sin subir. La que importa siempre es la facturación + gastos.
-
-## Cómo se usa
-
-1. Cada fin de mes (o cuando tengas todo), copiás los 7 archivos a la subcarpeta del mes.
-2. Le pasás esa carpeta a Claude y le pedís que actualice `analisis_financiero_datos.js` con los datos del mes.
-3. Push a `main`. GitHub Pages refresca y la app levanta los datos nuevos.
-
-## Mapeo: archivo → qué sección actualiza en la app
-
-| Archivo | Secciones que alimenta en el HTML |
-|---|---|
-| 1. Facturación BS Gestión | Resumen, Facturación, Vendedores, Volumen, Comparador, Fact vs Cobr |
-| 2. Excel de gastos | Gastos (mercadería/fijos/varios/sueldos), Top conceptos |
-| 3. Gastos BS Gestión | Comisiones reales del mes (parte de Gastos) |
-| 4. Extracto Galicia | Pagos de tarjetas Galicia, gastos bancarios |
-| 5. Resumen Santander | Pagos de tarjetas Santander |
-| 6. Screenshot cobranzas | Tab Cobranzas (total cobrado, por mes, por vendedor) |
-| 7. Saldos al cierre | Tab Flujo (snapshot de saldos bancarios) |
+> En vez de la captura de pantalla del dashboard, usamos un `.txt` con los 3 números. Es más confiable que parsear una imagen y te lleva 10 segundos.
 
 ## Datos que NO vienen de archivos
 
-- **Préstamos vigentes:** se cargan a mano en `analisis_financiero_datos.js` (clave `prestamos`). Solo se actualiza cuando hay un préstamo nuevo o termina uno.
-- **Tumini:** monto adeudado y facturado. Manual (clave `problemas_tumini`).
+Estos se actualizan a mano en `analisis_financiero_datos.js`, solo cuando cambian:
+
+- **Préstamos vigentes** (clave `prestamos`): cuando se agrega o termina uno.
+- **Tumini** (clave `problemas_tumini`): monto adeudado y facturado.
+
+## Nota sobre la automatización
+
+Cuando subas los archivos por primera vez, te armo el pipeline (GitHub Actions) que parsea los Excel/PDF y regenera `analisis_financiero_datos.js` solo. Mientras tanto, podés cargar los archivos a la carpeta y avisarme — yo lo regenero al toque.
+
+Si algún archivo te falta (ej. resumen Santander que cierra el 26 del mes siguiente), no pasa nada: subís lo que tengas y completás el resto cuando llegue.
