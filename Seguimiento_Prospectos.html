@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#0a0e1a">
 <title>MAXIFER · Seguimiento</title>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
 :root {
   --bg: #0a0e1a;
   --bg-card: #131829;
@@ -41,16 +43,13 @@ html, body {
   min-height: 100vh;
 }
 
-/* === LAYOUT === */
 .app {
   max-width: 720px;
   margin: 0 auto;
   min-height: 100vh;
   padding-bottom: 80px;
-  position: relative;
 }
 
-/* === HEADER === */
 .header {
   position: sticky;
   top: 0;
@@ -78,10 +77,7 @@ html, body {
 
 .logo span { color: var(--text); }
 
-.header-actions {
-  display: flex;
-  gap: 8px;
-}
+.header-actions { display: flex; gap: 8px; }
 
 .icon-btn {
   background: var(--bg-elev);
@@ -95,17 +91,13 @@ html, body {
   justify-content: center;
   cursor: pointer;
   font-size: 16px;
-  transition: all 0.15s;
 }
 
 .icon-btn:active { transform: scale(0.92); }
 .icon-btn.refreshing { animation: spin 0.8s linear infinite; }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
+@keyframes spin { to { transform: rotate(360deg); } }
 
-/* === TABS === */
 .tabs {
   display: flex;
   gap: 4px;
@@ -128,7 +120,6 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 5px;
-  transition: all 0.2s;
   font-family: inherit;
 }
 
@@ -152,11 +143,58 @@ html, body {
   color: var(--accent);
 }
 
-/* === FILTERS === */
-.filters-bar {
-  padding: 12px 16px 0 16px;
+/* SMART FILTERS */
+.smart-filters {
+  padding: 10px 16px 0 16px;
   display: flex;
   gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.smart-filters::-webkit-scrollbar { display: none; }
+
+.smart-filter {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.smart-filter.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.smart-filter .count {
+  background: rgba(0,0,0,0.25);
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.smart-filter:not(.active) .count {
+  background: var(--bg-elev);
+  color: var(--text-dim);
+}
+
+/* GEO FILTERS */
+.filters-bar {
+  padding: 10px 16px 0 16px;
+  display: flex;
+  gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
@@ -168,14 +206,13 @@ html, body {
   background: var(--bg-card);
   border: 1px solid var(--border);
   color: var(--text-dim);
-  padding: 6px 12px;
-  border-radius: 18px;
-  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 14px;
+  font-size: 11px;
   cursor: pointer;
   white-space: nowrap;
   font-family: inherit;
   font-weight: 500;
-  transition: all 0.15s;
 }
 
 .filter-chip.active {
@@ -184,7 +221,7 @@ html, body {
   color: var(--accent);
 }
 
-/* === STATS === */
+/* STATS */
 .stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -219,10 +256,8 @@ html, body {
 .stat.warm .stat-value { color: var(--yellow); }
 .stat.cold .stat-value { color: var(--blue); }
 
-/* === CONTACT LIST === */
-.list {
-  padding: 0 16px;
-}
+/* LIST */
+.list { padding: 0 16px; }
 
 .section-title {
   font-family: 'Bebas Neue', sans-serif;
@@ -254,7 +289,6 @@ html, body {
   margin-bottom: 10px;
   position: relative;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .contact-card:active { transform: scale(0.99); }
@@ -264,12 +298,11 @@ html, body {
   box-shadow: 0 0 0 1px var(--red), 0 4px 16px rgba(239,68,68,0.12);
 }
 
-.contact-card.warm {
-  border-left: 3px solid var(--yellow);
-}
-
-.contact-card.cliente {
-  border-left: 3px solid var(--green);
+.contact-card.warm { border-left: 3px solid var(--yellow); }
+.contact-card.cliente { border-left: 3px solid var(--green); }
+.contact-card.hot {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
 .contact-header {
@@ -305,6 +338,26 @@ html, body {
 .tag-cliente { background: var(--green-soft); color: var(--green); }
 .tag-prospecto { background: var(--yellow-soft); color: var(--yellow); }
 .tag-proveedor { background: var(--blue-soft); color: var(--blue); }
+.tag-noleads { background: var(--red-soft); color: var(--red); }
+
+.contact-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.special-badge {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.badge-hot { background: var(--accent); color: #fff; }
+.badge-emprendedor { background: var(--purple); color: #fff; }
+.badge-pago { background: var(--green); color: #000; }
 
 .contact-meta {
   display: flex;
@@ -323,6 +376,10 @@ html, body {
   align-items: center;
   gap: 3px;
 }
+
+.meta-item.days-cold { color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+.meta-item.days-warm { color: var(--yellow); border: 1px solid rgba(251,191,36,0.3); }
+.meta-item.days-fresh { color: var(--green); }
 
 .contact-summary {
   font-size: 13px;
@@ -376,7 +433,6 @@ html, body {
   justify-content: center;
   gap: 4px;
   font-family: inherit;
-  transition: all 0.15s;
 }
 
 .btn:active { transform: scale(0.94); }
@@ -389,11 +445,8 @@ html, body {
 
 .btn-primary:active { background: #1fb855; }
 
-.btn-icon-only {
-  padding: 8px;
-}
+.btn-icon-only { padding: 8px; }
 
-/* === EMPTY STATE === */
 .empty {
   text-align: center;
   padding: 60px 20px;
@@ -404,7 +457,6 @@ html, body {
 .empty-title { font-size: 16px; margin-bottom: 6px; color: var(--text); font-weight: 700; }
 .empty-text { font-size: 13px; }
 
-/* === LOADING / ERROR === */
 .loading {
   text-align: center;
   padding: 60px 20px;
@@ -429,12 +481,9 @@ html, body {
   margin: 12px 16px;
   border-radius: var(--radius);
   font-size: 13px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
-/* === MODALS === */
+/* MODALS */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -502,11 +551,9 @@ html, body {
   padding: 12px;
   margin-bottom: 8px;
   cursor: pointer;
-  transition: all 0.15s;
 }
 
 .message-template:active { background: var(--bg); }
-.message-template.custom { border-style: dashed; text-align: center; color: var(--accent); }
 
 .message-template-name {
   font-weight: 700;
@@ -564,7 +611,6 @@ html, body {
   font-size: 14px;
 }
 
-/* === SETUP SCREEN === */
 .setup {
   padding: 40px 20px;
   text-align: center;
@@ -596,8 +642,6 @@ html, body {
   line-height: 1.5;
 }
 
-.setup-help a { color: var(--accent); }
-
 .setup .btn-primary {
   max-width: 400px;
   margin: 0 auto;
@@ -609,7 +653,6 @@ html, body {
   font-size: 14px;
 }
 
-/* === TOAST === */
 .toast {
   position: fixed;
   bottom: 20px;
@@ -630,7 +673,6 @@ html, body {
 .toast.success { border-color: var(--green); color: var(--green); }
 .toast.error { border-color: var(--red); color: var(--red); }
 
-/* === SUBELEMENTOS === */
 .history-item {
   background: var(--bg-elev);
   border-left: 2px solid var(--border);
@@ -661,14 +703,10 @@ html, body {
 @media (min-width: 720px) {
   .stats { grid-template-columns: repeat(6, 1fr); }
 }
-
-/* Fonts via Google */
-@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 </style>
 </head>
 <body>
 <div class="app" id="app">
-  <!-- Setup screen -->
   <div id="setup" class="setup" style="display:none;">
     <div class="setup-logo">MAXIFER</div>
     <div class="setup-title">Configurar acceso</div>
@@ -689,7 +727,6 @@ html, body {
     <button class="btn btn-primary" onclick="saveToken()">Guardar y entrar</button>
   </div>
 
-  <!-- Main screen -->
   <div id="main" style="display:none;">
     <div class="header">
       <div class="header-top">
@@ -708,12 +745,6 @@ html, body {
 
     <div id="content"></div>
   </div>
-
-  <!-- Loading screen -->
-  <div id="loading" class="loading" style="display:none;">
-    <div class="spinner"></div>
-    <div>Cargando datos...</div>
-  </div>
 </div>
 
 <!-- Modal: WhatsApp -->
@@ -721,7 +752,7 @@ html, body {
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-handle"></div>
     <div class="modal-title" id="wa-name">Contacto</div>
-    <div class="modal-subtitle" id="wa-context">Elegí un mensaje o escribí uno custom</div>
+    <div class="modal-subtitle" id="wa-context"></div>
 
     <div class="modal-section">
       <div class="modal-section-title">Mensajes preestablecidos</div>
@@ -760,13 +791,11 @@ html, body {
 
     <div class="modal-section">
       <div class="modal-section-title">¿Cuándo retomar?</div>
-      <div id="postpone-options">
-        <button class="btn" onclick="postponeBy(2)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +2 días hábiles</button>
-        <button class="btn" onclick="postponeBy(4)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +4 días hábiles</button>
-        <button class="btn" onclick="postponeBy(7)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +7 días</button>
-        <button class="btn" onclick="postponeBy(15)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +15 días</button>
-        <button class="btn" onclick="postponeBy(30)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +30 días</button>
-      </div>
+      <button class="btn" onclick="postponeBy(2)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +2 días hábiles</button>
+      <button class="btn" onclick="postponeBy(4)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +4 días hábiles</button>
+      <button class="btn" onclick="postponeBy(7)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +7 días</button>
+      <button class="btn" onclick="postponeBy(15)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +15 días</button>
+      <button class="btn" onclick="postponeBy(30)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +30 días</button>
     </div>
 
     <div class="input-row">
@@ -814,6 +843,13 @@ html, body {
 // ======================================================
 const BOARD_ID = 18410539555;
 const SUBBOARD_ID = 18410539771;
+const GROUPS = {
+  clientes: 'group_mm2vjn2q',
+  interesados: 'group_mm2vmmzx',
+  proveedores: 'group_mm2vxen7',
+  archivados: 'group_mm2w32m6',
+  noleads: 'group_mm2wmc6k'
+};
 const COL = {
   phone: 'phone_mm2vbfbn',
   link: 'link_mm2vy9df',
@@ -849,7 +885,8 @@ let state = {
   currentTab: 'hoy',
   currentContact: null,
   filterZona: 'all',
-  filterProvincia: 'all'
+  filterProvincia: 'all',
+  smartFilter: 'all'
 };
 
 // ======================================================
@@ -860,15 +897,13 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('setup').style.display = 'block';
   } else {
     document.getElementById('main').style.display = 'block';
-    if (state.contacts.length > 0) {
-      render();
-    }
+    if (state.contacts.length > 0) render();
     loadData();
   }
 });
 
 // ======================================================
-// SETUP
+// SETUP / TOKEN
 // ======================================================
 function saveToken() {
   const t = document.getElementById('setup-token').value.trim();
@@ -936,28 +971,23 @@ async function loadData() {
   const btn = document.getElementById('refresh-btn');
   if (btn) btn.classList.add('refreshing');
 
-  document.getElementById('content').innerHTML = state.contacts.length === 0
-    ? '<div class="loading"><div class="spinner"></div><div>Cargando contactos desde Monday...</div></div>'
-    : document.getElementById('content').innerHTML;
+  if (state.contacts.length === 0) {
+    document.getElementById('content').innerHTML = '<div class="loading"><div class="spinner"></div><div>Cargando contactos desde Monday...</div></div>';
+  }
 
   try {
-    // Query principal con paginación
     let allItems = [];
     let cursor = null;
     do {
       const query = `query ($cursor: String) {
         boards(ids: [${BOARD_ID}]) {
-          items_page(limit: 100, cursor: $cursor, query_params: {rules: []}) {
+          items_page(limit: 100, cursor: $cursor) {
             cursor
             items {
               id
               name
               group { id title }
-              column_values {
-                id
-                text
-                value
-              }
+              column_values { id text value }
               subitems {
                 id
                 name
@@ -973,7 +1003,6 @@ async function loadData() {
       cursor = page.cursor;
     } while (cursor);
 
-    // Mapear a formato interno
     state.contacts = allItems.map(parseItem);
     state.lastFetch = new Date().toISOString();
     localStorage.setItem('maxifer_cache', JSON.stringify(state.contacts));
@@ -986,8 +1015,7 @@ async function loadData() {
     if (btn) btn.classList.remove('refreshing');
     console.error(err);
     if (state.contacts.length === 0) {
-      document.getElementById('content').innerHTML =
-        '<div class="error-banner">⚠ Error al cargar: ' + err.message + '. Revisá tu token en ⚙</div>';
+      document.getElementById('content').innerHTML = '<div class="error-banner">⚠ Error al cargar: ' + err.message + '. Revisá tu token en ⚙</div>';
     } else {
       toast('Error al actualizar: ' + err.message, 'error');
       render();
@@ -1012,7 +1040,6 @@ function parseItem(item) {
       accion: sc[SUB_COL.accion]?.text || ''
     };
   });
-  // Ordenar subitems por fecha desc
   subitems.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
 
   return {
@@ -1039,45 +1066,110 @@ function parseItem(item) {
 }
 
 // ======================================================
+// SMART FILTERS - Detección inteligente
+// ======================================================
+
+// Lead caliente: presupuesto enviado + estado positivo + sin cerrar
+function isLeadCaliente(c) {
+  if (c.groupId === GROUPS.archivados || c.groupId === GROUPS.noleads) return false;
+  if (c.estado !== 'Presupuesto enviado' && c.estado !== 'Negociando' && c.estado !== 'Reactivar') return false;
+  // Tiene presupuesto enviado o negociando
+  const txt = (c.resumen + ' ' + c.comentario).toLowerCase();
+  const hotSignals = ['interesa', 'me gusta', 'cerrar', 'avanzar', 'comprar', 'lo quiero', 'lo voy a', 'genial', 'perfecto', 'lo confirm', 'me sirve'];
+  return hotSignals.some(s => txt.includes(s)) || c.estado === 'Negociando' || c.estado === 'Reactivar';
+}
+
+// Presupuesto sin respuesta
+function isPresupuestoPendiente(c) {
+  if (c.groupId === GROUPS.archivados || c.groupId === GROUPS.noleads) return false;
+  return c.estado === 'Presupuesto enviado' || c.estado === 'Sin respuesta';
+}
+
+// Pidió surtido completo
+function isSurtidoCompleto(c) {
+  if (c.groupId === GROUPS.archivados || c.groupId === GROUPS.noleads) return false;
+  const txt = ((c.interes || '') + ' ' + c.resumen + ' ' + c.comentario).toLowerCase();
+  const surtidoKeys = ['completo', 'surtido', 'combo', 'mueble', 'exhibidor', 'gavetero', 'todo el', 'toda la línea', 'kit'];
+  return surtidoKeys.some(k => txt.includes(k));
+}
+
+// Sin contacto hace 30+ días
+function isOldContact(c, daysMin) {
+  if (!c.fecha_ultimo) return false;
+  if (c.groupId === GROUPS.archivados || c.groupId === GROUPS.noleads) return false;
+  const days = daysSinceLast(c);
+  return days >= daysMin;
+}
+
+// Quiere abrir negocio (emprendedor)
+function isEmprendedor(c) {
+  if (c.groupId === GROUPS.archivados || c.groupId === GROUPS.noleads) return false;
+  const txt = (c.resumen + ' ' + c.comentario + ' ' + c.tipo_negocio).toLowerCase();
+  const empKeys = ['quiero abrir', 'voy a abrir', 'estoy por abrir', 'arrancar mi', 'empezar un', 'arrancando', 'nuevo local', 'nueva ferretería', 'nueva bulonera', 'emprender', 'emprendedor', 'voy a empezar', 'pienso abrir', 'estoy montando', 'monté', 'inicio mi', 'recién abr'];
+  return empKeys.some(k => txt.includes(k));
+}
+
+function daysSinceLast(c) {
+  if (!c.fecha_ultimo) return null;
+  const today = new Date();
+  const last = new Date(c.fecha_ultimo);
+  const ms = today - last;
+  return Math.floor(ms / 86400000);
+}
+
+// ======================================================
 // RENDER
 // ======================================================
 function render() {
-  // Filtrar contactos según pestaña
   const today = new Date().toISOString().split('T')[0];
 
-  // Actualizar badges
-  const tabHoy = state.contacts.filter(c => c.proximo_seg && c.proximo_seg <= today && c.groupId !== 'group_mm2w32m6');
-  const tabProspectos = state.contacts.filter(c => c.groupId === 'group_mm2vmmzx');
-  const tabClientes = state.contacts.filter(c => c.groupId === 'group_mm2vjn2q');
+  // Items por pestaña base
+  const inboxActive = state.contacts.filter(c =>
+    c.groupId !== GROUPS.archivados && c.groupId !== GROUPS.noleads
+  );
+  const tabHoyAll = inboxActive.filter(c => c.proximo_seg && c.proximo_seg <= today);
+  const tabProspectosAll = state.contacts.filter(c => c.groupId === GROUPS.interesados);
+  const tabClientesAll = state.contacts.filter(c => c.groupId === GROUPS.clientes);
 
-  document.getElementById('badge-hoy').textContent = tabHoy.length;
-  document.getElementById('badge-prospectos').textContent = tabProspectos.length;
-  document.getElementById('badge-clientes').textContent = tabClientes.length;
+  document.getElementById('badge-hoy').textContent = tabHoyAll.length;
+  document.getElementById('badge-prospectos').textContent = tabProspectosAll.length;
+  document.getElementById('badge-clientes').textContent = tabClientesAll.length;
 
   let items;
-  if (state.currentTab === 'hoy') items = tabHoy;
-  else if (state.currentTab === 'prospectos') items = tabProspectos;
-  else items = tabClientes;
+  if (state.currentTab === 'hoy') items = tabHoyAll;
+  else if (state.currentTab === 'prospectos') items = tabProspectosAll;
+  else items = tabClientesAll;
 
-  // Aplicar filtros
+  // Aplicar smart filter
+  if (state.smartFilter === 'caliente') items = items.filter(isLeadCaliente);
+  else if (state.smartFilter === 'presupuesto') items = items.filter(isPresupuestoPendiente);
+  else if (state.smartFilter === 'surtido') items = items.filter(isSurtidoCompleto);
+  else if (state.smartFilter === 'cold30') items = items.filter(c => isOldContact(c, 30));
+  else if (state.smartFilter === 'cold60') items = items.filter(c => isOldContact(c, 60));
+  else if (state.smartFilter === 'emprendedor') items = items.filter(isEmprendedor);
+
+  // Aplicar filtros geo
   if (state.filterZona !== 'all') items = items.filter(c => c.zona === state.filterZona);
   if (state.filterProvincia !== 'all') items = items.filter(c => c.provincia === state.filterProvincia);
 
   // Render
   let html = '';
 
-  // Filtros (solo en pestañas que no son hoy)
+  // Smart filters siempre arriba (excepto pestaña hoy donde son menos útiles)
+  html += renderSmartFilters(state.currentTab === 'hoy' ? tabHoyAll : (state.currentTab === 'prospectos' ? tabProspectosAll : tabClientesAll));
+
+  // Filtros geo solo en leads y clientes
   if (state.currentTab !== 'hoy') {
-    html += renderFilters();
+    html += renderGeoFilters();
   } else {
     html += renderStats(items, today);
   }
 
   if (items.length === 0) {
     html += '<div class="empty"><div class="empty-icon">' + (state.currentTab === 'hoy' ? '✓' : '∅') + '</div>';
-    html += '<div class="empty-title">' + (state.currentTab === 'hoy' ? '¡Al día!' : 'Sin resultados') + '</div>';
-    html += '<div class="empty-text">' + (state.currentTab === 'hoy' ? 'No tenés seguimientos pendientes para hoy.' : 'Probá quitando filtros.') + '</div></div>';
-  } else if (state.currentTab === 'hoy') {
+    html += '<div class="empty-title">' + (state.currentTab === 'hoy' && state.smartFilter === 'all' ? '¡Al día!' : 'Sin resultados') + '</div>';
+    html += '<div class="empty-text">' + (state.smartFilter !== 'all' || state.filterZona !== 'all' || state.filterProvincia !== 'all' ? 'Probá quitando filtros.' : 'No tenés seguimientos pendientes para hoy.') + '</div></div>';
+  } else if (state.currentTab === 'hoy' && state.smartFilter === 'all') {
     html += renderHoy(items, today);
   } else {
     html += '<div class="list">' + items.map(c => renderCard(c, today)).join('') + '</div>';
@@ -1087,28 +1179,51 @@ function render() {
   attachCardListeners();
 }
 
-function renderFilters() {
+function renderSmartFilters(baseItems) {
+  const filters = [
+    { key: 'all', label: 'Todos', count: baseItems.length },
+    { key: 'caliente', label: '🔥 Calientes', count: baseItems.filter(isLeadCaliente).length },
+    { key: 'presupuesto', label: '💬 Presupuesto sin respuesta', count: baseItems.filter(isPresupuestoPendiente).length },
+    { key: 'surtido', label: '📦 Pidió surtido completo', count: baseItems.filter(isSurtidoCompleto).length },
+    { key: 'cold30', label: '⏰ +30 días sin contacto', count: baseItems.filter(c => isOldContact(c, 30)).length },
+    { key: 'emprendedor', label: '🌟 Quiere abrir negocio', count: baseItems.filter(isEmprendedor).length }
+  ];
+
+  let html = '<div class="smart-filters">';
+  filters.forEach(f => {
+    const active = state.smartFilter === f.key ? 'active' : '';
+    html += `<button class="smart-filter ${active}" onclick="setSmartFilter('${f.key}')">${f.label} <span class="count">${f.count}</span></button>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function setSmartFilter(key) {
+  state.smartFilter = state.smartFilter === key ? 'all' : key;
+  render();
+}
+
+function renderGeoFilters() {
   const zonas = [...new Set(state.contacts.map(c => c.zona).filter(Boolean))];
   const provincias = [...new Set(state.contacts.map(c => c.provincia).filter(Boolean))];
 
   let html = '<div class="filters-bar">';
-  html += `<button class="filter-chip ${state.filterZona === 'all' ? 'active' : ''}" onclick="setFilter('zona','all')">Todas las zonas</button>`;
+  html += `<button class="filter-chip ${state.filterZona === 'all' ? 'active' : ''}" onclick="setGeoFilter('zona','all')">📍 Todas zonas</button>`;
   zonas.forEach(z => {
-    html += `<button class="filter-chip ${state.filterZona === z ? 'active' : ''}" onclick="setFilter('zona','${z}')">${z}</button>`;
+    html += `<button class="filter-chip ${state.filterZona === z ? 'active' : ''}" onclick="setGeoFilter('zona','${z}')">${z}</button>`;
   });
   html += '</div>';
 
   html += '<div class="filters-bar" style="padding-top:6px;">';
-  html += `<button class="filter-chip ${state.filterProvincia === 'all' ? 'active' : ''}" onclick="setFilter('provincia','all')">Toda Argentina</button>`;
+  html += `<button class="filter-chip ${state.filterProvincia === 'all' ? 'active' : ''}" onclick="setGeoFilter('provincia','all')">🗺 Toda Argentina</button>`;
   provincias.forEach(p => {
-    html += `<button class="filter-chip ${state.filterProvincia === p ? 'active' : ''}" onclick="setFilter('provincia','${p}')">${p}</button>`;
+    html += `<button class="filter-chip ${state.filterProvincia === p ? 'active' : ''}" onclick="setGeoFilter('provincia','${p}')">${p}</button>`;
   });
   html += '</div>';
-
   return html;
 }
 
-function setFilter(type, value) {
+function setGeoFilter(type, value) {
   if (type === 'zona') state.filterZona = value;
   if (type === 'provincia') state.filterProvincia = value;
   render();
@@ -1125,7 +1240,6 @@ function renderStats(items, today) {
 }
 
 function renderHoy(items, today) {
-  // Separar atrasados, hoy
   const overdue = items.filter(c => c.proximo_seg < today).sort((a,b) => a.proximo_seg.localeCompare(b.proximo_seg));
   const hoy = items.filter(c => c.proximo_seg === today);
 
@@ -1145,34 +1259,62 @@ function renderHoy(items, today) {
 function renderCard(c, today) {
   const isOverdue = c.proximo_seg && c.proximo_seg < today;
   const isToday = c.proximo_seg === today;
-  const isCliente = c.groupId === 'group_mm2vjn2q';
+  const isCliente = c.groupId === GROUPS.clientes;
+  const isHot = isLeadCaliente(c);
+  const isEmp = isEmprendedor(c);
 
   let classes = 'contact-card';
   if (isOverdue) classes += ' urgent';
   else if (isToday) classes += ' warm';
   if (isCliente) classes += ' cliente';
+  if (isHot && !isOverdue) classes += ' hot';
 
   let tag, tagClass;
   if (isCliente) { tag = '🟢 Cliente'; tagClass = 'tag-cliente'; }
-  else if (c.groupId === 'group_mm2vxen7') { tag = '🔵 Proveedor'; tagClass = 'tag-proveedor'; }
+  else if (c.groupId === GROUPS.proveedores) { tag = '🔵 Proveedor'; tagClass = 'tag-proveedor'; }
+  else if (c.groupId === GROUPS.noleads) { tag = '📦 No-lead'; tagClass = 'tag-noleads'; }
   else { tag = '🟡 Lead'; tagClass = 'tag-prospecto'; }
 
+  // Special badges
+  let badgesHtml = '';
+  const badges = [];
+  if (isHot) badges.push('<span class="special-badge badge-hot">🔥 CALIENTE</span>');
+  if (isEmp) badges.push('<span class="special-badge badge-emprendedor">🌟 EMPRENDEDOR</span>');
+  if (badges.length > 0) badgesHtml = '<div class="contact-badges">' + badges.join('') + '</div>';
+
+  // Días sin contacto
+  const days = daysSinceLast(c);
+  let daysHtml = '';
+  if (days !== null) {
+    let cls = 'days-fresh';
+    let label;
+    if (days === 0) label = 'Hoy';
+    else if (days === 1) label = 'Ayer';
+    else if (days <= 7) { label = `Hace ${days} días`; cls = 'days-fresh'; }
+    else if (days <= 30) { label = `Hace ${days} días`; cls = 'days-warm'; }
+    else { label = `Hace ${days} días`; cls = 'days-cold'; }
+    daysHtml = `<span class="meta-item ${cls}">⏱ ${label}</span>`;
+  }
+
+  // Followup
   let followupHtml = '';
   if (c.proximo_seg) {
-    const days = daysDiff(today, c.proximo_seg);
+    const fdays = daysDiff(today, c.proximo_seg);
     let cls, label;
-    if (days < 0) { cls = 'followup-overdue'; label = `⚠ Atrasado ${Math.abs(days)}d`; }
-    else if (days === 0) { cls = 'followup-today'; label = `🔥 Para HOY`; }
-    else if (days <= 3) { cls = 'followup-soon'; label = `⏰ En ${days}d`; }
+    if (fdays < 0) { cls = 'followup-overdue'; label = `⚠ Atrasado ${Math.abs(fdays)}d`; }
+    else if (fdays === 0) { cls = 'followup-today'; label = `🔥 Para HOY`; }
+    else if (fdays <= 3) { cls = 'followup-soon'; label = `⏰ En ${fdays}d`; }
     else { cls = 'followup-future'; label = `📅 ${formatDate(c.proximo_seg)}`; }
     followupHtml = `<div class="contact-followup ${cls}">${label}</div>`;
   }
 
+  // Meta items
   const meta = [];
+  if (daysHtml) meta.push(daysHtml);
   if (c.estado) meta.push(`<span class="meta-item">${c.estado}</span>`);
-  if (c.tipo_negocio) meta.push(`<span class="meta-item">${c.tipo_negocio}</span>`);
-  if (c.zona) meta.push(`<span class="meta-item">📍 ${c.zona}</span>`);
-  if (c.provincia && c.provincia !== c.zona) meta.push(`<span class="meta-item">${c.provincia}</span>`);
+  if (c.tipo_negocio && c.tipo_negocio !== 'Sin definir') meta.push(`<span class="meta-item">${c.tipo_negocio}</span>`);
+  if (c.zona && c.zona !== 'Sin definir') meta.push(`<span class="meta-item">📍 ${c.zona}</span>`);
+  if (c.provincia && c.provincia !== c.zona && c.provincia !== 'Sin definir') meta.push(`<span class="meta-item">${c.provincia}</span>`);
   if (c.dia_visita && c.dia_visita !== 'Sin día fijo') meta.push(`<span class="meta-item">📆 ${c.dia_visita}</span>`);
 
   return `<div class="${classes}" data-id="${c.id}">
@@ -1180,6 +1322,7 @@ function renderCard(c, today) {
       <div class="contact-name">${escapeHtml(c.name)}</div>
       <span class="contact-tag ${tagClass}">${tag}</span>
     </div>
+    ${badgesHtml}
     ${meta.length > 0 ? '<div class="contact-meta">' + meta.join('') + '</div>' : ''}
     ${c.resumen ? '<div class="contact-summary">' + escapeHtml(c.resumen) + '</div>' : ''}
     ${followupHtml}
@@ -1206,6 +1349,9 @@ function attachCardListeners() {
 // ======================================================
 function switchTab(tab) {
   state.currentTab = tab;
+  state.smartFilter = 'all';
+  state.filterZona = 'all';
+  state.filterProvincia = 'all';
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   render();
 }
@@ -1220,10 +1366,10 @@ function openWhatsApp(id) {
 
   document.getElementById('wa-name').textContent = c.name;
   let context = c.phone ? '+' + c.phone : '';
-  if (c.proximo_seg) context += ' · ' + (daysDiff(today(), c.proximo_seg) < 0 ? 'Atrasado' : 'Pendiente');
+  const days = daysSinceLast(c);
+  if (days !== null) context += ' · ' + (days === 0 ? 'hoy' : days === 1 ? 'ayer' : `hace ${days}d`);
   document.getElementById('wa-context').textContent = context;
 
-  // Generar templates contextuales
   const templates = generateTemplates(c);
   document.getElementById('wa-templates').innerHTML = templates.map((t, i) =>
     `<div class="message-template" onclick="useTemplate(${i})">
@@ -1272,14 +1418,21 @@ function generateTemplates(c) {
     });
   }
 
-  if (c.estado === 'Reactivar') {
+  if (c.estado === 'Reactivar' || isLeadCaliente(c)) {
     templates.push({
       name: '🎯 Lead caliente',
       text: `${greet}! Te dejo un toque, ¿pudiste decidir lo del surtido? Cualquier ajuste de precio o forma de pago lo charlamos. Saludos! Maxi de MAXIFER`
     });
   }
 
-  if (c.groupId === 'group_mm2vjn2q') {
+  if (isEmprendedor(c)) {
+    templates.push({
+      name: '🌟 Para emprendedor',
+      text: `${greet}! ¿Cómo va el proyecto? Cualquier consulta sobre cómo armar el surtido inicial, o si querés que te asesore con la primera compra, decime. Saludos! Maxi`
+    });
+  }
+
+  if (c.groupId === GROUPS.clientes) {
     templates.push({
       name: '✨ Saludo cliente',
       text: `${greet}! ¿Cómo andás? Te paso a saludar y consultar si necesitás reposición o algo. Saludos! Maxi de MAXIFER`
@@ -1290,7 +1443,6 @@ function generateTemplates(c) {
     });
   }
 
-  // Genéricos siempre disponibles
   templates.push({
     name: '👋 Saludo simple',
     text: `${greet}! ¿Cómo andás? Maxi de MAXIFER 🛠`
@@ -1320,7 +1472,7 @@ function sendWhatsApp() {
 // ACCIONES
 // ======================================================
 async function markContacted(id) {
-  if (!confirm('¿Marcar como contactado? Se va a actualizar la fecha de último mensaje a hoy y limpiar el próximo seguimiento.')) return;
+  if (!confirm('¿Marcar como contactado? Se actualiza la fecha de último mensaje a hoy y se limpia el próximo seguimiento.')) return;
 
   const today = new Date().toISOString().split('T')[0];
   const colValues = {};
@@ -1329,7 +1481,6 @@ async function markContacted(id) {
 
   try {
     await mondayMutation(id, colValues);
-    // Update local
     const c = state.contacts.find(x => x.id === id);
     if (c) { c.fecha_ultimo = today; c.proximo_seg = ''; }
     localStorage.setItem('maxifer_cache', JSON.stringify(state.contacts));
@@ -1400,8 +1551,16 @@ function openDetail(id) {
   let html = `<div class="modal-title">${escapeHtml(c.name)}</div>`;
   html += `<div class="modal-subtitle">${c.phone ? '+' + c.phone : ''} · ${c.group}</div>`;
 
+  // Tags especiales en el detalle
+  const detailBadges = [];
+  if (isLeadCaliente(c)) detailBadges.push('<span class="special-badge badge-hot">🔥 LEAD CALIENTE</span>');
+  if (isEmprendedor(c)) detailBadges.push('<span class="special-badge badge-emprendedor">🌟 EMPRENDEDOR</span>');
+  if (detailBadges.length > 0) html += '<div class="contact-badges">' + detailBadges.join('') + '</div>';
+
+  const days = daysSinceLast(c);
   html += '<div class="modal-section"><div class="modal-section-title">Datos</div>';
   const data = [];
+  if (days !== null) data.push(`<strong>Hace ${days === 0 ? 'hoy' : days + ' días'} sin contacto</strong>`);
   if (c.etiqueta) data.push(`<strong>Etiqueta:</strong> ${escapeHtml(c.etiqueta)}`);
   if (c.estado) data.push(`<strong>Estado:</strong> ${escapeHtml(c.estado)}`);
   if (c.tipo_negocio) data.push(`<strong>Negocio:</strong> ${escapeHtml(c.tipo_negocio)}`);
@@ -1445,13 +1604,8 @@ function openDetail(id) {
 // ======================================================
 // MODALES
 // ======================================================
-function openModal(id) {
-  document.getElementById(id).classList.add('active');
-}
-
-function closeModal(id) {
-  document.getElementById(id).classList.remove('active');
-}
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
 document.querySelectorAll('.modal-backdrop').forEach(b => {
   b.addEventListener('click', e => {
