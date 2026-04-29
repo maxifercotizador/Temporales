@@ -7,7 +7,7 @@ Tirá acá los archivos del mes con estos nombres exactos:
 - [ ] `gastos_bs.xlsx` — BS Gestión, gastos 01/09 al 30/09
 - [ ] `extracto_galicia.xlsx` — Movimientos Galicia 01/09 al 30/09
 - [ ] `resumen_santander.pdf` — Resumen Santander del mes
-- [ ] `cobranzas.txt` — `total_cobrado / cantidad / cobrado_papa`
-- [ ] `saldos.txt` — `galicia / santander / usd` al 30/09
+- [ ] `cobranzas.png` (o `.jpg` o `.txt`) — captura del dashboard, o 3 números
+- [ ] `saldos.txt` (o `.png`) — `galicia / santander / usd` al 30/09
 
 Si te falta alguno, no pasa nada — subís lo que tengas. Detalle completo en `../README.md`.

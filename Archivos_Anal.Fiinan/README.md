@@ -19,24 +19,27 @@ Estos son los **nombres exactos** que tienen que tener los archivos. Si los nomb
 | 3 | `gastos_bs.xlsx` | BS Gestión, gastos del 01/MM al fin de mes | Comisiones reales del mes |
 | 4 | `extracto_galicia.xlsx` | Home banking Galicia, movimientos del 01/MM al fin de mes | Pagos tarjetas Galicia, gastos bancarios |
 | 5 | `resumen_santander.pdf` | PDF del resumen Santander del mes | Pagos tarjetas Santander |
-| 6 | `cobranzas.txt` | Tres números (ver abajo) | Cobranzas del mes |
-| 7 | `saldos.txt` | Tres números (ver abajo) | Saldos al cierre del mes |
+| 6 | `cobranzas.png` (o `.jpg` o `.txt`) | Captura del dashboard de cobranzas, o 3 números en txt | Cobranzas del mes |
+| 7 | `saldos.txt` (o `.png`) | Saldos al cierre, ver formato abajo | Saldos al cierre del mes |
 
-### Formato de `cobranzas.txt`
+### Si usás imagen para cobranzas/saldos
+Tirás el screenshot tal cual (`cobranzas.png`, `saldos.png`). El pipeline lo lee con OCR.
+
+### Si usás txt (más confiable, más rápido)
+
+`cobranzas.txt`:
 ```
 total_cobrado: 9100000
 cantidad: 30
 cobrado_papa: 1200000
 ```
 
-### Formato de `saldos.txt`
+`saldos.txt`:
 ```
 galicia: 2529212
 santander: 7613
 usd: 44.62
 ```
-
-> En vez de la captura de pantalla del dashboard, usamos un `.txt` con los 3 números. Es más confiable que parsear una imagen y te lleva 10 segundos.
 
 ## Datos que NO vienen de archivos
 
