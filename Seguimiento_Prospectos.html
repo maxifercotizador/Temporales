@@ -1,0 +1,1503 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0a0e1a">
+<title>MAXIFER · Seguimiento</title>
+<style>
+:root {
+  --bg: #0a0e1a;
+  --bg-card: #131829;
+  --bg-elev: #1c2238;
+  --border: #2a3050;
+  --text: #e8ecf5;
+  --text-dim: #8893b0;
+  --accent: #ff6b35;
+  --accent-soft: rgba(255, 107, 53, 0.12);
+  --green: #4ade80;
+  --green-soft: rgba(74, 222, 128, 0.12);
+  --red: #ef4444;
+  --red-soft: rgba(239, 68, 68, 0.12);
+  --yellow: #fbbf24;
+  --yellow-soft: rgba(251, 191, 36, 0.12);
+  --blue: #60a5fa;
+  --blue-soft: rgba(96, 165, 250, 0.12);
+  --purple: #a78bfa;
+  --purple-soft: rgba(167, 139, 250, 0.12);
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* === LAYOUT === */
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  min-height: 100vh;
+  padding-bottom: 80px;
+  position: relative;
+}
+
+/* === HEADER === */
+.header {
+  position: sticky;
+  top: 0;
+  background: rgba(10, 14, 26, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 14px 16px;
+  z-index: 100;
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  font-weight: 400;
+}
+
+.logo span { color: var(--text); }
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.15s;
+}
+
+.icon-btn:active { transform: scale(0.92); }
+.icon-btn.refreshing { animation: spin 0.8s linear infinite; }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* === TABS === */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-elev);
+  padding: 4px;
+  border-radius: 10px;
+}
+
+.tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 9px 8px;
+  border-radius: 7px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.tab.active {
+  background: var(--bg);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.tab .badge {
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.tab:not(.active) .badge {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+/* === FILTERS === */
+.filters-bar {
+  padding: 12px 16px 0 16px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filters-bar::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 6px 12px;
+  border-radius: 18px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+
+.filter-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* === STATS === */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 12px 16px;
+}
+
+.stat {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.stat-label {
+  font-size: 10px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
+.stat-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.stat.urgent .stat-value { color: var(--red); }
+.stat.warm .stat-value { color: var(--yellow); }
+.stat.cold .stat-value { color: var(--blue); }
+
+/* === CONTACT LIST === */
+.list {
+  padding: 0 16px;
+}
+
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 0.05em;
+  margin: 16px 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+}
+
+.section-title-count {
+  background: var(--bg-elev);
+  color: var(--text);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  letter-spacing: 0;
+  font-weight: 700;
+}
+
+.contact-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.contact-card:active { transform: scale(0.99); }
+
+.contact-card.urgent {
+  border-color: var(--red);
+  box-shadow: 0 0 0 1px var(--red), 0 4px 16px rgba(239,68,68,0.12);
+}
+
+.contact-card.warm {
+  border-left: 3px solid var(--yellow);
+}
+
+.contact-card.cliente {
+  border-left: 3px solid var(--green);
+}
+
+.contact-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.contact-name {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.3;
+  flex: 1;
+  word-break: break-word;
+}
+
+.contact-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.tag-cliente { background: var(--green-soft); color: var(--green); }
+.tag-prospecto { background: var(--yellow-soft); color: var(--yellow); }
+.tag-proveedor { background: var(--blue-soft); color: var(--blue); }
+
+.contact-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.meta-item {
+  background: var(--bg-elev);
+  padding: 3px 8px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.contact-summary {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-bottom: 10px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.contact-card.expanded .contact-summary {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+
+.contact-followup {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  margin-bottom: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.followup-overdue { background: var(--red-soft); color: var(--red); }
+.followup-today { background: var(--accent-soft); color: var(--accent); }
+.followup-soon { background: var(--yellow-soft); color: var(--yellow); }
+.followup-future { background: var(--bg-elev); color: var(--text-dim); }
+
+.contact-actions {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 6px;
+}
+
+.btn {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 6px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+
+.btn:active { transform: scale(0.94); }
+
+.btn-primary {
+  background: #25d366;
+  border-color: #25d366;
+  color: #fff;
+}
+
+.btn-primary:active { background: #1fb855; }
+
+.btn-icon-only {
+  padding: 8px;
+}
+
+/* === EMPTY STATE === */
+.empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+
+.empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+.empty-title { font-size: 16px; margin-bottom: 6px; color: var(--text); font-weight: 700; }
+.empty-text { font-size: 13px; }
+
+/* === LOADING / ERROR === */
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-dim);
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  animation: spin 0.8s linear infinite;
+}
+
+.error-banner {
+  background: var(--red-soft);
+  border: 1px solid var(--red);
+  color: var(--red);
+  padding: 12px 16px;
+  margin: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* === MODALS === */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal-backdrop.active { display: flex; animation: fadeIn 0.2s; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+.modal {
+  background: var(--bg-card);
+  width: 100%;
+  max-width: 720px;
+  max-height: 90vh;
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border);
+  overflow-y: auto;
+  animation: slideUp 0.25s ease-out;
+  padding: 20px;
+}
+
+.modal-handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.modal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+.modal-subtitle {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 16px;
+}
+
+.modal-section { margin-bottom: 16px; }
+
+.modal-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.message-template {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.message-template:active { background: var(--bg); }
+.message-template.custom { border-style: dashed; text-align: center; color: var(--accent); }
+
+.message-template-name {
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 4px;
+  color: var(--accent);
+}
+
+.message-template-text {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.text-area {
+  width: 100%;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.modal-actions .btn { flex: 1; padding: 12px; font-size: 14px; }
+
+.btn-danger { background: var(--red-soft); border-color: var(--red); color: var(--red); }
+.btn-warning { background: var(--yellow-soft); border-color: var(--yellow); color: var(--yellow); }
+
+.input-row { margin-bottom: 12px; }
+.input-row label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.input-row input {
+  width: 100%;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 12px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+/* === SETUP SCREEN === */
+.setup {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.setup-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 48px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  letter-spacing: 0.05em;
+}
+
+.setup-title { font-size: 18px; margin-bottom: 8px; }
+.setup-text { color: var(--text-dim); font-size: 13px; margin-bottom: 24px; line-height: 1.6; }
+
+.setup .input-row { text-align: left; max-width: 400px; margin: 0 auto 12px; }
+
+.setup-help {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin: 16px auto;
+  max-width: 400px;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.setup-help a { color: var(--accent); }
+
+.setup .btn-primary {
+  max-width: 400px;
+  margin: 0 auto;
+  display: flex;
+  width: 100%;
+  background: var(--accent);
+  border-color: var(--accent);
+  padding: 14px;
+  font-size: 14px;
+}
+
+/* === TOAST === */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(120px);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  padding: 12px 20px;
+  border-radius: 100px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 300;
+  transition: transform 0.3s;
+  box-shadow: var(--shadow);
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.success { border-color: var(--green); color: var(--green); }
+.toast.error { border-color: var(--red); color: var(--red); }
+
+/* === SUBELEMENTOS === */
+.history-item {
+  background: var(--bg-elev);
+  border-left: 2px solid var(--border);
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border-radius: 0 8px 8px 0;
+}
+
+.history-date {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+
+.history-title {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.history-summary {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+@media (min-width: 720px) {
+  .stats { grid-template-columns: repeat(6, 1fr); }
+}
+
+/* Fonts via Google */
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- Setup screen -->
+  <div id="setup" class="setup" style="display:none;">
+    <div class="setup-logo">MAXIFER</div>
+    <div class="setup-title">Configurar acceso</div>
+    <div class="setup-text">Pegá tu token de la API de Monday para empezar. Se guarda solo en este dispositivo.</div>
+
+    <div class="input-row">
+      <label>Token Monday API</label>
+      <input type="password" id="setup-token" placeholder="eyJhbGciOiJIUzI1...">
+    </div>
+
+    <div class="setup-help">
+      <strong>Cómo obtener el token:</strong><br>
+      1. Entrá a tu Monday → Avatar arriba derecha → <em>Developers</em>.<br>
+      2. Sección <em>My Access Tokens</em> → Show / Generate.<br>
+      3. Copiá y pegalo acá.
+    </div>
+
+    <button class="btn btn-primary" onclick="saveToken()">Guardar y entrar</button>
+  </div>
+
+  <!-- Main screen -->
+  <div id="main" style="display:none;">
+    <div class="header">
+      <div class="header-top">
+        <div class="logo">MAXIFER<span> · CRM</span></div>
+        <div class="header-actions">
+          <button class="icon-btn" id="refresh-btn" onclick="loadData()" title="Actualizar">↻</button>
+          <button class="icon-btn" onclick="openSettings()" title="Configuración">⚙</button>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" data-tab="hoy" onclick="switchTab('hoy')">🔥 Hoy <span class="badge" id="badge-hoy">0</span></button>
+        <button class="tab" data-tab="prospectos" onclick="switchTab('prospectos')">🟡 Leads <span class="badge" id="badge-prospectos">0</span></button>
+        <button class="tab" data-tab="clientes" onclick="switchTab('clientes')">🟢 Clientes <span class="badge" id="badge-clientes">0</span></button>
+      </div>
+    </div>
+
+    <div id="content"></div>
+  </div>
+
+  <!-- Loading screen -->
+  <div id="loading" class="loading" style="display:none;">
+    <div class="spinner"></div>
+    <div>Cargando datos...</div>
+  </div>
+</div>
+
+<!-- Modal: WhatsApp -->
+<div class="modal-backdrop" id="modal-whatsapp">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="wa-name">Contacto</div>
+    <div class="modal-subtitle" id="wa-context">Elegí un mensaje o escribí uno custom</div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Mensajes preestablecidos</div>
+      <div id="wa-templates"></div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">O escribí uno custom</div>
+      <textarea class="text-area" id="wa-custom" placeholder="Tu mensaje..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-whatsapp')">Cancelar</button>
+      <button class="btn btn-primary" onclick="sendWhatsApp()">📱 Abrir WhatsApp</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Detalle del contacto -->
+<div class="modal-backdrop" id="modal-detail">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="detail-content"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-detail')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Posponer -->
+<div class="modal-backdrop" id="modal-postpone">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Posponer seguimiento</div>
+    <div class="modal-subtitle" id="postpone-name"></div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">¿Cuándo retomar?</div>
+      <div id="postpone-options">
+        <button class="btn" onclick="postponeBy(2)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +2 días hábiles</button>
+        <button class="btn" onclick="postponeBy(4)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +4 días hábiles</button>
+        <button class="btn" onclick="postponeBy(7)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +7 días</button>
+        <button class="btn" onclick="postponeBy(15)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +15 días</button>
+        <button class="btn" onclick="postponeBy(30)" style="width:100%; margin-bottom:6px; padding:12px;">📅 +30 días</button>
+      </div>
+    </div>
+
+    <div class="input-row">
+      <label>O fecha custom</label>
+      <input type="date" id="postpone-custom">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-postpone')">Cancelar</button>
+      <button class="btn btn-primary" onclick="postponeCustom()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Settings -->
+<div class="modal-backdrop" id="modal-settings">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Configuración</div>
+
+    <div class="input-row">
+      <label>Token Monday</label>
+      <input type="password" id="settings-token">
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Datos</div>
+      <button class="btn" style="width:100%; margin-bottom:6px;" onclick="loadData(); closeModal('modal-settings');">↻ Refrescar datos</button>
+      <button class="btn btn-warning" style="width:100%; margin-bottom:6px;" onclick="clearCache()">🗑 Limpiar caché local</button>
+      <button class="btn btn-danger" style="width:100%;" onclick="logout()">🚪 Cerrar sesión / borrar token</button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-settings')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ======================================================
+// CONFIGURACIÓN
+// ======================================================
+const BOARD_ID = 18410539555;
+const SUBBOARD_ID = 18410539771;
+const COL = {
+  phone: 'phone_mm2vbfbn',
+  link: 'link_mm2vy9df',
+  etiqueta: 'text_mm2vfm4e',
+  dia_visita: 'dropdown_mm2veg95',
+  zona: 'dropdown_mm2v7rbr',
+  provincia: 'dropdown_mm2vemmm',
+  tipo_contacto: 'color_mm2v26hx',
+  estado: 'color_mm2vhgm9',
+  tipo_negocio: 'dropdown_mm2vtmn8',
+  interes: 'dropdown_mm2vrwpz',
+  fecha_primer: 'date_mm2v9a5a',
+  fecha_ultimo: 'date_mm2v6dkw',
+  proximo_seg: 'date_mm2vqy63',
+  resumen: 'long_text_mm2vq649',
+  comentario: 'long_text_mm2vce4h'
+};
+const SUB_COL = {
+  fecha: 'date_mm2vk132',
+  tipo: 'color_mm2v9qf5',
+  resumen: 'long_text_mm2vacff',
+  productos: 'dropdown_mm2vd9mq',
+  accion: 'text_mm2vmqtg'
+};
+
+// ======================================================
+// ESTADO
+// ======================================================
+let state = {
+  token: localStorage.getItem('maxifer_token') || '',
+  contacts: JSON.parse(localStorage.getItem('maxifer_cache') || '[]'),
+  lastFetch: localStorage.getItem('maxifer_lastfetch') || null,
+  currentTab: 'hoy',
+  currentContact: null,
+  filterZona: 'all',
+  filterProvincia: 'all'
+};
+
+// ======================================================
+// INIT
+// ======================================================
+window.addEventListener('DOMContentLoaded', () => {
+  if (!state.token) {
+    document.getElementById('setup').style.display = 'block';
+  } else {
+    document.getElementById('main').style.display = 'block';
+    if (state.contacts.length > 0) {
+      render();
+    }
+    loadData();
+  }
+});
+
+// ======================================================
+// SETUP
+// ======================================================
+function saveToken() {
+  const t = document.getElementById('setup-token').value.trim();
+  if (!t) return toast('Pegá el token primero', 'error');
+  localStorage.setItem('maxifer_token', t);
+  state.token = t;
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  loadData();
+}
+
+function logout() {
+  if (!confirm('¿Borrar token y cerrar sesión?')) return;
+  localStorage.removeItem('maxifer_token');
+  localStorage.removeItem('maxifer_cache');
+  localStorage.removeItem('maxifer_lastfetch');
+  location.reload();
+}
+
+function clearCache() {
+  localStorage.removeItem('maxifer_cache');
+  localStorage.removeItem('maxifer_lastfetch');
+  state.contacts = [];
+  toast('Caché borrado', 'success');
+  loadData();
+}
+
+function openSettings() {
+  document.getElementById('settings-token').value = state.token;
+  openModal('modal-settings');
+}
+
+function saveSettings() {
+  const t = document.getElementById('settings-token').value.trim();
+  if (t && t !== state.token) {
+    localStorage.setItem('maxifer_token', t);
+    state.token = t;
+    toast('Token actualizado', 'success');
+    loadData();
+  }
+  closeModal('modal-settings');
+}
+
+// ======================================================
+// API MONDAY
+// ======================================================
+async function mondayQuery(query, variables = {}) {
+  const res = await fetch('https://api.monday.com/v2', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': state.token,
+      'API-Version': '2024-10'
+    },
+    body: JSON.stringify({ query, variables })
+  });
+  if (!res.ok) throw new Error('API error: ' + res.status);
+  const data = await res.json();
+  if (data.errors) throw new Error(data.errors[0].message);
+  return data.data;
+}
+
+async function loadData() {
+  if (!state.token) return;
+  const btn = document.getElementById('refresh-btn');
+  if (btn) btn.classList.add('refreshing');
+
+  document.getElementById('content').innerHTML = state.contacts.length === 0
+    ? '<div class="loading"><div class="spinner"></div><div>Cargando contactos desde Monday...</div></div>'
+    : document.getElementById('content').innerHTML;
+
+  try {
+    // Query principal con paginación
+    let allItems = [];
+    let cursor = null;
+    do {
+      const query = `query ($cursor: String) {
+        boards(ids: [${BOARD_ID}]) {
+          items_page(limit: 100, cursor: $cursor, query_params: {rules: []}) {
+            cursor
+            items {
+              id
+              name
+              group { id title }
+              column_values {
+                id
+                text
+                value
+              }
+              subitems {
+                id
+                name
+                column_values { id text value }
+              }
+            }
+          }
+        }
+      }`;
+      const data = await mondayQuery(query, { cursor });
+      const page = data.boards[0].items_page;
+      allItems = allItems.concat(page.items);
+      cursor = page.cursor;
+    } while (cursor);
+
+    // Mapear a formato interno
+    state.contacts = allItems.map(parseItem);
+    state.lastFetch = new Date().toISOString();
+    localStorage.setItem('maxifer_cache', JSON.stringify(state.contacts));
+    localStorage.setItem('maxifer_lastfetch', state.lastFetch);
+
+    if (btn) btn.classList.remove('refreshing');
+    render();
+    toast('Actualizado: ' + state.contacts.length + ' contactos', 'success');
+  } catch (err) {
+    if (btn) btn.classList.remove('refreshing');
+    console.error(err);
+    if (state.contacts.length === 0) {
+      document.getElementById('content').innerHTML =
+        '<div class="error-banner">⚠ Error al cargar: ' + err.message + '. Revisá tu token en ⚙</div>';
+    } else {
+      toast('Error al actualizar: ' + err.message, 'error');
+      render();
+    }
+  }
+}
+
+function parseItem(item) {
+  const cols = {};
+  item.column_values.forEach(c => { cols[c.id] = c; });
+
+  const subitems = (item.subitems || []).map(s => {
+    const sc = {};
+    s.column_values.forEach(c => { sc[c.id] = c; });
+    return {
+      id: s.id,
+      name: s.name,
+      fecha: sc[SUB_COL.fecha]?.text || '',
+      tipo: sc[SUB_COL.tipo]?.text || '',
+      resumen: sc[SUB_COL.resumen]?.text || '',
+      productos: sc[SUB_COL.productos]?.text || '',
+      accion: sc[SUB_COL.accion]?.text || ''
+    };
+  });
+  // Ordenar subitems por fecha desc
+  subitems.sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+
+  return {
+    id: item.id,
+    name: item.name,
+    group: item.group.title,
+    groupId: item.group.id,
+    phone: cols[COL.phone]?.text || '',
+    etiqueta: cols[COL.etiqueta]?.text || '',
+    dia_visita: cols[COL.dia_visita]?.text || '',
+    zona: cols[COL.zona]?.text || '',
+    provincia: cols[COL.provincia]?.text || '',
+    tipo_contacto: cols[COL.tipo_contacto]?.text || '',
+    estado: cols[COL.estado]?.text || '',
+    tipo_negocio: cols[COL.tipo_negocio]?.text || '',
+    interes: cols[COL.interes]?.text || '',
+    fecha_primer: cols[COL.fecha_primer]?.text || '',
+    fecha_ultimo: cols[COL.fecha_ultimo]?.text || '',
+    proximo_seg: cols[COL.proximo_seg]?.text || '',
+    resumen: cols[COL.resumen]?.text || '',
+    comentario: cols[COL.comentario]?.text || '',
+    subitems
+  };
+}
+
+// ======================================================
+// RENDER
+// ======================================================
+function render() {
+  // Filtrar contactos según pestaña
+  const today = new Date().toISOString().split('T')[0];
+
+  // Actualizar badges
+  const tabHoy = state.contacts.filter(c => c.proximo_seg && c.proximo_seg <= today && c.groupId !== 'group_mm2w32m6');
+  const tabProspectos = state.contacts.filter(c => c.groupId === 'group_mm2vmmzx');
+  const tabClientes = state.contacts.filter(c => c.groupId === 'group_mm2vjn2q');
+
+  document.getElementById('badge-hoy').textContent = tabHoy.length;
+  document.getElementById('badge-prospectos').textContent = tabProspectos.length;
+  document.getElementById('badge-clientes').textContent = tabClientes.length;
+
+  let items;
+  if (state.currentTab === 'hoy') items = tabHoy;
+  else if (state.currentTab === 'prospectos') items = tabProspectos;
+  else items = tabClientes;
+
+  // Aplicar filtros
+  if (state.filterZona !== 'all') items = items.filter(c => c.zona === state.filterZona);
+  if (state.filterProvincia !== 'all') items = items.filter(c => c.provincia === state.filterProvincia);
+
+  // Render
+  let html = '';
+
+  // Filtros (solo en pestañas que no son hoy)
+  if (state.currentTab !== 'hoy') {
+    html += renderFilters();
+  } else {
+    html += renderStats(items, today);
+  }
+
+  if (items.length === 0) {
+    html += '<div class="empty"><div class="empty-icon">' + (state.currentTab === 'hoy' ? '✓' : '∅') + '</div>';
+    html += '<div class="empty-title">' + (state.currentTab === 'hoy' ? '¡Al día!' : 'Sin resultados') + '</div>';
+    html += '<div class="empty-text">' + (state.currentTab === 'hoy' ? 'No tenés seguimientos pendientes para hoy.' : 'Probá quitando filtros.') + '</div></div>';
+  } else if (state.currentTab === 'hoy') {
+    html += renderHoy(items, today);
+  } else {
+    html += '<div class="list">' + items.map(c => renderCard(c, today)).join('') + '</div>';
+  }
+
+  document.getElementById('content').innerHTML = html;
+  attachCardListeners();
+}
+
+function renderFilters() {
+  const zonas = [...new Set(state.contacts.map(c => c.zona).filter(Boolean))];
+  const provincias = [...new Set(state.contacts.map(c => c.provincia).filter(Boolean))];
+
+  let html = '<div class="filters-bar">';
+  html += `<button class="filter-chip ${state.filterZona === 'all' ? 'active' : ''}" onclick="setFilter('zona','all')">Todas las zonas</button>`;
+  zonas.forEach(z => {
+    html += `<button class="filter-chip ${state.filterZona === z ? 'active' : ''}" onclick="setFilter('zona','${z}')">${z}</button>`;
+  });
+  html += '</div>';
+
+  html += '<div class="filters-bar" style="padding-top:6px;">';
+  html += `<button class="filter-chip ${state.filterProvincia === 'all' ? 'active' : ''}" onclick="setFilter('provincia','all')">Toda Argentina</button>`;
+  provincias.forEach(p => {
+    html += `<button class="filter-chip ${state.filterProvincia === p ? 'active' : ''}" onclick="setFilter('provincia','${p}')">${p}</button>`;
+  });
+  html += '</div>';
+
+  return html;
+}
+
+function setFilter(type, value) {
+  if (type === 'zona') state.filterZona = value;
+  if (type === 'provincia') state.filterProvincia = value;
+  render();
+}
+
+function renderStats(items, today) {
+  const overdue = items.filter(c => c.proximo_seg < today).length;
+  const todayCount = items.filter(c => c.proximo_seg === today).length;
+  return `<div class="stats">
+    <div class="stat urgent"><div class="stat-label">Atrasados</div><div class="stat-value">${overdue}</div></div>
+    <div class="stat warm"><div class="stat-label">Hoy</div><div class="stat-value">${todayCount}</div></div>
+    <div class="stat cold"><div class="stat-label">Total pendiente</div><div class="stat-value">${items.length}</div></div>
+  </div>`;
+}
+
+function renderHoy(items, today) {
+  // Separar atrasados, hoy
+  const overdue = items.filter(c => c.proximo_seg < today).sort((a,b) => a.proximo_seg.localeCompare(b.proximo_seg));
+  const hoy = items.filter(c => c.proximo_seg === today);
+
+  let html = '<div class="list">';
+  if (overdue.length > 0) {
+    html += `<div class="section-title">⚠ Atrasados <span class="section-title-count">${overdue.length}</span></div>`;
+    html += overdue.map(c => renderCard(c, today)).join('');
+  }
+  if (hoy.length > 0) {
+    html += `<div class="section-title">📌 Hoy <span class="section-title-count">${hoy.length}</span></div>`;
+    html += hoy.map(c => renderCard(c, today)).join('');
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderCard(c, today) {
+  const isOverdue = c.proximo_seg && c.proximo_seg < today;
+  const isToday = c.proximo_seg === today;
+  const isCliente = c.groupId === 'group_mm2vjn2q';
+
+  let classes = 'contact-card';
+  if (isOverdue) classes += ' urgent';
+  else if (isToday) classes += ' warm';
+  if (isCliente) classes += ' cliente';
+
+  let tag, tagClass;
+  if (isCliente) { tag = '🟢 Cliente'; tagClass = 'tag-cliente'; }
+  else if (c.groupId === 'group_mm2vxen7') { tag = '🔵 Proveedor'; tagClass = 'tag-proveedor'; }
+  else { tag = '🟡 Lead'; tagClass = 'tag-prospecto'; }
+
+  let followupHtml = '';
+  if (c.proximo_seg) {
+    const days = daysDiff(today, c.proximo_seg);
+    let cls, label;
+    if (days < 0) { cls = 'followup-overdue'; label = `⚠ Atrasado ${Math.abs(days)}d`; }
+    else if (days === 0) { cls = 'followup-today'; label = `🔥 Para HOY`; }
+    else if (days <= 3) { cls = 'followup-soon'; label = `⏰ En ${days}d`; }
+    else { cls = 'followup-future'; label = `📅 ${formatDate(c.proximo_seg)}`; }
+    followupHtml = `<div class="contact-followup ${cls}">${label}</div>`;
+  }
+
+  const meta = [];
+  if (c.estado) meta.push(`<span class="meta-item">${c.estado}</span>`);
+  if (c.tipo_negocio) meta.push(`<span class="meta-item">${c.tipo_negocio}</span>`);
+  if (c.zona) meta.push(`<span class="meta-item">📍 ${c.zona}</span>`);
+  if (c.provincia && c.provincia !== c.zona) meta.push(`<span class="meta-item">${c.provincia}</span>`);
+  if (c.dia_visita && c.dia_visita !== 'Sin día fijo') meta.push(`<span class="meta-item">📆 ${c.dia_visita}</span>`);
+
+  return `<div class="${classes}" data-id="${c.id}">
+    <div class="contact-header">
+      <div class="contact-name">${escapeHtml(c.name)}</div>
+      <span class="contact-tag ${tagClass}">${tag}</span>
+    </div>
+    ${meta.length > 0 ? '<div class="contact-meta">' + meta.join('') + '</div>' : ''}
+    ${c.resumen ? '<div class="contact-summary">' + escapeHtml(c.resumen) + '</div>' : ''}
+    ${followupHtml}
+    <div class="contact-actions">
+      <button class="btn btn-primary" onclick="event.stopPropagation(); openWhatsApp('${c.id}')">📱 WhatsApp</button>
+      <button class="btn btn-icon-only" onclick="event.stopPropagation(); markContacted('${c.id}')" title="Marcar contactado">✓</button>
+      <button class="btn btn-icon-only" onclick="event.stopPropagation(); openPostpone('${c.id}')" title="Posponer">⏰</button>
+      <button class="btn btn-icon-only" onclick="event.stopPropagation(); openDetail('${c.id}')" title="Detalle">⋯</button>
+    </div>
+  </div>`;
+}
+
+function attachCardListeners() {
+  document.querySelectorAll('.contact-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+      card.classList.toggle('expanded');
+    });
+  });
+}
+
+// ======================================================
+// TABS
+// ======================================================
+function switchTab(tab) {
+  state.currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  render();
+}
+
+// ======================================================
+// WHATSAPP
+// ======================================================
+function openWhatsApp(id) {
+  const c = state.contacts.find(x => x.id === id);
+  if (!c) return;
+  state.currentContact = c;
+
+  document.getElementById('wa-name').textContent = c.name;
+  let context = c.phone ? '+' + c.phone : '';
+  if (c.proximo_seg) context += ' · ' + (daysDiff(today(), c.proximo_seg) < 0 ? 'Atrasado' : 'Pendiente');
+  document.getElementById('wa-context').textContent = context;
+
+  // Generar templates contextuales
+  const templates = generateTemplates(c);
+  document.getElementById('wa-templates').innerHTML = templates.map((t, i) =>
+    `<div class="message-template" onclick="useTemplate(${i})">
+      <div class="message-template-name">${t.name}</div>
+      <div class="message-template-text">${escapeHtml(t.text)}</div>
+    </div>`
+  ).join('');
+
+  state.currentTemplates = templates;
+  document.getElementById('wa-custom').value = '';
+  openModal('modal-whatsapp');
+}
+
+function useTemplate(i) {
+  document.getElementById('wa-custom').value = state.currentTemplates[i].text;
+}
+
+function generateTemplates(c) {
+  const firstName = c.name.split(/[\s\-(]/)[0].replace(/^\+\d+/, '').trim() || 'Hola';
+  const greet = firstName.match(/^\d/) ? 'Hola' : `Hola ${firstName}`;
+
+  const templates = [];
+
+  if (c.estado === 'Presupuesto enviado') {
+    templates.push({
+      name: '💬 Seguimiento de presupuesto',
+      text: `${greet}, cómo va? Te escribo para saber si pudiste ver el presupuesto que te mandé. Cualquier duda estoy. Saludos! Maxi de MAXIFER 🛠`
+    });
+    templates.push({
+      name: '🔥 Crear urgencia',
+      text: `${greet}! Te aviso que los precios del presupuesto que te pasé son válidos hasta fin de mes. Si te interesa avanzar, decime y lo coordinamos. Saludos! Maxi`
+    });
+  }
+
+  if (c.estado === 'Quedó en escribir' || c.estado === 'Sin respuesta') {
+    templates.push({
+      name: '🤝 Reactivación suave',
+      text: `${greet}, qué tal? Te escribo para retomar lo que habíamos charlado. ¿Seguís interesado o lo dejamos para más adelante? Saludos! Maxi de MAXIFER`
+    });
+  }
+
+  if (c.estado === 'Sin plata aún') {
+    templates.push({
+      name: '💰 Check de timing',
+      text: `${greet}, cómo andás? Te paso a saludar y consultar si ya pudiste destinar el presupuesto para lo que habíamos hablado. Saludos! Maxi`
+    });
+  }
+
+  if (c.estado === 'Reactivar') {
+    templates.push({
+      name: '🎯 Lead caliente',
+      text: `${greet}! Te dejo un toque, ¿pudiste decidir lo del surtido? Cualquier ajuste de precio o forma de pago lo charlamos. Saludos! Maxi de MAXIFER`
+    });
+  }
+
+  if (c.groupId === 'group_mm2vjn2q') {
+    templates.push({
+      name: '✨ Saludo cliente',
+      text: `${greet}! ¿Cómo andás? Te paso a saludar y consultar si necesitás reposición o algo. Saludos! Maxi de MAXIFER`
+    });
+    templates.push({
+      name: '📦 Aviso novedad',
+      text: `${greet}! ¿Cómo andás? Te aviso que tenemos novedades en el catálogo. Si querés te paso info. Saludos! Maxi`
+    });
+  }
+
+  // Genéricos siempre disponibles
+  templates.push({
+    name: '👋 Saludo simple',
+    text: `${greet}! ¿Cómo andás? Maxi de MAXIFER 🛠`
+  });
+
+  templates.push({
+    name: '📞 Pedir que me llame',
+    text: `${greet}, cuando puedas, ¿me podés mandar un mensaje o llamarme? Tengo info para vos. Saludos! Maxi`
+  });
+
+  return templates;
+}
+
+function sendWhatsApp() {
+  const c = state.currentContact;
+  if (!c) return;
+  const text = document.getElementById('wa-custom').value.trim();
+  const phone = c.phone.replace(/\D/g, '');
+  if (!phone) return toast('No hay teléfono', 'error');
+  const url = `https://wa.me/${phone}${text ? '?text=' + encodeURIComponent(text) : ''}`;
+  window.open(url, '_blank');
+  closeModal('modal-whatsapp');
+  toast('Abriendo WhatsApp...', 'success');
+}
+
+// ======================================================
+// ACCIONES
+// ======================================================
+async function markContacted(id) {
+  if (!confirm('¿Marcar como contactado? Se va a actualizar la fecha de último mensaje a hoy y limpiar el próximo seguimiento.')) return;
+
+  const today = new Date().toISOString().split('T')[0];
+  const colValues = {};
+  colValues[COL.fecha_ultimo] = { date: today };
+  colValues[COL.proximo_seg] = null;
+
+  try {
+    await mondayMutation(id, colValues);
+    // Update local
+    const c = state.contacts.find(x => x.id === id);
+    if (c) { c.fecha_ultimo = today; c.proximo_seg = ''; }
+    localStorage.setItem('maxifer_cache', JSON.stringify(state.contacts));
+    toast('Marcado como contactado ✓', 'success');
+    render();
+  } catch (err) {
+    toast('Error: ' + err.message, 'error');
+  }
+}
+
+function openPostpone(id) {
+  state.currentContact = state.contacts.find(x => x.id === id);
+  if (!state.currentContact) return;
+  document.getElementById('postpone-name').textContent = state.currentContact.name;
+  document.getElementById('postpone-custom').value = '';
+  openModal('modal-postpone');
+}
+
+async function postponeBy(days) {
+  if (!state.currentContact) return;
+  const date = addBusinessDays(new Date(), days);
+  const dateStr = date.toISOString().split('T')[0];
+  await applyPostpone(dateStr);
+}
+
+async function postponeCustom() {
+  const dateStr = document.getElementById('postpone-custom').value;
+  if (!dateStr) return toast('Elegí una fecha', 'error');
+  await applyPostpone(dateStr);
+}
+
+async function applyPostpone(dateStr) {
+  const c = state.currentContact;
+  if (!c) return;
+  try {
+    await mondayMutation(c.id, { [COL.proximo_seg]: { date: dateStr } });
+    c.proximo_seg = dateStr;
+    localStorage.setItem('maxifer_cache', JSON.stringify(state.contacts));
+    toast(`Pospuesto al ${formatDate(dateStr)} ✓`, 'success');
+    closeModal('modal-postpone');
+    render();
+  } catch (err) {
+    toast('Error: ' + err.message, 'error');
+  }
+}
+
+async function mondayMutation(itemId, colValues) {
+  const query = `mutation ($itemId: ID!, $boardId: ID!, $colValues: JSON!) {
+    change_multiple_column_values(item_id: $itemId, board_id: $boardId, column_values: $colValues) {
+      id
+    }
+  }`;
+  await mondayQuery(query, {
+    itemId: String(itemId),
+    boardId: String(BOARD_ID),
+    colValues: JSON.stringify(colValues)
+  });
+}
+
+// ======================================================
+// DETALLE
+// ======================================================
+function openDetail(id) {
+  const c = state.contacts.find(x => x.id === id);
+  if (!c) return;
+  state.currentContact = c;
+
+  let html = `<div class="modal-title">${escapeHtml(c.name)}</div>`;
+  html += `<div class="modal-subtitle">${c.phone ? '+' + c.phone : ''} · ${c.group}</div>`;
+
+  html += '<div class="modal-section"><div class="modal-section-title">Datos</div>';
+  const data = [];
+  if (c.etiqueta) data.push(`<strong>Etiqueta:</strong> ${escapeHtml(c.etiqueta)}`);
+  if (c.estado) data.push(`<strong>Estado:</strong> ${escapeHtml(c.estado)}`);
+  if (c.tipo_negocio) data.push(`<strong>Negocio:</strong> ${escapeHtml(c.tipo_negocio)}`);
+  if (c.zona) data.push(`<strong>Zona:</strong> ${escapeHtml(c.zona)}`);
+  if (c.provincia) data.push(`<strong>Provincia:</strong> ${escapeHtml(c.provincia)}`);
+  if (c.dia_visita && c.dia_visita !== 'Sin día fijo') data.push(`<strong>Día visita:</strong> ${escapeHtml(c.dia_visita)}`);
+  if (c.interes) data.push(`<strong>Interés:</strong> ${escapeHtml(c.interes)}`);
+  if (c.fecha_primer) data.push(`<strong>Primer contacto:</strong> ${formatDate(c.fecha_primer)}`);
+  if (c.fecha_ultimo) data.push(`<strong>Último mensaje:</strong> ${formatDate(c.fecha_ultimo)}`);
+  if (c.proximo_seg) data.push(`<strong>Próximo seguimiento:</strong> ${formatDate(c.proximo_seg)}`);
+  html += '<div style="font-size:13px; line-height:1.8;">' + data.join('<br>') + '</div></div>';
+
+  if (c.resumen) {
+    html += `<div class="modal-section"><div class="modal-section-title">Resumen</div><div style="font-size:13px;">${escapeHtml(c.resumen)}</div></div>`;
+  }
+  if (c.comentario) {
+    html += `<div class="modal-section"><div class="modal-section-title">Comentario importante</div><div style="font-size:13px; color: var(--accent);">${escapeHtml(c.comentario)}</div></div>`;
+  }
+
+  if (c.subitems.length > 0) {
+    html += '<div class="modal-section"><div class="modal-section-title">Historial (' + c.subitems.length + ')</div>';
+    html += c.subitems.slice(0, 10).map(s => `
+      <div class="history-item">
+        <div class="history-date">${formatDate(s.fecha) || 'Sin fecha'} · ${escapeHtml(s.tipo) || ''}</div>
+        <div class="history-title">${escapeHtml(s.name)}</div>
+        ${s.resumen ? '<div class="history-summary">' + escapeHtml(s.resumen) + '</div>' : ''}
+        ${s.accion ? '<div class="history-summary" style="color:var(--accent); margin-top:4px;">→ ' + escapeHtml(s.accion) + '</div>' : ''}
+      </div>
+    `).join('');
+    html += '</div>';
+  }
+
+  html += `<div class="modal-actions">
+    <button class="btn btn-primary" onclick="closeModal('modal-detail'); openWhatsApp('${c.id}')">📱 WhatsApp</button>
+  </div>`;
+
+  document.getElementById('detail-content').innerHTML = html;
+  openModal('modal-detail');
+}
+
+// ======================================================
+// MODALES
+// ======================================================
+function openModal(id) {
+  document.getElementById(id).classList.add('active');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+document.querySelectorAll('.modal-backdrop').forEach(b => {
+  b.addEventListener('click', e => {
+    if (e.target === b) b.classList.remove('active');
+  });
+});
+
+// ======================================================
+// HELPERS
+// ======================================================
+function today() { return new Date().toISOString().split('T')[0]; }
+
+function daysDiff(a, b) {
+  const ms = new Date(b).getTime() - new Date(a).getTime();
+  return Math.round(ms / 86400000);
+}
+
+function addBusinessDays(date, days) {
+  const d = new Date(date);
+  let added = 0;
+  while (added < days) {
+    d.setDate(d.getDate() + 1);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) added++;
+  }
+  return d;
+}
+
+function formatDate(iso) {
+  if (!iso) return '';
+  const [y, m, day] = iso.split('-');
+  return `${day}/${m}/${y.slice(2)}`;
+}
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function toast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.className = 'toast show ' + type;
+  t.textContent = msg;
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
