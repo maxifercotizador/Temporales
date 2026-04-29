@@ -1,0 +1,2050 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viaje al Sur · Mayo 2026 · MAXIFER</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+<style>
+  :root {
+    /* Paleta inspirada en sitio Maxifer */
+    --bg: #f4f6f9;
+    --bg-soft: #e9eef5;
+    --surface: #ffffff;
+    --surface-soft: #f7f9fc;
+    --border: #e2e8f0;
+    --border-soft: #eef1f5;
+
+    /* Texto */
+    --text: #0c1e3e;          /* Navy fuerte como el del sitio */
+    --text-soft: #485677;
+    --text-mute: #8590a8;
+
+    /* Acentos */
+    --accent: #1f7c3f;         /* Verde principal del sitio */
+    --accent-soft: #4ea163;
+    --accent-bg: #e8f3ec;      /* Fondo de los cuadraditos de iconos */
+    --navy: #0c1e3e;
+
+    /* Estados */
+    --gray:    #94a3b8;
+    --red:     #dc2f4a;
+    --red-bg:  #fde8eb;
+    --orange:  #d97706;
+    --orange-bg:#fef3c7;
+    --green:   #16a34a;
+    --green-bg:#dcfce7;
+    --blue:    #0ea5e9;
+    --blue-bg: #e0f2fe;
+
+    --shadow-sm: 0 1px 2px rgba(12,30,62,.04);
+    --shadow:    0 4px 16px rgba(12,30,62,.06);
+    --shadow-lg: 0 10px 40px rgba(12,30,62,.08);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* ====== Header ====== */
+  header.top {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  .brand-text {
+    min-width: 0;
+  }
+  .brand h1 {
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: -.02em;
+    color: var(--navy);
+    line-height: 1.2;
+  }
+  .brand h1 .accent { color: var(--accent); }
+  .brand .sub {
+    font-size: .75rem;
+    color: var(--text-mute);
+    font-weight: 500;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  /* ====== Botones ====== */
+  .btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover {
+    background: #186831;
+    border-color: #186831;
+    color: white;
+  }
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-soft);
+  }
+  .btn-ghost:hover { background: var(--bg-soft); color: var(--text); }
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: .75rem;
+  }
+
+  /* ====== Hero / sub-header ====== */
+  .hero {
+    padding: 28px 24px 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 10px;
+  }
+  .hero-eyebrow::before {
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .hero h2 {
+    font-size: clamp(1.5rem, 4vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -.025em;
+    color: var(--navy);
+    line-height: 1.1;
+  }
+  .hero h2 .accent { color: var(--accent); }
+  .hero-meta {
+    margin-top: 8px;
+    color: var(--text-soft);
+    font-size: .88rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .hero-meta strong { color: var(--text); font-weight: 700; }
+
+  /* ====== Sync bar ====== */
+  .sync-bar {
+    max-width: 1200px;
+    margin: 0 auto 16px;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .8rem;
+  }
+  .sync-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-mute);
+    flex: 1;
+    min-width: 0;
+  }
+  .sync-status .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--gray);
+    flex-shrink: 0;
+  }
+  .sync-status.ok .dot { background: var(--green); box-shadow: 0 0 0 3px rgba(22,163,74,.15); }
+  .sync-status.err .dot { background: var(--red); }
+  .sync-status.loading .dot { background: var(--orange); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% {opacity:1} 50% {opacity:.3} }
+  .sync-status .txt { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ====== Tabs ====== */
+  nav.tabs {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  nav.tabs button {
+    background: transparent;
+    border: none;
+    color: var(--text-soft);
+    padding: 12px 16px;
+    font-family: inherit;
+    font-size: .88rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2.5px solid transparent;
+    transition: all .15s;
+    margin-bottom: -1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  nav.tabs button:hover { color: var(--text); }
+  nav.tabs button.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  nav.tabs button.disabled {
+    color: var(--text-mute);
+    cursor: not-allowed;
+    opacity: .55;
+  }
+  nav.tabs button .pill {
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-size: .65rem;
+    font-weight: 800;
+    padding: 1px 7px;
+    border-radius: 8px;
+    margin-left: 2px;
+  }
+  nav.tabs button.active .pill {
+    background: var(--accent);
+    color: white;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .panel-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  /* ====== Stats ====== */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all .15s;
+    text-align: left;
+    user-select: none;
+  }
+  .stat:hover {
+    border-color: var(--accent);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+  }
+  .stat.active {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+  }
+  .stat-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    background: var(--bg-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .stat .num {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+    letter-spacing: -.02em;
+  }
+  .stat .lbl {
+    color: var(--text-mute);
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 700;
+    margin-top: 4px;
+  }
+
+  /* Variantes de color para stats */
+  .stat.s-total .stat-icon { background: var(--accent-bg); color: var(--accent); }
+  .stat.s-fijos .stat-icon { background: #fef3c7; color: #b45309; }
+  .stat.s-sin   .stat-icon { background: #f1f5f9; color: var(--text-soft); }
+  .stat.s-noresp .stat-icon{ background: var(--red-bg); color: var(--red); }
+  .stat.s-vapedir .stat-icon{ background: var(--orange-bg); color: var(--orange); }
+  .stat.s-pedido .stat-icon{ background: var(--green-bg); color: var(--green); }
+  .stat.s-cancel .stat-icon{ background: #f1f5f9; color: var(--text-mute); }
+
+  /* ====== Filters ====== */
+  .filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+  .filters input[type="text"], .filters select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .88rem;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .filters input[type="text"] {
+    flex: 1;
+    min-width: 220px;
+  }
+  .filters input[type="text"]::placeholder { color: var(--text-mute); }
+  .filters input[type="text"]:focus, .filters select:focus { border-color: var(--accent); }
+  .filters select { cursor: pointer; }
+
+  .filters-row-2 {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  /* ====== Localidades editor ====== */
+  .localidades-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .localidades-head {
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+    transition: background .15s;
+  }
+  .localidades-head:hover { background: var(--surface-soft); }
+  .localidades-head h4 {
+    font-size: .9rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .meta-l {
+    color: var(--text-mute);
+    font-size: .75rem;
+    margin-top: 2px;
+    font-weight: 500;
+  }
+  .chev {
+    color: var(--text-mute);
+    transition: transform .2s;
+    font-size: .75rem;
+  }
+  .chev.open { transform: rotate(180deg); }
+  .localidades-body {
+    padding: 0 16px 16px;
+    display: none;
+    border-top: 1px solid var(--border-soft);
+  }
+  .localidades-body.open { display: block; }
+  .localidades-body textarea {
+    width: 100%;
+    min-height: 120px;
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 12px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: .82rem;
+    resize: vertical;
+    outline: none;
+    margin-top: 12px;
+  }
+  .localidades-body textarea:focus { border-color: var(--accent); }
+  .localidades-body .desc {
+    color: var(--text-mute);
+    font-size: .76rem;
+    margin-top: 12px;
+  }
+
+  /* ====== Day groups ====== */
+  .day-group {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    box-shadow: var(--shadow-sm);
+  }
+  .day-header {
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s;
+    background: var(--surface);
+  }
+  .day-header:hover { background: var(--surface-soft); }
+  .day-num {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-weight: 800;
+    font-size: .85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .day-header.day-d0 .day-num { background: #fef3c7; color: #b45309; }
+  .day-header.day-d1 .day-num { background: #fef3c7; color: #b45309; }
+  .day-header.day-d2 .day-num { background: #fce7f3; color: #be185d; }
+  .day-header.day-d3 .day-num { background: var(--blue-bg); color: var(--blue); }
+  .day-header.day-d4 .day-num { background: #f3e8ff; color: #7e22ce; }
+  .day-header.day-d5 .day-num { background: var(--accent-bg); color: var(--accent); }
+  .day-header.day-d6 .day-num { background: #ccfbf1; color: #0f766e; }
+  .day-header.day-d7 .day-num { background: var(--orange-bg); color: var(--orange); }
+  .day-header.day-d8 .day-num { background: var(--blue-bg); color: var(--blue); }
+  .day-header.day-d9 .day-num { background: #fee2e2; color: var(--red); }
+
+  .day-info { flex: 1; min-width: 0; }
+  .day-info h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -.01em;
+  }
+  .day-route {
+    color: var(--text-mute);
+    font-size: .78rem;
+    font-weight: 500;
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .day-counts {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+  }
+  .day-count {
+    background: var(--bg-soft);
+    color: var(--text-soft);
+    font-size: .72rem;
+    padding: 4px 9px;
+    border-radius: 6px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .day-clients {
+    border-top: 1px solid var(--border-soft);
+    background: var(--surface-soft);
+  }
+  .day-clients.collapsed { display: none; }
+
+  /* ====== Cliente card ====== */
+  .client {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-soft);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px 16px;
+    transition: background .15s;
+  }
+  .client:last-child { border-bottom: none; }
+  .client:hover { background: var(--surface); }
+
+  .client-main { min-width: 0; }
+  .client-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .client-name {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--text);
+    letter-spacing: -.01em;
+  }
+  .client-name a {
+    color: var(--text);
+    text-decoration: none;
+  }
+  .client-name a:hover { color: var(--accent); }
+
+  /* Badge fijo / manual */
+  .badge {
+    font-size: .65rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .badge-fijo { background: #fef3c7; color: #b45309; }
+  .badge-manual { background: var(--accent-bg); color: var(--accent); }
+  .badge-vm { background: var(--accent); color: white; }
+  .badge-dias { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-variant-numeric: tabular-nums; }
+  .badge-dias.urgente { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+  .badge-dias.hoy { background: #fef3c7; color: #b45309; border-color: #fde68a; }
+  .badge-dias.pasado { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
+
+  .client-meta {
+    color: var(--text-soft);
+    font-size: .82rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 10px;
+  }
+  .client-meta a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .client-meta .sep { color: var(--text-mute); }
+  .client-loc {
+    color: var(--text-mute);
+    font-size: .78rem;
+    margin-top: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .client-notes {
+    background: #fffbeb;
+    border-left: 3px solid #f59e0b;
+    color: #92400e;
+    font-size: .76rem;
+    padding: 6px 10px;
+    border-radius: 0 6px 6px 0;
+    margin-top: 6px;
+    font-weight: 500;
+  }
+
+  /* Estado selector */
+  .estado-selector {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .estado-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: .72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .12s;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+  .estado-btn:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    background: var(--surface);
+  }
+  .estado-btn.on.estado-sin     { background: #f1f5f9; border-color: var(--gray); color: var(--text); }
+  .estado-btn.on.estado-noresp  { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+  .estado-btn.on.estado-vapedir { background: var(--orange-bg); border-color: var(--orange); color: var(--orange); }
+  .estado-btn.on.estado-pedido  { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+  .estado-btn.on.estado-cancel  { background: #f1f5f9; border-color: var(--gray); color: var(--text-mute); text-decoration: line-through; }
+
+  /* Side: tags + vendedor */
+  .client-side {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+    flex-shrink: 0;
+  }
+  .tag {
+    font-size: .65rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    padding: 3px 7px;
+    border-radius: 5px;
+  }
+  .tag-vm { background: var(--accent); color: white; }
+  .tag-d  { background: var(--blue-bg); color: var(--blue); }
+  .tag-bs { background: var(--bg-soft); color: var(--text-soft); }
+  .tag-r  { background: var(--orange-bg); color: var(--orange); }
+  .tag-vendor {
+    color: var(--text-mute);
+    font-size: .7rem;
+    font-weight: 500;
+  }
+
+  /* ====== Empty placeholder ====== */
+  .placeholder {
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    padding: 50px 30px;
+    text-align: center;
+  }
+  .placeholder h3 {
+    font-size: 1.1rem;
+    margin-bottom: 6px;
+    color: var(--text);
+    font-weight: 700;
+  }
+  .placeholder p {
+    color: var(--text-mute);
+    font-size: .88rem;
+  }
+
+  /* ====== Mapa ====== */
+  #mapa {
+    height: calc(100vh - 200px);
+    min-height: 480px;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .map-legend {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    align-items: center;
+    font-size: .82rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--text-soft);
+    font-weight: 500;
+  }
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  }
+
+  .map-filter-switch {
+    display: inline-flex;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .map-filter-btn {
+    border: none;
+    background: transparent;
+    padding: 5px 12px;
+    font-size: .76rem;
+    font-weight: 600;
+    color: var(--text-soft);
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all .15s;
+  }
+  .map-filter-btn.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  }
+  .map-filter-btn:hover:not(.active) {
+    color: var(--text);
+  }
+  .map-filter-btn .count {
+    color: var(--text-mute);
+    font-weight: 500;
+    font-size: .7rem;
+    margin-left: 4px;
+  }
+  .map-filter-btn.active .count {
+    color: var(--accent);
+  }
+
+  .leaflet-popup-content-wrapper {
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+  }
+  .leaflet-popup-content { margin: 12px 14px; font-family: 'Plus Jakarta Sans', sans-serif; font-size: .85rem; }
+  .leaflet-popup-content b { color: var(--text); font-size: .92rem; }
+  .leaflet-popup-content .pop-meta { color: var(--text-soft); font-size: .78rem; margin-top: 4px; }
+  .leaflet-popup-tip { background: var(--surface); }
+  .leaflet-container { background: #e9eef5; font-family: 'Plus Jakarta Sans', sans-serif; }
+
+  /* ====== Modal ====== */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(12,30,62,.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+    backdrop-filter: blur(4px);
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border-radius: 14px;
+    padding: 26px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal h2 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .modal p {
+    color: var(--text-soft);
+    font-size: .87rem;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+  .modal p code {
+    background: var(--bg-soft);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: .8rem;
+    color: var(--accent);
+    font-family: monospace;
+  }
+  .modal input {
+    width: 100%;
+    background: var(--surface-soft);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 11px 14px;
+    border-radius: 8px;
+    font-family: monospace;
+    font-size: .82rem;
+    outline: none;
+  }
+  .modal input:focus { border-color: var(--accent); }
+  .modal-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 18px;
+  }
+
+  @media (max-width: 640px) {
+    .client { grid-template-columns: 1fr; }
+    .client-side { flex-direction: row; flex-wrap: wrap; align-items: flex-start; }
+    .hero { padding: 20px 16px; }
+    .panel-inner { padding: 16px; }
+    .sync-bar { padding: 0 16px; }
+    nav.tabs { padding: 0 16px; }
+    header.top { padding: 12px 16px; }
+    .day-header { padding: 12px 14px; }
+    .client { padding: 12px 14px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    #mapa { height: calc(100vh - 240px); }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="brand-mark">M</div>
+    <div class="brand-text">
+      <h1>Viaje al Sur <span class="accent">·</span> Mayo 2026</h1>
+      <div class="sub">Maxifer · Maximiliano Gordillo</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-sm btn-ghost" id="btnToken" title="Configurar token">⚙</button>
+    <button class="btn btn-sm btn-primary" id="btnRefresh">↻ Sincronizar</button>
+  </div>
+</header>
+
+<div class="hero">
+  <span class="hero-eyebrow">Recorrido Mayo 2026</span>
+  <h2>Clientes <span class="accent">·</span> Pedidos <span class="accent">·</span> Mapa</h2>
+  <div class="hero-meta">
+    <span>Salida <strong>Jue 14/05</strong></span>
+    <span>·</span>
+    <span>Vuelta <strong>Vie 22/05</strong></span>
+    <span>·</span>
+    <span>Vehículo <strong>Partner</strong></span>
+    <span>·</span>
+    <span><strong id="totalClientes">—</strong> en ruta</span>
+  </div>
+</div>
+
+<div class="sync-bar">
+  <div class="sync-status" id="syncStatus">
+    <span class="dot"></span>
+    <span class="txt">Sin conectar</span>
+  </div>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button class="active" data-tab="potenciales">Potenciales <span class="pill" id="pillPot">0</span></button>
+  <button data-tab="viajemaxi">Viaje Maxi <span class="pill" id="pillVM">0</span></button>
+  <button data-tab="mapa">Mapa</button>
+  <button class="disabled" disabled>Recorrido</button>
+  <button class="disabled" disabled>Gastos</button>
+</nav>
+
+<!-- ============ TAB: POTENCIALES ============ -->
+<section class="panel active" id="panel-potenciales">
+  <div class="panel-inner">
+    <!-- Stats clickeables que filtran por estado -->
+    <div class="stats" id="statsPot"></div>
+
+    <div class="filters">
+      <input type="text" id="buscador" placeholder="Buscar cliente, contacto, teléfono…">
+      <select id="filtroDia">
+        <option value="">Todos los días</option>
+      </select>
+      <select id="filtroLoc">
+        <option value="">Todas las localidades</option>
+      </select>
+    </div>
+
+    <div class="localidades-box">
+      <div class="localidades-head" id="locHead">
+        <div>
+          <h4>📋 Localidades del recorrido</h4>
+          <div class="meta-l" id="locMeta">— editá la lista para incluir/excluir zonas</div>
+        </div>
+        <span class="chev" id="locChev">▼</span>
+      </div>
+      <div class="localidades-body" id="locBody">
+        <div class="desc">Una localidad por línea. Si una dirección de Monday contiene cualquiera de estas, el cliente entra en Potenciales.</div>
+        <textarea id="locTextarea"></textarea>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-primary btn-sm" id="locGuardar">Guardar</button>
+          <button class="btn btn-sm" id="locDefault">Restaurar default</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="listadoPot"></div>
+  </div>
+</section>
+
+<!-- ============ TAB: VIAJE MAXI ============ -->
+<section class="panel" id="panel-viajemaxi">
+  <div class="panel-inner">
+    <div class="stats" id="statsVM"></div>
+
+    <div class="filters">
+      <input type="text" id="buscadorVM" placeholder="Buscar cliente con pedido…">
+      <select id="filtroDiaVM">
+        <option value="">Todos los días</option>
+      </select>
+      <select id="filtroLocVM">
+        <option value="">Todas las localidades</option>
+      </select>
+    </div>
+
+    <div id="listadoVM"></div>
+  </div>
+</section>
+
+<!-- ============ TAB: MAPA ============ -->
+<section class="panel" id="panel-mapa">
+  <div class="panel-inner">
+    <div class="map-legend">
+      <div class="map-filter-switch" id="mapFiltro">
+        <button class="map-filter-btn active" data-filter="potenciales">Potenciales <span class="count" id="mapCountPot">0</span></button>
+        <button class="map-filter-btn" data-filter="viajemaxi">Viaje Maxi <span class="count" id="mapCountVM">0</span></button>
+      </div>
+      <div class="legend-item"><span class="legend-dot" style="background:#1f7c3f"></span> Con pedido (Viaje Maxi)</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#d97706"></span> Va a pedir</div>
+      <div class="legend-item"><span class="legend-dot" style="background:#94a3b8"></span> Sin enviar / Sin respuesta</div>
+      <div class="legend-item" style="margin-left:auto;color:var(--text-mute);font-size:.74rem">Click sobre un punto para ver detalle</div>
+    </div>
+    <div id="mapa"></div>
+    <div id="sinDirBox" style="margin-top:18px"></div>
+  </div>
+</section>
+
+<!-- Modal token -->
+<div class="modal-bg" id="modalToken">
+  <div class="modal">
+    <h2>Token de Monday</h2>
+    <p>Pegá tu token personal. Lo conseguís en <strong>Monday → tu avatar → Developers → My Access Tokens → Show</strong>.<br>El token queda guardado solo en este dispositivo.</p>
+    <input type="text" id="tokenInput" placeholder="eyJhbGc...">
+    <div class="modal-footer">
+      <button class="btn" id="tokenCancel">Cancelar</button>
+      <button class="btn btn-primary" id="tokenGuardar">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const SK_TOKEN = 'maxifer_monday_token';
+const SK_DATA  = 'maxifer_viaje_clientes_v3';
+const SK_PEDIDOS_ACTIVOS = 'maxifer_viaje_pedidos_activos_v3';
+const SK_STATE = 'maxifer_viaje_estado_v3';
+const SK_LOC   = 'maxifer_viaje_localidades_v3';
+const SK_EXCL  = 'maxifer_viaje_excluidos_v3';
+const SK_LASTSYNC = 'maxifer_viaje_lastsync_v3';
+
+const BOARD_ID = 8921412317;
+const EQUIPO_BOARD_ID = 7212937829;        // Board "Equipo MAXIFER" (pedidos)
+const PEDIDOS_ACTIVOS_GROUP = 'new_group29179'; // Grupo "PEDIDOS ACTIVOS"
+
+// ============================================================
+// LISTA MADRE (confirmados del viaje anterior, matchean por nombre)
+// ============================================================
+const CONFIRMADOS_VIAJE_ANTERIOR = [
+  { match:"DOSANTOS", dayIdx:0 },
+  { match:"FERREMIX", dayIdx:0 },
+  { match:"NOAH", dayIdx:1 },
+  { match:"SEBASTIAN FURTURO", dayIdx:2 },
+  { match:"FERRETERIA LIDER", dayIdx:2 },
+  { match:"NICOSIA", dayIdx:2 },
+  { match:"BULONERA VELEZ", dayIdx:4 },
+  { match:"THGAS", dayIdx:4 },
+  { match:"EL VECINO", dayIdx:5 },
+  { match:"BULONERA ELORDI", dayIdx:5 },
+  { match:"FERRETERIA BAMBU", dayIdx:5 },
+  { match:"FERRETERIA EL GALLEGO", dayIdx:6 },
+  { match:"DS HERRAMIENTAS", dayIdx:6 },
+  { match:"BULONERA CARLITOS", dayIdx:6 },
+  { match:"REPUESTOS PAMPA", dayIdx:6 },
+  { match:"FERRETERIA ALFARO", dayIdx:7 },
+  { match:"FERRETERIA DEL ALTO", dayIdx:7 },
+  { match:"BULONERA CHAÑAR", dayIdx:7 },
+  { match:"CORRALON CONFLUENCIA", dayIdx:7 },
+  { match:"FERRETERIA FAVA", dayIdx:7 },
+  { match:"FERRETERIA LA PLAZA", dayIdx:7 },
+  { match:"MARTIN REPUESTOS", dayIdx:7 },
+  { match:"ZAPATA GOMA", dayIdx:7 },
+  { match:"ZANOTTI HNOS", dayIdx:7 },
+  { match:"LA CASA DE LOS BULONES", dayIdx:8 },
+  { match:"YACOPINO", dayIdx:8 },
+  { match:"BELICH", dayIdx:8 },
+  { match:"ALLEN REP", dayIdx:8 },
+  { match:"AB SERVICE", dayIdx:8 },
+  { match:"INGENIERIA COLLING", dayIdx:8 },
+  { match:"EL PASO JUSTO", dayIdx:6 }
+];
+
+// ============================================================
+// CLIENTES MANUALES (no en Monday o con info incompleta)
+// ============================================================
+const CLIENTES_MANUALES = [
+  { id:"manual-jose-trevelin", nombre:"JOSE (Trevelin) — contacto nuevo", contacto:"Jose", dir:"Trevelin, Chubut, Argentina", tel:"+5492945654037", nota:"Cliente nuevo a contactar.", vendedor:"Maximiliano Gordillo", etiq:"DESPACHO", dayIdx:4 },
+  { id:"manual-sma-nuevo", nombre:"Nuevo cliente SMA (compró ferretería a Julián)", contacto:"—", dir:"San Martín de los Andes, Neuquén, Argentina", tel:"", nota:"Compró el negocio a Julián. Quiere reponer. ESCRIBIRLE.", vendedor:"Maximiliano Gordillo", etiq:"DESPACHO", dayIdx:6 },
+  { id:"manual-pedro-vilugron", nombre:"Pedro — Ferr. Vilugron (SMA)", contacto:"Pedro", dir:"San Martín de los Andes, Neuquén, Argentina", tel:"+5492944418078", nota:"Contacto suelto, agendado para visita.", vendedor:"Maximiliano Gordillo", etiq:"DESPACHO", dayIdx:6 },
+  { id:"manual-almeira-pehuenia", nombre:"ALMEIRA SERVICIOS (Villa Pehuenia)", contacto:"—", dir:"Villa Pehuenia, Las Araucarias, Neuquén, Argentina", tel:"", nota:"Posible parada antes de Zapala.", vendedor:"Maximiliano Gordillo", etiq:"DESPACHO", dayIdx:6 },
+  { id:"manual-corralon-progreso", nombre:"CORRALON EL PROGRESO (Picún Leufú)", contacto:"—", dir:"Sarmiento & Av. 9 de Julio, Picún Leufú, Neuquén, Argentina", tel:"", nota:"", vendedor:"Maximiliano Gordillo", etiq:"DESPACHO", dayIdx:6 }
+];
+
+// ============================================================
+// CLIENTES EXCLUIDOS (no van en este viaje aunque matcheen localidad)
+// Match por substring del nombre, case-insensitive.
+// Editable por el usuario desde la UI.
+// ============================================================
+const EXCLUIDOS_DEFAULT = [
+  "ORTIZ RIVERO",
+  "TUMINI DANIEL",
+  "BULONERA NORTE TUMINI",
+  "BULONERA TORQUE",
+  "SOLDESTER",
+  "TE-NES ELECTRICIDAD",
+  "TE.NES ELECTRICIDAD"
+];
+
+// ============================================================
+// LOCALIDADES default
+// ============================================================
+const LOCALIDADES_DEFAULT = [
+  "Hilario Ascasubi","Villa Fortabat","Olavarría","Olavarria","Coronel Pringles","Tornquist",
+  "Bahía Blanca","Bahia Blanca","Punta Alta","Pedro Luro","Médanos",
+  "Carmen de Patagones","Patagones","Viedma","San Antonio Oeste","Las Grutas","Sierra Grande","Puerto Madryn",
+  "Trelew","Rawson, Chubut","Playa Union","Playa Unión","Gaiman","Dolavon",
+  "Esquel","Trevelin",
+  "El Hoyo","Lago Puelo","El Bolsón","El Bolson","Bariloche","San Carlos de Bariloche","Dina Huapi","Villa La Angostura",
+  "San Martín de los Andes","San Martin de los Andes","Junín de los Andes","Junin de los Andes",
+  "Villa Pehuenia","Aluminé","Alumine","Picún Leufú","Picun Leufu","Zapala","Las Lajas",
+  "Cutral Co","Cutral Có","Plaza Huincul","Senillosa",
+  "Neuquén","Neuquen","Plottier","Centenario","Vista Alegre","San Patricio del Chañar","San Patricio del Chanar",
+  "Añelo","Anelo","Rincón de los Sauces","Rincon de los Sauces","Buta Ranquil","Chos Malal","Chosmalal",
+  "Cinco Saltos","Contralmirante Cordero","Cipolletti","Fernández Oro","Allen","General Roca","Villa Regina",
+  "Ingeniero Huergo","Mainqué","Cervantes","Chichinales","Godoy","Catriel",
+  "Choele Choel","Lamarque","Luis Beltrán","Pomona","Río Colorado","Rio Colorado","La Adela","Bordenave","Tres Arroyos",
+  "Gral. San Martin","General San Martín, La Pampa","Gral. San Martín, La Pampa"
+];
+
+// ============================================================
+// Día por localidad
+// ============================================================
+function dayInfoFromLoc(locStr){
+  const s = norm(locStr);
+  const buckets = [
+    { dayIdx:0, dia:"Jue 14/05", etapa:"Salida BsAs → Olavarría → Cnel Pringles → H. Ascasubi → Bahía Blanca",
+      keys:["villa fortabat","olavarria","coronel pringles","tornquist","tres arroyos","hilario ascasubi"] },
+    { dayIdx:1, dia:"Jue/Vie 14-15/05", etapa:"Bahía Blanca + Punta Alta + Pedro Luro",
+      keys:["bahia blanca","punta alta","pedro luro","medanos"] },
+    { dayIdx:2, dia:"Vie 15/05", etapa:"Viedma → Las Grutas → Sierra Grande → Pto Madryn",
+      keys:["carmen de patagones","patagones","viedma","san antonio oeste","las grutas","sierra grande","puerto madryn","puerto madrn"] },
+    { dayIdx:3, dia:"Sáb 16/05", etapa:"Trelew → Playa Unión → Gaiman",
+      keys:["trelew","rawson, chubut","playa union","playa unin","gaiman","dolavon"] },
+    { dayIdx:4, dia:"Dom 17/05", etapa:"Cruce: Rawson → Esquel → Trevelin",
+      keys:["esquel","trevelin"] },
+    { dayIdx:5, dia:"Lun 18/05", etapa:"El Hoyo → El Bolsón → Bariloche → Dina Huapi",
+      keys:["el hoyo","lago puelo","el bolson","el bolsn","bariloche","san carlos de bariloche","dina huapi","villa la angostura"] },
+    { dayIdx:6, dia:"Mar 19/05", etapa:"SMA → Junín → V. Pehuenia → Zapala → Cutral Có → Picún Leufú → Senillosa",
+      keys:["san martin de los andes","junin de los andes","villa pehuenia","alumine","zapala","las lajas","cutral co","cutral c","plaza huincul","picun leufu","picn leuf","senillosa"] },
+    { dayIdx:7, dia:"Mié 20/05", etapa:"Neuquén capital + Centenario + Chañar + zona norte",
+      keys:["neuquen","plottier","centenario","vista alegre","san patricio del chanar","san patricio del chaar","anelo","aelo","rincon de los sauces","rincn de los sauces","buta ranquil","chos malal","chosmalal"] },
+    { dayIdx:8, dia:"Jue 21/05", etapa:"Cinco Saltos → Cipolletti → Allen → Gral Roca → V. Regina",
+      keys:["cinco saltos","contralmirante cordero","cipolletti","fernandez oro","fernndez oro","allen","general roca","villa regina","ingeniero huergo","mainque","mainqu","cervantes","chichinales","catriel","godoy"] },
+    { dayIdx:9, dia:"Vie 22/05", etapa:"Choele Choel → Río Colorado → Gral. S. Martín (LP) → BsAs",
+      keys:["choele choel","lamarque","luis beltran","luis beltrn","pomona","rio colorado","ro colorado","la adela","bordenave","gral. san martin","general san martin","gral. san martn","general san martn"] }
+  ];
+  for (const b of buckets) for (const k of b.keys) if (s.includes(k)) return b;
+  return { dayIdx:99, dia:"Sin clasificar", etapa:"Localidad sin día asignado", keys:[] };
+}
+
+// ============================================================
+// Fechas reales por dayIdx → contador "Faltan X días"
+// ============================================================
+const FECHAS_VIAJE = {
+  0: '2026-05-14', // Jue 14/05  Olavarría/Pringles/H. Ascasubi
+  1: '2026-05-15', // Jue/Vie 14-15  Bahía Blanca/Punta Alta/Pedro Luro (uso vie)
+  2: '2026-05-15', // Vie 15/05  Viedma/Las Grutas/Pto Madryn
+  3: '2026-05-16', // Sáb 16/05  Trelew/Playa Unión/Gaiman
+  4: '2026-05-17', // Dom 17/05  Esquel/Trevelin
+  5: '2026-05-18', // Lun 18/05  El Hoyo/Bolsón/Bariloche
+  6: '2026-05-19', // Mar 19/05  SMA/Junín/Pehuenia/Zapala/Cutral
+  7: '2026-05-20', // Mié 20/05  Neuquén/Centenario/Chañar
+  8: '2026-05-21', // Jue 21/05  Cinco Saltos/Cipolletti/Gral Roca/V.Regina
+  9: '2026-05-22'  // Vie 22/05  Choele/Río Colorado/Gral S.Martín LP
+};
+
+function diasFaltantes(dayIdx) {
+  const fechaStr = FECHAS_VIAJE[dayIdx];
+  if (!fechaStr) return null;  // sin clasificar o manual sin día
+  // Construir Date en hora local sin tema de TZ
+  const [y, m, d] = fechaStr.split('-').map(Number);
+  const fechaVisita = new Date(y, m - 1, d);
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  const diff = Math.round((fechaVisita - hoy) / (1000 * 60 * 60 * 24));
+  return diff;
+}
+
+function badgeDiasHtml(dayIdx) {
+  const dias = diasFaltantes(dayIdx);
+  if (dias === null) return '';
+  if (dias < 0)  return `<span class="badge badge-dias pasado" title="Visita pasada">Hace ${Math.abs(dias)} día${Math.abs(dias)===1?'':'s'}</span>`;
+  if (dias === 0) return `<span class="badge badge-dias hoy" title="Visita hoy">⚡ Hoy</span>`;
+  if (dias === 1) return `<span class="badge badge-dias urgente" title="Mañana">⏰ Mañana</span>`;
+  if (dias <= 7) return `<span class="badge badge-dias urgente" title="Faltan ${dias} días">⏰ Faltan ${dias} días</span>`;
+  return `<span class="badge badge-dias" title="Faltan ${dias} días">📅 Faltan ${dias} días</span>`;
+}
+
+const LOC_COORDS = {
+  "hilario ascasubi":[-39.385,-62.640],
+  "villa fortabat":[-37.054,-60.139],"olavarria":[-36.892,-60.323],
+  "coronel pringles":[-37.984,-61.357],
+  "bahia blanca":[-38.728,-62.272],"punta alta":[-38.881,-62.077],"pedro luro":[-39.495,-62.690],
+  "medanos":[-38.825,-62.683],"tornquist":[-38.099,-62.222],"tres arroyos":[-38.376,-60.275],
+  "carmen de patagones":[-40.802,-62.987],"patagones":[-40.802,-62.987],
+  "viedma":[-40.812,-62.998],"san antonio oeste":[-40.732,-64.943],"las grutas":[-40.810,-65.090],
+  "sierra grande":[-41.610,-65.353],"puerto madryn":[-42.769,-65.038],
+  "trelew":[-43.249,-65.305],"rawson, chubut":[-43.300,-65.103],
+  "playa union":[-43.314,-65.046],"playa unin":[-43.314,-65.046],
+  "gaiman":[-43.290,-65.495],"dolavon":[-43.302,-65.695],
+  "esquel":[-42.911,-71.319],"trevelin":[-43.082,-71.464],
+  "el hoyo":[-42.078,-71.521],"lago puelo":[-42.122,-71.611],
+  "el bolson":[-41.967,-71.532],
+  "bariloche":[-41.143,-71.310],"san carlos de bariloche":[-41.143,-71.310],
+  "dina huapi":[-41.066,-71.166],"villa la angostura":[-40.766,-71.642],
+  "san martin de los andes":[-40.157,-71.353],"junin de los andes":[-39.952,-71.069],
+  "villa pehuenia":[-38.920,-71.171],"alumine":[-39.236,-70.918],
+  "zapala":[-38.901,-70.064],"las lajas":[-38.520,-70.371],
+  "cutral co":[-38.940,-69.230],"plaza huincul":[-38.929,-69.211],
+  "picun leufu":[-39.094,-69.245],"senillosa":[-39.000,-68.420],
+  "neuquen":[-38.951,-68.063],"plottier":[-38.967,-68.234],
+  "centenario":[-38.836,-68.130],"vista alegre":[-38.795,-68.233],
+  "anelo":[-38.357,-68.792],"san patricio del chanar":[-38.638,-68.244],
+  "rincon de los sauces":[-37.388,-68.929],"buta ranquil":[-37.072,-69.736],
+  "chos malal":[-37.378,-70.267],
+  "cinco saltos":[-38.835,-68.058],"contralmirante cordero":[-38.733,-68.064],
+  "cipolletti":[-38.937,-67.993],"fernandez oro":[-38.945,-67.917],
+  "allen":[-38.973,-67.815],"general roca":[-39.033,-67.580],
+  "villa regina":[-39.092,-67.067],"ingeniero huergo":[-39.072,-67.231],
+  "mainque":[-39.058,-67.327],"cervantes":[-39.070,-67.391],
+  "chichinales":[-39.110,-66.964],"catriel":[-37.882,-67.793],
+  "choele choel":[-39.275,-65.681],"lamarque":[-39.428,-65.706],
+  "luis beltran":[-39.378,-65.610],"pomona":[-39.470,-65.736],
+  "rio colorado":[-39.011,-64.090],"la adela":[-38.998,-64.082],
+  "gral. san martin":[-37.560,-63.640],"general san martin":[-37.560,-63.640]
+};
+
+function norm(s){
+  return (s||'').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[áéíóúñ]/g,m=>({á:'a',é:'e',í:'i',ó:'o',ú:'u',ñ:'n'}[m]||m));
+}
+function getCoords(locStr){
+  const s = norm(locStr);
+  for (const k in LOC_COORDS) if (s.includes(k)) return LOC_COORDS[k];
+  return [-40.5, -67];
+}
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+// ============================================================
+// State
+// ============================================================
+let CLIENTES = [];        // todos del board
+let IDS_CON_PEDIDO_ACTIVO = new Set();  // IDs (de Base Clientes) con pedido en grupo PEDIDOS ACTIVOS
+let POTENCIALES = [];     // matchean localidad (incluye fijos+manuales y resto)
+let VIAJEMAXI = [];       // SOLO los con etiqueta VIAJE MAXI en Monday (tienen pedido)
+let estado = {};
+let localidades = [];
+let excluidos = [];       // nombres de clientes a excluir (substring match)
+
+// Filtros activos
+let filtroEstadoPot = '';   // estado seleccionado en stats
+let filtroEstadoVM = '';
+let filtroMapa = 'potenciales';  // 'potenciales' | 'viajemaxi'
+
+try { estado = JSON.parse(localStorage.getItem(SK_STATE) || '{}'); } catch(e) { estado = {}; }
+try {
+  const stored = localStorage.getItem(SK_LOC);
+  localidades = stored ? JSON.parse(stored) : [...LOCALIDADES_DEFAULT];
+} catch(e) { localidades = [...LOCALIDADES_DEFAULT]; }
+
+// Excluidos: SIEMPRE usar la constante hardcodeada (no localStorage)
+excluidos = [...EXCLUIDOS_DEFAULT];
+
+function guardarEstado(){ try { localStorage.setItem(SK_STATE, JSON.stringify(estado)); } catch(e){} }
+function guardarLocalidades(){ try { localStorage.setItem(SK_LOC, JSON.stringify(localidades)); } catch(e){} }
+
+function esExcluido(cliente){
+  const nombre = norm(cliente.nombre || cliente.n || '');
+  return excluidos.some(e => e && nombre.includes(norm(e)));
+}
+
+const ESTADOS = [
+  { key:"sin",     label:"Sin enviar",   icon:"📨", clsBtn:"estado-sin",     statCls:"s-sin"     },
+  { key:"noresp",  label:"Sin respuesta",icon:"⏳", clsBtn:"estado-noresp",  statCls:"s-noresp"  },
+  { key:"vapedir", label:"Va a pedir",   icon:"🤔", clsBtn:"estado-vapedir", statCls:"s-vapedir" },
+  { key:"pedido",  label:"Con pedido",   icon:"✅", clsBtn:"estado-pedido",  statCls:"s-pedido"  },
+  { key:"cancel",  label:"Cancelado",    icon:"❌", clsBtn:"estado-cancel",  statCls:"s-cancel"  }
+];
+function getEstado(id){
+  const e = estado[id];
+  if (typeof e === 'string') return e;
+  return 'sin';
+}
+function setEstado(id, key){ estado[id] = key; guardarEstado(); }
+
+// ============================================================
+// Monday API
+// ============================================================
+async function mondayQuery(query, variables = {}) {
+  const token = localStorage.getItem(SK_TOKEN);
+  if (!token) throw new Error('NO_TOKEN');
+  const res = await fetch('https://api.monday.com/v2', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token,
+      'API-Version': '2024-01'
+    },
+    body: JSON.stringify({ query, variables })
+  });
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0]?.message || 'API error');
+  return json.data;
+}
+
+async function fetchPedidosActivos() {
+  // Trae IDs de clientes (Base Clientes) que tienen al menos un pedido
+  // en el grupo "PEDIDOS ACTIVOS" del board Equipo MAXIFER
+  const idsClientes = new Set();
+  let cursor = null;
+  let pagina = 0;
+  const maxPaginas = 30;
+
+  // Query: grupo del board Equipo MAXIFER, items con su columna board_relation_mkpzzjqf
+  const queryFirst = `
+    query ($boardId: ID!, $groupId: String!, $limit: Int) {
+      boards(ids: [$boardId]) {
+        groups(ids: [$groupId]) {
+          items_page(limit: $limit) {
+            cursor
+            items {
+              id
+              column_values(ids: ["board_relation_mkpzzjqf"]) {
+                ... on BoardRelationValue { linked_item_ids }
+              }
+            }
+          }
+        }
+      }
+    }`;
+  const queryNext = `
+    query ($limit: Int, $cursor: String!) {
+      next_items_page(limit: $limit, cursor: $cursor) {
+        cursor
+        items {
+          id
+          column_values(ids: ["board_relation_mkpzzjqf"]) {
+            ... on BoardRelationValue { linked_item_ids }
+          }
+        }
+      }
+    }`;
+
+  try {
+    setSync('loading','Trayendo pedidos activos…');
+    // Primera página
+    const dataFirst = await mondayQuery(queryFirst, {
+      boardId: String(EQUIPO_BOARD_ID),
+      groupId: PEDIDOS_ACTIVOS_GROUP,
+      limit: 100
+    });
+    const grupos = dataFirst.boards[0].groups;
+    if (!grupos || !grupos.length) return idsClientes;
+    const firstPage = grupos[0].items_page;
+    firstPage.items.forEach(it => {
+      const cv = it.column_values && it.column_values[0];
+      if (cv && cv.linked_item_ids) {
+        cv.linked_item_ids.forEach(id => idsClientes.add(String(id)));
+      }
+    });
+    cursor = firstPage.cursor;
+    pagina = 1;
+
+    // Paginación
+    while (cursor && pagina < maxPaginas) {
+      pagina++;
+      setSync('loading',`Pedidos activos · página ${pagina}…`);
+      const data = await mondayQuery(queryNext, { limit: 100, cursor });
+      const page = data.next_items_page;
+      page.items.forEach(it => {
+        const cv = it.column_values && it.column_values[0];
+        if (cv && cv.linked_item_ids) {
+          cv.linked_item_ids.forEach(id => idsClientes.add(String(id)));
+        }
+      });
+      cursor = page.cursor;
+    }
+  } catch(e) {
+    console.warn('Error trayendo pedidos activos:', e);
+    // Si falla, devolvemos vacío (no rompemos el flujo principal)
+  }
+  return idsClientes;
+}
+
+async function fetchTodosClientes() {
+  setSync('loading','Trayendo clientes de Monday…');
+  const todos = [];
+  let cursor = null;
+  let pagina = 0;
+  const maxPaginas = 30;
+
+  const query = `
+    query ($boardId: ID!, $limit: Int, $cursor: String) {
+      boards(ids: [$boardId]) {
+        items_page(limit: $limit, cursor: $cursor) {
+          cursor
+          items {
+            id name url
+            column_values(ids: ["texto0__1","ubicaci_n__1","tel_fono__1","text9","vendedor__1","label__1"]) {
+              id text
+            }
+          }
+        }
+      }
+    }`;
+
+  try {
+    do {
+      pagina++;
+      setSync('loading',`Cargando página ${pagina}…`);
+      const data = await mondayQuery(query, { boardId: String(BOARD_ID), limit: 100, cursor });
+      const page = data.boards[0].items_page;
+      page.items.forEach(item => {
+        const cv = {};
+        item.column_values.forEach(c => { cv[c.id] = c.text; });
+        todos.push({
+          id: item.id, url: item.url, nombre: item.name,
+          contacto: cv.texto0__1 || '', dir: cv.ubicaci_n__1 || '',
+          tel: cv.tel_fono__1 || '', nota: cv.text9 || '',
+          vendedor: cv.vendedor__1 || '', etiq: cv.label__1 || ''
+        });
+      });
+      cursor = page.cursor;
+    } while (cursor && pagina < maxPaginas);
+
+    CLIENTES = todos;
+    localStorage.setItem(SK_DATA, JSON.stringify(todos));
+
+    // Traer pedidos activos del board Equipo MAXIFER
+    const idsActivos = await fetchPedidosActivos();
+    IDS_CON_PEDIDO_ACTIVO = idsActivos;
+    localStorage.setItem(SK_PEDIDOS_ACTIVOS, JSON.stringify([...idsActivos]));
+
+    localStorage.setItem(SK_LASTSYNC, new Date().toISOString());
+    procesarClientes();
+    setSync('ok', `${todos.length} clientes · ${idsActivos.size} con pedido activo · sincronizado ${formatTime(new Date())}`);
+  } catch (e) {
+    if (e.message === 'NO_TOKEN') {
+      setSync('err','Falta el token. Click en ⚙ para configurar.');
+      abrirModalToken();
+    } else {
+      setSync('err', 'Error: ' + e.message);
+    }
+  }
+}
+
+function setSync(state, txt){
+  const el = document.getElementById('syncStatus');
+  el.classList.remove('ok','err','loading');
+  if (state) el.classList.add(state);
+  el.querySelector('.txt').textContent = txt;
+}
+function formatTime(d){
+  return d.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'});
+}
+
+function cargarCache(){
+  try {
+    const raw = localStorage.getItem(SK_DATA);
+    if (raw) {
+      CLIENTES = JSON.parse(raw);
+      // También cargar IDs con pedido activo (si hay cache)
+      try {
+        const rawIds = localStorage.getItem(SK_PEDIDOS_ACTIVOS);
+        if (rawIds) IDS_CON_PEDIDO_ACTIVO = new Set(JSON.parse(rawIds));
+      } catch(e) {}
+      const last = localStorage.getItem(SK_LASTSYNC);
+      if (last) {
+        const d = new Date(last);
+        setSync('', `Última sync: ${d.toLocaleDateString('es-AR')} ${formatTime(d)}`);
+      }
+      procesarClientes();
+      return true;
+    }
+  } catch(e){}
+  return false;
+}
+
+function esConfirmadoAnterior(cliente) {
+  const nombre = norm(cliente.nombre);
+  return CONFIRMADOS_VIAJE_ANTERIOR.find(c => nombre.includes(norm(c.match)));
+}
+
+// ============================================================
+// Procesar
+// ============================================================
+function procesarClientes(){
+  const locsNorm = localidades.map(norm).filter(Boolean);
+  POTENCIALES = [];
+  VIAJEMAXI = [];
+
+  // Cache de día/etapa
+  const diasPorIdx = {};
+  ["villa fortabat","bahia blanca","viedma","trelew","esquel","bariloche","junin de los andes","neuquen","cipolletti","choele choel"].forEach(k => {
+    const info = dayInfoFromLoc(k);
+    diasPorIdx[info.dayIdx] = { dia: info.dia, etapa: info.etapa };
+  });
+
+  CLIENTES.forEach(c => {
+    // EXCLUIDOS: nunca aparecen en Potenciales ni Viaje Maxi
+    if (esExcluido(c)) return;
+
+    const dirN = norm(c.dir);
+    const matchLoc = locsNorm.find(l => l && dirN.includes(l));
+    const confirmadoAnterior = esConfirmadoAnterior(c);
+    const esVMEnMonday = c.etiq === 'VIAJE MAXI';
+
+    // Decidir día
+    let info;
+    if (confirmadoAnterior && diasPorIdx[confirmadoAnterior.dayIdx]) {
+      info = { ...diasPorIdx[confirmadoAnterior.dayIdx], dayIdx: confirmadoAnterior.dayIdx };
+    } else {
+      info = dayInfoFromLoc(c.dir);
+    }
+    const coords = getCoords(c.dir);
+
+    // POTENCIALES = los que tengan vínculo geográfico real con el viaje
+    // (matchea localidad del recorrido O fue confirmado del año pasado).
+    // NO incluímos VIAJE MAXI como criterio porque la etiqueta es categoría
+    // permanente del cliente y muchos no están en zona del viaje.
+    if (matchLoc || confirmadoAnterior) {
+      POTENCIALES.push({
+        ...c, ...info,
+        lat: coords[0], lng: coords[1],
+        confirmadoAnterior: !!confirmadoAnterior,
+        manual: false
+      });
+    }
+
+    // VIAJEMAXI = etiqueta VIAJE MAXI en Monday Y pedido activo en Equipo MAXIFER
+    // Si todavía no se sincronizaron los pedidos activos (set vacío), mostramos todos
+    // los VIAJE MAXI igual para que el HTML no quede en blanco antes de la primera sync.
+    const tienePedidoActivo = IDS_CON_PEDIDO_ACTIVO.size === 0
+      || IDS_CON_PEDIDO_ACTIVO.has(String(c.id));
+    if (esVMEnMonday && tienePedidoActivo) {
+      VIAJEMAXI.push({
+        ...c, ...info,
+        lat: coords[0], lng: coords[1],
+        confirmadoAnterior: !!confirmadoAnterior,
+        manual: false
+      });
+    }
+  });
+
+  // Manuales van solo a POTENCIALES
+  CLIENTES_MANUALES.forEach(m => {
+    const info = diasPorIdx[m.dayIdx] || dayInfoFromLoc(m.dir);
+    const coords = getCoords(m.dir);
+    POTENCIALES.push({
+      ...m, ...info, dayIdx: m.dayIdx,
+      lat: coords[0], lng: coords[1],
+      confirmadoAnterior: false, manual: true, url: '#'
+    });
+  });
+
+  // Header
+  document.getElementById('totalClientes').textContent = POTENCIALES.length;
+  document.getElementById('pillPot').textContent = POTENCIALES.length;
+  document.getElementById('pillVM').textContent = VIAJEMAXI.length;
+  document.getElementById('locMeta').textContent = `${localidades.length} localidades · ${POTENCIALES.length} potenciales · ${VIAJEMAXI.length} con pedido en Monday`;
+
+  poblarFiltrosDia();
+  poblarFiltrosLoc();
+  renderStatsPot();
+  renderStatsVM();
+  renderListadoPot();
+  renderListadoVM();
+  if (mapa) renderMapa();
+}
+
+// ============================================================
+// Render stats clickeables
+// ============================================================
+function renderStatsPot(){
+  const cont = document.getElementById('statsPot');
+  // Contadores por estado
+  const counts = { total: POTENCIALES.length };
+  ESTADOS.forEach(e => counts[e.key] = 0);
+  POTENCIALES.forEach(c => { counts[getEstado(c.id)]++; });
+
+  const stats = [
+    { key:'',        statCls:'s-total', icon:'👥', num: counts.total, label:'Total potenciales' },
+    { key:'sin',     statCls:'s-sin', icon:'📨', num: counts.sin, label:'Sin enviar' },
+    { key:'noresp',  statCls:'s-noresp', icon:'⏳', num: counts.noresp, label:'Sin respuesta' },
+    { key:'vapedir', statCls:'s-vapedir', icon:'🤔', num: counts.vapedir, label:'Va a pedir' },
+    { key:'pedido',  statCls:'s-pedido', icon:'✅', num: counts.pedido, label:'Con pedido' },
+    { key:'cancel',  statCls:'s-cancel', icon:'❌', num: counts.cancel, label:'Cancelado' }
+  ];
+  cont.innerHTML = stats.map(s => `
+    <div class="stat ${s.statCls} ${filtroEstadoPot === s.key ? 'active' : ''}" data-est="${s.key}">
+      <div class="stat-icon">${s.icon}</div>
+      <div>
+        <div class="num">${s.num}</div>
+        <div class="lbl">${s.label}</div>
+      </div>
+    </div>
+  `).join('');
+  cont.querySelectorAll('.stat').forEach(el => {
+    el.addEventListener('click', () => {
+      const est = el.dataset.est;
+      filtroEstadoPot = (filtroEstadoPot === est) ? '' : est;
+      renderStatsPot();
+      renderListadoPot();
+    });
+  });
+}
+
+function renderStatsVM(){
+  const cont = document.getElementById('statsVM');
+  const counts = { total: VIAJEMAXI.length };
+  ESTADOS.forEach(e => counts[e.key] = 0);
+  VIAJEMAXI.forEach(c => { counts[getEstado(c.id)]++; });
+
+  const stats = [
+    { key:'',        statCls:'s-total', icon:'📦', num: counts.total, label:'Con etiqueta Monday' },
+    { key:'sin',     statCls:'s-sin', icon:'📨', num: counts.sin, label:'Sin enviar' },
+    { key:'noresp',  statCls:'s-noresp', icon:'⏳', num: counts.noresp, label:'Sin respuesta' },
+    { key:'vapedir', statCls:'s-vapedir', icon:'🤔', num: counts.vapedir, label:'Va a pedir' },
+    { key:'pedido',  statCls:'s-pedido', icon:'✅', num: counts.pedido, label:'Con pedido' },
+    { key:'cancel',  statCls:'s-cancel', icon:'❌', num: counts.cancel, label:'Cancelado' }
+  ];
+  cont.innerHTML = stats.map(s => `
+    <div class="stat ${s.statCls} ${filtroEstadoVM === s.key ? 'active' : ''}" data-est="${s.key}">
+      <div class="stat-icon">${s.icon}</div>
+      <div>
+        <div class="num">${s.num}</div>
+        <div class="lbl">${s.label}</div>
+      </div>
+    </div>
+  `).join('');
+  cont.querySelectorAll('.stat').forEach(el => {
+    el.addEventListener('click', () => {
+      const est = el.dataset.est;
+      filtroEstadoVM = (filtroEstadoVM === est) ? '' : est;
+      renderStatsVM();
+      renderListadoVM();
+    });
+  });
+}
+
+// ============================================================
+// Render listado
+// ============================================================
+function renderClientes(items, contId){
+  const cont = document.getElementById(contId);
+  cont.innerHTML = '';
+
+  if (items.length === 0){
+    cont.innerHTML = '<div class="placeholder"><h3>Sin resultados</h3><p>Ajustá filtros o sincronizá con Monday.</p></div>';
+    return;
+  }
+
+  // Agrupar por día
+  const grupos = {};
+  items.forEach(c => {
+    const k = c.dia || 'Sin clasificar';
+    if (!grupos[k]) grupos[k] = { dayIdx:c.dayIdx, etapa:c.etapa, items:[] };
+    grupos[k].items.push(c);
+  });
+
+  Object.keys(grupos).sort((a,b)=>grupos[a].dayIdx - grupos[b].dayIdx).forEach(dia => {
+    const g = grupos[dia];
+    const wrap = document.createElement('div');
+    wrap.className = 'day-group';
+    const dayClass = g.dayIdx === 99 ? 'day-d99' : `day-d${g.dayIdx}`;
+
+    // Contadores por estado en este día
+    const dayCounts = {};
+    ESTADOS.forEach(e => dayCounts[e.key] = 0);
+    g.items.forEach(c => dayCounts[getEstado(c.id)]++);
+    const countsHtml = ESTADOS
+      .filter(e => dayCounts[e.key] > 0)
+      .map(e => `<span class="day-count" title="${e.label}">${e.icon} ${dayCounts[e.key]}</span>`)
+      .join('');
+
+    const partes = dia.split(' ');
+    const titulo = partes.slice(0,2).join(' ');
+    const fecha = partes.slice(2).join(' ');
+
+    const h = document.createElement('div');
+    h.className = `day-header ${dayClass}`;
+    h.innerHTML = `
+      <div class="day-num">${g.dayIdx === 99 ? '?' : g.dayIdx + 1}</div>
+      <div class="day-info">
+        <h3>${titulo} ${fecha}</h3>
+        <div class="day-route">${escapeHtml(g.etapa)}</div>
+      </div>
+      <div class="day-counts">
+        <span class="day-count" title="Total"><strong>${g.items.length}</strong></span>
+        ${countsHtml}
+      </div>
+    `;
+    wrap.appendChild(h);
+
+    const list = document.createElement('div');
+    list.className = 'day-clients';
+
+    g.items.forEach(c => {
+      const estadoActual = getEstado(c.id);
+      const row = document.createElement('div');
+      row.className = 'client';
+
+      let badgesHtml = '';
+      if (c.confirmadoAnterior) badgesHtml += `<span class="badge badge-fijo">★ Fijo</span>`;
+      if (c.manual) badgesHtml += `<span class="badge badge-manual">+ Manual</span>`;
+      if (c.etiq === 'VIAJE MAXI') badgesHtml += `<span class="badge badge-vm">Viaje Maxi</span>`;
+      badgesHtml += badgeDiasHtml(c.dayIdx);
+
+      const tagClass = c.etiq === 'VIAJE MAXI' ? 'tag-vm'
+                     : c.etiq === 'DESPACHO' ? 'tag-d'
+                     : c.etiq === 'RETIRAN' ? 'tag-r'
+                     : 'tag-bs';
+
+      const estadoBtns = ESTADOS.map(est => {
+        const on = estadoActual === est.key;
+        return `<button class="estado-btn ${est.clsBtn} ${on?'on':''}" data-id="${c.id}" data-est="${est.key}">${est.icon} ${est.label}</button>`;
+      }).join('');
+
+      row.innerHTML = `
+        <div class="client-main">
+          <div class="client-name-row">
+            <span class="client-name">${(c.url && c.url !== '#') ? `<a href="${c.url}" target="_blank" rel="noopener">${escapeHtml(c.nombre)}</a>` : escapeHtml(c.nombre)}</span>
+            ${badgesHtml}
+          </div>
+          <div class="client-meta">
+            ${c.contacto ? `<span>👤 ${escapeHtml(c.contacto)}</span>` : ''}
+            ${c.contacto && c.tel ? '<span class="sep">·</span>' : ''}
+            ${c.tel ? `<a href="tel:${c.tel}">📞 ${escapeHtml(c.tel)}</a>` : ''}
+          </div>
+          ${c.dir ? `<div class="client-loc">📍 ${escapeHtml(c.dir)}</div>` : ''}
+          ${c.nota ? `<div class="client-notes">${escapeHtml(c.nota)}</div>` : ''}
+          <div class="estado-selector">${estadoBtns}</div>
+        </div>
+        <div class="client-side">
+          <span class="tag ${tagClass}">${escapeHtml(c.etiq || '—')}</span>
+          ${c.vendedor ? `<span class="tag-vendor">${escapeHtml(c.vendedor)}</span>` : ''}
+        </div>
+      `;
+      list.appendChild(row);
+    });
+
+    wrap.appendChild(list);
+    cont.appendChild(wrap);
+
+    h.addEventListener('click', () => {
+      h.classList.toggle('collapsed');
+      list.classList.toggle('collapsed');
+    });
+  });
+
+  // Bind botones de estado
+  cont.querySelectorAll('.estado-btn').forEach(b => {
+    b.addEventListener('click', (ev)=> {
+      ev.stopPropagation();
+      const id = b.dataset.id;
+      const newEst = b.dataset.est;
+      const currentEst = getEstado(id);
+      const final = (currentEst === newEst) ? 'sin' : newEst;
+      setEstado(id, final);
+      // Re-render del cliente: solo botones de este selector
+      const sel = b.parentElement;
+      sel.querySelectorAll('.estado-btn').forEach(btn => btn.classList.toggle('on', btn.dataset.est === final));
+      // Refresh stats sin re-render completo
+      renderStatsPot();
+      renderStatsVM();
+      // Actualizar contadores del día sin re-render completo
+      // (un re-render parcial sería ideal, pero re-render todo es seguro)
+    });
+  });
+}
+
+function renderListadoPot(){
+  const q = document.getElementById('buscador').value.toLowerCase().trim();
+  const filtroDia = document.getElementById('filtroDia').value;
+  const filtroLoc = document.getElementById('filtroLoc').value;
+
+  const filtrados = POTENCIALES.filter(c => {
+    if (filtroEstadoPot && getEstado(c.id) !== filtroEstadoPot) return false;
+    if (filtroDia && c.dia !== filtroDia) return false;
+    if (filtroLoc) {
+      if (!norm(c.dir).includes(norm(filtroLoc))) return false;
+    }
+    if (q) {
+      const txt = `${c.nombre} ${c.dir} ${c.contacto} ${c.tel}`.toLowerCase();
+      if (!txt.includes(q)) return false;
+    }
+    return true;
+  });
+  renderClientes(filtrados, 'listadoPot');
+}
+
+function renderListadoVM(){
+  const q = document.getElementById('buscadorVM').value.toLowerCase().trim();
+  const filtroDia = document.getElementById('filtroDiaVM').value;
+  const filtroLoc = document.getElementById('filtroLocVM').value;
+
+  const filtrados = VIAJEMAXI.filter(c => {
+    if (filtroEstadoVM && getEstado(c.id) !== filtroEstadoVM) return false;
+    if (filtroDia && c.dia !== filtroDia) return false;
+    if (filtroLoc) {
+      if (!norm(c.dir).includes(norm(filtroLoc))) return false;
+    }
+    if (q) {
+      const txt = `${c.nombre} ${c.dir} ${c.contacto} ${c.tel}`.toLowerCase();
+      if (!txt.includes(q)) return false;
+    }
+    return true;
+  });
+  renderClientes(filtrados, 'listadoVM');
+}
+
+// ============================================================
+// Filtros: poblar selects
+// ============================================================
+function poblarFiltrosDia(){
+  const fillSelect = (selId, list) => {
+    const dias = [...new Set(list.map(c => c.dia))].sort((a,b)=>{
+      const ai = list.find(p=>p.dia===a)?.dayIdx ?? 99;
+      const bi = list.find(p=>p.dia===b)?.dayIdx ?? 99;
+      return ai-bi;
+    });
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">Todos los días</option>';
+    dias.forEach(d => {
+      const o = document.createElement('option');
+      o.value = d; o.textContent = d;
+      sel.appendChild(o);
+    });
+    sel.value = prev;
+  };
+  fillSelect('filtroDia', POTENCIALES);
+  fillSelect('filtroDiaVM', VIAJEMAXI);
+}
+
+function poblarFiltrosLoc(){
+  const fillSelect = (selId, list) => {
+    // Extraer localidades únicas de las direcciones
+    const locs = new Set();
+    list.forEach(c => {
+      // Extraer la localidad: lo que está antes de la primera coma con provincia
+      const dir = c.dir || '';
+      // Heurística: tomar la 2ª "parte" entre comas, o la primera localidad conocida que matchee
+      const matchedLoc = LOCALIDADES_DEFAULT.find(l => norm(dir).includes(norm(l)));
+      if (matchedLoc) {
+        // Normalizar a una versión "limpia"
+        const clean = matchedLoc.replace(/, La Pampa$/,'').replace(/, Chubut$/,'');
+        locs.add(clean);
+      }
+    });
+    const sel = document.getElementById(selId);
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">Todas las localidades</option>';
+    [...locs].sort().forEach(l => {
+      const o = document.createElement('option');
+      o.value = l; o.textContent = l;
+      sel.appendChild(o);
+    });
+    sel.value = prev;
+  };
+  fillSelect('filtroLoc', POTENCIALES);
+  fillSelect('filtroLocVM', VIAJEMAXI);
+}
+
+// ============================================================
+// Mapa
+// ============================================================
+let mapa, capaPedido, capaVa, capaResto;
+
+function initMapa(){
+  if (mapa) { renderMapa(); return; }
+  mapa = L.map('mapa', { zoomControl: true }).setView([-40.5, -67], 6);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap, © CARTO', maxZoom: 18
+  }).addTo(mapa);
+  capaPedido = L.layerGroup().addTo(mapa);
+  capaVa     = L.layerGroup().addTo(mapa);
+  capaResto  = L.layerGroup().addTo(mapa);
+  renderMapa();
+}
+
+function renderMapa(){
+  if (!mapa) return;
+  capaPedido.clearLayers();
+  capaVa.clearLayers();
+  capaResto.clearLayers();
+
+  // Dataset según el filtro del switch
+  const dataset = filtroMapa === 'viajemaxi' ? VIAJEMAXI : POTENCIALES;
+
+  // Actualizar contadores en los botones
+  const btnPotCount = document.getElementById('mapCountPot');
+  const btnVMCount = document.getElementById('mapCountVM');
+  if (btnPotCount) btnPotCount.textContent = POTENCIALES.length;
+  if (btnVMCount) btnVMCount.textContent = VIAJEMAXI.length;
+
+  // Separar: con dirección (van al mapa) y sin dirección (van al listado abajo)
+  const conDireccion = [];
+  const sinDireccion = [];
+  dataset.forEach(c => {
+    const tieneDir = c.dir && c.dir.trim().length > 0;
+    if (tieneDir) conDireccion.push(c);
+    else sinDireccion.push(c);
+  });
+
+  // Mostrar en el mapa solo los que tienen dirección
+  conDireccion.forEach(c => {
+    if (!c.lat || !c.lng) return;
+    const est = getEstado(c.id);
+    const esPedido = est === 'pedido' || c.etiq === 'VIAJE MAXI';
+    const esVa = est === 'vapedir';
+    const esCancel = est === 'cancel';
+    const color = esPedido ? '#1f7c3f' : esVa ? '#d97706' : esCancel ? '#cbd5e1' : '#94a3b8';
+    const size = esPedido ? 16 : 13;
+    const icon = L.divIcon({
+      className: 'custom-pin',
+      html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:${color};border:2.5px solid white;box-shadow:0 2px 6px rgba(0,0,0,.25)"></div>`,
+      iconSize: [size,size],
+      iconAnchor: [size/2,size/2]
+    });
+    const m = L.marker([c.lat, c.lng], { icon });
+    m.bindPopup(`
+      <b>${escapeHtml(c.nombre)}</b>
+      <div class="pop-meta">${c.contacto ? escapeHtml(c.contacto) + ' · ' : ''}${escapeHtml(c.tel||'')}</div>
+      ${c.dir ? `<div class="pop-meta">📍 ${escapeHtml(c.dir)}</div>` : ''}
+      <div class="pop-meta" style="margin-top:6px"><strong style="color:${color}">${escapeHtml(c.etiq||'—')}</strong> · ${escapeHtml(c.dia||'')}</div>
+      ${c.url && c.url!=='#' ? `<div class="pop-meta" style="margin-top:6px"><a href="${c.url}" target="_blank" style="color:var(--accent);font-weight:600">Ver en Monday →</a></div>` : ''}
+    `);
+    if (esPedido) m.addTo(capaPedido);
+    else if (esVa) m.addTo(capaVa);
+    else m.addTo(capaResto);
+  });
+
+  if (conDireccion.length > 0) {
+    const bounds = L.latLngBounds(conDireccion.filter(c=>c.lat).map(c => [c.lat, c.lng]));
+    if (bounds.isValid()) mapa.fitBounds(bounds, { padding: [40,40] });
+  }
+
+  // Listado de clientes sin dirección
+  const sinDirBox = document.getElementById('sinDirBox');
+  if (sinDireccion.length === 0) {
+    sinDirBox.innerHTML = '';
+    return;
+  }
+  let html = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow-sm)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="font-size:1rem">📍</span>
+        <h4 style="font-weight:700;color:var(--text);font-size:.95rem">Clientes sin dirección cargada en Monday (${sinDireccion.length})</h4>
+      </div>
+      <div style="font-size:.78rem;color:var(--text-mute);margin-bottom:12px">No se muestran en el mapa porque no tienen ubicación. Cargales la dirección en Monday para que aparezcan.</div>
+      <div style="display:grid;gap:8px">
+  `;
+  sinDireccion.forEach(c => {
+    const est = getEstado(c.id);
+    const estObj = ESTADOS.find(e => e.key === est);
+    const tagClass = c.etiq === 'VIAJE MAXI' ? 'tag-vm'
+                   : c.etiq === 'DESPACHO' ? 'tag-d'
+                   : c.etiq === 'RETIRAN' ? 'tag-r' : 'tag-bs';
+    html += `
+      <div style="padding:10px 12px;background:var(--surface-soft);border-radius:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:180px">
+          <div style="font-weight:700;font-size:.88rem;color:var(--text)">
+            ${(c.url && c.url !== '#') ? `<a href="${c.url}" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">${escapeHtml(c.nombre)} ↗</a>` : escapeHtml(c.nombre)}
+          </div>
+          <div style="font-size:.76rem;color:var(--text-soft);margin-top:2px">
+            ${c.contacto ? escapeHtml(c.contacto) : ''}
+            ${c.contacto && c.tel ? ' · ' : ''}
+            ${c.tel ? `<a href="tel:${c.tel}" style="color:var(--accent);font-weight:600;text-decoration:none">${escapeHtml(c.tel)}</a>` : ''}
+            ${(!c.contacto && !c.tel) ? '<span style="color:var(--text-mute)">— sin datos de contacto</span>' : ''}
+          </div>
+        </div>
+        <span class="tag ${tagClass}">${escapeHtml(c.etiq || '—')}</span>
+        ${estObj ? `<span style="font-size:.72rem;color:var(--text-mute);font-weight:600">${estObj.icon} ${estObj.label}</span>` : ''}
+      </div>
+    `;
+  });
+  html += `</div></div>`;
+  sinDirBox.innerHTML = html;
+}
+
+// ============================================================
+// Modal token
+// ============================================================
+function abrirModalToken(){
+  const m = document.getElementById('modalToken');
+  document.getElementById('tokenInput').value = localStorage.getItem(SK_TOKEN) || '';
+  m.classList.add('open');
+}
+function cerrarModalToken(){
+  document.getElementById('modalToken').classList.remove('open');
+}
+document.getElementById('btnToken').addEventListener('click', abrirModalToken);
+document.getElementById('tokenCancel').addEventListener('click', cerrarModalToken);
+document.getElementById('tokenGuardar').addEventListener('click', () => {
+  const v = document.getElementById('tokenInput').value.trim();
+  if (v) {
+    localStorage.setItem(SK_TOKEN, v);
+    cerrarModalToken();
+    fetchTodosClientes();
+  }
+});
+document.getElementById('btnRefresh').addEventListener('click', fetchTodosClientes);
+
+// ============================================================
+// Localidades editor
+// ============================================================
+const locHead = document.getElementById('locHead');
+const locBody = document.getElementById('locBody');
+const locTextarea = document.getElementById('locTextarea');
+const locChev = document.getElementById('locChev');
+locTextarea.value = localidades.join('\n');
+locHead.addEventListener('click', () => {
+  locBody.classList.toggle('open');
+  locChev.classList.toggle('open');
+});
+document.getElementById('locGuardar').addEventListener('click', () => {
+  const lines = locTextarea.value.split('\n').map(s=>s.trim()).filter(Boolean);
+  localidades = lines;
+  guardarLocalidades();
+  procesarClientes();
+});
+document.getElementById('locDefault').addEventListener('click', () => {
+  if (confirm('¿Restaurar la lista de localidades por defecto?')) {
+    localidades = [...LOCALIDADES_DEFAULT];
+    locTextarea.value = localidades.join('\n');
+    guardarLocalidades();
+    procesarClientes();
+  }
+});
+
+// ============================================================
+// Tabs
+// ============================================================
+document.querySelectorAll('nav.tabs button').forEach(b => {
+  b.addEventListener('click', () => {
+    if (b.classList.contains('disabled')) return;
+    document.querySelectorAll('nav.tabs button').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    const tab = b.dataset.tab;
+    document.getElementById('panel-'+tab).classList.add('active');
+    if (tab === 'mapa') {
+      setTimeout(() => { initMapa(); if(mapa) mapa.invalidateSize(); }, 50);
+    }
+  });
+});
+
+// Buscadores y selects
+document.getElementById('buscador').addEventListener('input', renderListadoPot);
+document.getElementById('filtroDia').addEventListener('change', renderListadoPot);
+document.getElementById('filtroLoc').addEventListener('change', renderListadoPot);
+document.getElementById('buscadorVM').addEventListener('input', renderListadoVM);
+document.getElementById('filtroDiaVM').addEventListener('change', renderListadoVM);
+document.getElementById('filtroLocVM').addEventListener('change', renderListadoVM);
+
+// Switch del mapa: Potenciales / Viaje Maxi
+document.querySelectorAll('#mapFiltro .map-filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#mapFiltro .map-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    filtroMapa = btn.dataset.filter;
+    renderMapa();
+  });
+});
+
+// ============================================================
+// INIT
+// ============================================================
+const tieneCache = cargarCache();
+const tieneToken = !!localStorage.getItem(SK_TOKEN);
+if (!tieneToken && !tieneCache) {
+  setSync('', 'Configurá tu token de Monday para empezar');
+  abrirModalToken();
+} else if (tieneToken && !tieneCache) {
+  fetchTodosClientes();
+}
+
+</script>
+</body>
+</html>
