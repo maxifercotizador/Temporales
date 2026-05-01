@@ -209,7 +209,7 @@
 </header>
 
 <div class="search-wrap">
-  <input class="search-input" id="buscador" type="search" placeholder="Buscar producto o surtido (descripción, código, proveedor...)" autocomplete="off">
+  <input class="search-input" id="buscador" type="search" placeholder="Buscar en todo: app, producto, cliente, archivo..." autocomplete="off">
   <div class="search-status" id="searchStatus">Cargando catálogos para búsqueda...</div>
 </div>
 
@@ -433,19 +433,21 @@ const APPS_INDEX = [
 ];
 
 // Catálogos: cargados perezosos en memoria
-let catalogs = { productos: [], surtidos: {}, loaded: false };
+let catalogs = { productos: [], surtidos: [], ventas: [], loaded: false };
 
 async function loadCatalogs() {
   const status = document.getElementById('searchStatus');
   try {
-    const [pr, su] = await Promise.allSettled([
+    const [pr, su, ve] = await Promise.allSettled([
       fetch('https://maxifercotizador.github.io/Presupuestador/productos.json').then(r => r.json()),
       fetch('https://maxifercotizador.github.io/Presupuestador/surtidos.json').then(r => r.json()),
+      fetch('https://maxifercotizador.github.io/Proyecto-Privado/ventas_monday.json').then(r => r.json()),
     ]);
     if (pr.status === 'fulfilled') catalogs.productos = pr.value || [];
     if (su.status === 'fulfilled') catalogs.surtidos = su.value || {};
+    if (ve.status === 'fulfilled') catalogs.ventas = ve.value || [];
     catalogs.loaded = true;
-    status.textContent = `Listo · ${catalogs.productos.length} productos · ${Object.keys(catalogs.surtidos).length} surtidos indexados`;
+    status.textContent = `Listo · ${catalogs.productos.length} productos · ${Object.keys(catalogs.surtidos).length} surtidos · ${catalogs.ventas.length} ventas indexadas`;
   } catch (e) {
     status.textContent = '⚠️ Error cargando catálogos: ' + e.message;
   }
@@ -457,10 +459,16 @@ async function loadCatalogs() {
 function searchAll(q) {
   const qn = norm(q);
   if (!qn) return null;
-  const out = { productos: [], surtidos: [] };
+  const out = { apps: [], productos: [], surtidos: [], ventas: [], archivos: [] };
+
+  // Apps
+  for (const a of APPS_INDEX) {
+    const hay = norm(a.name + ' ' + a.desc);
+    if (hay.includes(qn)) out.apps.push(a);
+  }
 
   // Productos: buscar en descripción, código, número, proveedor, código proveedor, familia
-  const MAX = 80;
+  const MAX = 60;
   for (const p of catalogs.productos) {
     const hay = norm(`${p.d||''} ${p.c||''} ${p.n||''} ${p.prov||''} ${p.cp||''} ${p.p||''}`);
     if (hay.includes(qn)) {
@@ -475,10 +483,26 @@ function searchAll(q) {
     if (hay.includes(qn)) {
       out.surtidos.push({ code, ...surt });
     } else if (Array.isArray(surt.i)) {
+      // buscar dentro de items
       const matchedItem = surt.i.find(it => norm(`${it.d||''} ${it.n||''}`).includes(qn));
       if (matchedItem) out.surtidos.push({ code, ...surt, _matched: matchedItem });
     }
     if (out.surtidos.length >= 30) break;
+  }
+
+  // Ventas (clientes / vendedores / surtido)
+  for (const v of catalogs.ventas) {
+    const hay = norm(`${v.cliente||''} ${v.vendedor||''} ${v.surtido||''}`);
+    if (hay.includes(qn)) {
+      out.ventas.push(v);
+      if (out.ventas.length >= 40) break;
+    }
+  }
+
+  // Archivos
+  for (const f of ARCHIVOS_LIST) {
+    const hay = norm(`${f.name} ${f.repo}`);
+    if (hay.includes(qn)) out.archivos.push(f);
   }
 
   return out;
@@ -490,13 +514,26 @@ function renderResults(q, res) {
   document.getElementById('panelsWrap').classList.add('searching');
   cont.classList.add('active');
 
-  const total = res.productos.length + res.surtidos.length;
+  const total = res.apps.length + res.productos.length + res.surtidos.length + res.ventas.length + res.archivos.length;
   if (total === 0) {
-    cont.innerHTML = `<div class="empty-search">🔍 Sin productos ni surtidos para <b>${escapeHtml(q)}</b></div>`;
+    cont.innerHTML = `<div class="empty-search">🔍 Sin resultados para <b>${escapeHtml(q)}</b></div>`;
     return;
   }
 
   let html = '';
+
+  if (res.apps.length) {
+    html += `<div class="result-group"><h3>Apps · <b>${res.apps.length}</b></h3>`;
+    for (const a of res.apps) {
+      html += `<a class="result-row" href="${a.url}">
+        <div><div class="rname">${a.icon} ${highlight(a.name, q)}</div>
+        <div class="rmeta">${highlight(a.desc, q)}</div></div>
+        <div></div>
+        <div class="rgo">Abrir →</div>
+      </a>`;
+    }
+    html += '</div>';
+  }
 
   if (res.productos.length) {
     html += `<div class="result-group"><h3>Productos · <b>${res.productos.length}</b></h3>`;
@@ -520,6 +557,36 @@ function renderResults(q, res) {
         <div class="rmeta">cód <b>${highlight(s.code, q)}</b> · ${sub}</div></div>
         <div></div>
         <div class="rgo">Ver →</div>
+      </a>`;
+    }
+    html += '</div>';
+  }
+
+  if (res.ventas.length) {
+    html += `<div class="result-group"><h3>Ventas / Clientes · <b>${res.ventas.length}</b></h3>`;
+    for (const v of res.ventas) {
+      html += `<a class="result-row" href="https://maxifercotizador.github.io/Proyecto-Privado/analisis_ventas.html?from=menu">
+        <div><div class="rname">${highlight(v.cliente||'(sin nombre)', q)}</div>
+        <div class="rmeta">${highlight(v.vendedor||'', q)} · ${highlight(v.surtido||'', q)} · ${escapeHtml(v.fecha||'')}</div></div>
+        <div></div>
+        <div class="rgo">Ver →</div>
+      </a>`;
+    }
+    html += '</div>';
+  }
+
+  if (res.archivos.length) {
+    html += `<div class="result-group"><h3>Archivos · <b>${res.archivos.length}</b></h3>`;
+    for (const f of res.archivos) {
+      const ext = (f.path.split('.').pop()||'').toLowerCase();
+      const isPdf = ext === 'pdf';
+      const cls = isPdf ? 'is-pdf' : 'is-file';
+      const lbl = isPdf ? 'Abrir PDF' : (ext.startsWith('xls') ? 'Abrir Excel' : 'Abrir');
+      html += `<a class="result-row ${cls}" href="${f.url}" target="_blank">
+        <div><div class="rname">${f.icon} ${highlight(f.name, q)}</div>
+        <div class="rmeta">${highlight(f.repo, q)}${f.date ? ' · actualizado ' + f.date : ''}</div></div>
+        <div></div>
+        <div class="rgo">${lbl} →</div>
       </a>`;
     }
     html += '</div>';
