@@ -883,6 +883,45 @@
   @media (max-width: 480px) {
     .extras-form { grid-template-columns: 1fr; }
   }
+  /* Mini nota siempre visible */
+  .mini-nota {
+    width: 100%; padding: 6px 9px; border: 1px solid #e5e5e5; border-radius: 6px;
+    font-size: 12px; margin-top: 8px; background: #fff; font-family: inherit;
+  }
+  .mini-nota:focus { outline: none; border-color: #1f7c3f; background: #f9fdf9; }
+  .mini-nota:not(:placeholder-shown) { background: #fffde9; border-color: #e6c200; }
+  /* Recorrido */
+  .recorrido-day {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 8px;
+    padding: 12px 14px; margin-bottom: 12px; box-shadow: 0 1px 2px rgba(0,0,0,.04);
+  }
+  .recorrido-day h4 { margin: 0 0 4px 0; font-size: .95rem; }
+  .recorrido-day .meta { color: #777; font-size: .8rem; margin-bottom: 8px; }
+  .recorrido-day .stats-mini {
+    display: flex; flex-wrap: wrap; gap: 10px; font-size: .82rem; margin-bottom: 6px;
+  }
+  .recorrido-day .stats-mini span { background: #f1f5f9; padding: 3px 9px; border-radius: 12px; }
+  .recorrido-day .stats-mini span.pedido { background: #d8f3df; color: #1f7c3f; }
+  .recorrido-day .stats-mini span.dinero { background: #fff3cd; color: #8a6d00; }
+  .recorrido-day .clientes-mini { font-size: .82rem; color: #555; line-height: 1.5; margin-top: 6px; }
+  .recorrido-day .clientes-mini b { color: #333; }
+  /* Gastos */
+  .gasto-row {
+    display: grid; grid-template-columns: 80px 1fr auto auto; gap: 10px;
+    align-items: center; padding: 10px 12px; background: #fff; border: 1px solid #e5e5e5;
+    border-radius: 6px; margin-bottom: 6px; font-size: .9rem;
+  }
+  .gasto-row .fecha { color: #777; font-size: .82rem; }
+  .gasto-row .concepto { font-weight: 500; }
+  .gasto-row .monto { font-weight: 600; color: #1f7c3f; min-width: 80px; text-align: right; }
+  .gasto-row .delete-gasto {
+    background: transparent; border: none; cursor: pointer; color: #c8102e;
+    padding: 2px 6px; font-size: 1rem;
+  }
+  @media (max-width: 480px) {
+    .gasto-row { grid-template-columns: 1fr auto; gap: 4px 10px; }
+    .gasto-row .fecha { grid-column: 1 / -1; order: -1; }
+  }
 </style>
 <script>window.MAXIFER_SYNC_NAMESPACE = 'viaje_sur';</script>
 <script type="module" src="./firebase-sync.js"></script>
@@ -929,8 +968,8 @@
   <button class="active" data-tab="potenciales">Potenciales <span class="pill" id="pillPot">0</span></button>
   <button data-tab="viajemaxi">Viaje Maxi <span class="pill" id="pillVM">0</span></button>
   <button data-tab="mapa">Mapa</button>
-  <button class="disabled" disabled>Recorrido</button>
-  <button class="disabled" disabled>Gastos</button>
+  <button data-tab="recorrido">Recorrido</button>
+  <button data-tab="gastos">Gastos <span class="pill" id="pillGastos">$0</span></button>
 </nav>
 
 <!-- ============ TAB: POTENCIALES ============ -->
@@ -1005,6 +1044,59 @@
     </div>
     <div id="mapa"></div>
     <div id="sinDirBox" style="margin-top:18px"></div>
+  </div>
+</section>
+
+<!-- ============ TAB: RECORRIDO ============ -->
+<section class="panel" id="panel-recorrido">
+  <div class="panel-inner">
+    <div class="recorrido-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <h3 style="margin:0;font-size:1rem;">📅 Día por día del viaje</h3>
+      <div id="recorridoTotales" style="font-size:.85rem;color:var(--text-mute);"></div>
+    </div>
+    <div id="listadoRecorrido"></div>
+  </div>
+</section>
+
+<!-- ============ TAB: GASTOS ============ -->
+<section class="panel" id="panel-gastos">
+  <div class="panel-inner">
+    <div class="gastos-header" style="display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:10px;margin-bottom:14px;">
+      <div>
+        <h3 style="margin:0 0 4px 0;font-size:1rem;">💰 Gastos del viaje</h3>
+        <div id="gastosResumen" style="font-size:.85rem;color:var(--text-mute);">Total: $0</div>
+      </div>
+      <button class="btn btn-primary btn-sm" id="btnAddGasto">+ Agregar gasto</button>
+    </div>
+    <form id="formGasto" style="display:none;background:#fafafa;padding:14px;border-radius:8px;border:1px solid #e5e5e5;margin-bottom:14px;">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;">
+        <label style="display:flex;flex-direction:column;font-size:11px;color:#555;gap:3px;">📅 Fecha
+          <input type="date" id="gastoFecha" required style="padding:6px;border:1px solid #ccc;border-radius:4px;">
+        </label>
+        <label style="display:flex;flex-direction:column;font-size:11px;color:#555;gap:3px;">📝 Concepto
+          <input type="text" id="gastoConcepto" placeholder="Nafta, peaje, hotel..." required style="padding:6px;border:1px solid #ccc;border-radius:4px;">
+        </label>
+        <label style="display:flex;flex-direction:column;font-size:11px;color:#555;gap:3px;">💵 Monto
+          <input type="number" id="gastoMonto" inputmode="decimal" placeholder="0" required style="padding:6px;border:1px solid #ccc;border-radius:4px;">
+        </label>
+        <label style="display:flex;flex-direction:column;font-size:11px;color:#555;gap:3px;">🏷️ Categoría
+          <select id="gastoCategoria" style="padding:6px;border:1px solid #ccc;border-radius:4px;">
+            <option value="">Otro</option>
+            <option value="combustible">⛽ Combustible</option>
+            <option value="peaje">🛣️ Peaje</option>
+            <option value="comida">🍽️ Comida</option>
+            <option value="hotel">🏨 Hotel</option>
+            <option value="vehiculo">🔧 Vehículo</option>
+            <option value="varios">📦 Varios</option>
+          </select>
+        </label>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;justify-content:flex-end;">
+        <button type="button" class="btn btn-sm" id="gastoCancel">Cancelar</button>
+        <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+      </div>
+    </form>
+    <div id="listadoGastos"></div>
   </div>
 </section>
 
@@ -1270,6 +1362,19 @@ try {
 let extras = {};
 try { extras = JSON.parse(localStorage.getItem(SK_EXTRAS) || '{}'); } catch(e) { extras = {}; }
 
+const SK_GASTOS = 'maxifer_viaje_gastos_v3';
+let gastos = [];
+try { gastos = JSON.parse(localStorage.getItem(SK_GASTOS) || '[]'); } catch(e) { gastos = []; }
+function guardarGastos(){ try { localStorage.setItem(SK_GASTOS, JSON.stringify(gastos)); } catch(e){} }
+function totalGastos(){ return gastos.reduce((a,g)=>a + Number(g.monto||0), 0); }
+function dayIdxByFecha(fechaStr){
+  if (!fechaStr) return 99;
+  for (const [idx, f] of Object.entries(FECHAS_VIAJE)) {
+    if (f === fechaStr) return Number(idx);
+  }
+  return 99;
+}
+
 // Excluidos: SIEMPRE usar la constante hardcodeada (no localStorage)
 excluidos = [...EXCLUIDOS_DEFAULT];
 
@@ -1321,19 +1426,19 @@ function setEstado(id, key){
     if (typeof renderListadoVM === 'function') renderListadoVM();
   }
 }
-// Reconstruye VIAJEMAXI desde CLIENTES + estado local + Monday, sin tocar POTENCIALES
+// Reconstruye VIAJEMAXI desde CLIENTES (Monday) + POTENCIALES (incluye manuales)
+// con estado local 'pedido', sin duplicar.
 function rebuildViajeMaxi(){
-  if (!Array.isArray(CLIENTES) || CLIENTES.length === 0) return;
   VIAJEMAXI = [];
-  CLIENTES.forEach(c => {
+  const seen = new Set();
+  // 1) Monday: VIAJE MAXI etiqueta + pedido activo
+  (CLIENTES || []).forEach(c => {
     if (esExcluido(c)) return;
-    const confirmadoAnterior = esConfirmadoAnterior(c);
-    const esVMEnMonday = c.etiq === 'VIAJE MAXI';
-    const localPedido = getEstado(c.id) === 'pedido';
     const tienePedidoActivo = IDS_CON_PEDIDO_ACTIVO.size === 0
       || IDS_CON_PEDIDO_ACTIVO.has(String(c.id));
-    if ((esVMEnMonday && tienePedidoActivo) || localPedido) {
-      const info = (confirmadoAnterior ? null : null) || dayInfoFromLoc(c.dir);
+    if (c.etiq === 'VIAJE MAXI' && tienePedidoActivo) {
+      const confirmadoAnterior = esConfirmadoAnterior(c);
+      const info = dayInfoFromLoc(c.dir);
       const coords = getCoords(c.dir);
       VIAJEMAXI.push({
         ...c, ...info,
@@ -1341,7 +1446,31 @@ function rebuildViajeMaxi(){
         confirmadoAnterior: !!confirmadoAnterior,
         manual: false
       });
+      seen.add(String(c.id));
     }
+  });
+  // 2) Potenciales con estado local 'pedido' (incluye manuales y todo lo geográficamente cercano)
+  (POTENCIALES || []).forEach(c => {
+    const id = String(c.id);
+    if (seen.has(id)) return;
+    if (getEstado(c.id) !== 'pedido') return;
+    VIAJEMAXI.push({ ...c });
+    seen.add(id);
+  });
+  // 3) Por si hay Monday clientes fuera del recorrido pero marcados 'pedido' localmente
+  (CLIENTES || []).forEach(c => {
+    const id = String(c.id);
+    if (seen.has(id)) return;
+    if (esExcluido(c)) return;
+    if (getEstado(c.id) !== 'pedido') return;
+    const info = dayInfoFromLoc(c.dir);
+    const coords = getCoords(c.dir);
+    VIAJEMAXI.push({
+      ...c, ...info,
+      lat: coords[0], lng: coords[1],
+      confirmadoAnterior: false, manual: false
+    });
+    seen.add(id);
   });
   const pillVM = document.getElementById('pillVM'); if (pillVM) pillVM.textContent = VIAJEMAXI.length;
 }
@@ -1628,6 +1757,9 @@ function procesarClientes(){
   renderStatsVM();
   renderListadoPot();
   renderListadoVM();
+  // Actualizar pill y resúmenes de pestañas que pueden estar inactivas
+  const pill = document.getElementById('pillGastos');
+  if (pill) pill.textContent = '$' + fmtMoney(totalGastos());
   if (mapa) renderMapa();
 }
 
@@ -1781,16 +1913,18 @@ function renderClientes(items, contId){
 
       const ext = getExtras(c.id);
       const resumenExt = extrasResumen(c.id);
-      const tieneExtras = !!resumenExt;
+      const tieneExtras = !!(ext.gasto || ext.importe || ext.fechaEntrega || ext.cobrado);
+      const miniNotaHtml = `
+        <input type="text" class="mini-nota" data-id="${c.id}" data-extra="notas" value="${escapeHtml(ext.notas??'')}" placeholder="📝 Mini nota...">
+      `;
       const extrasHtml = `
         <details class="extras-details" ${tieneExtras?'open':''}>
-          <summary>💰 Extras${resumenExt?`<span class="extras-resumen">${resumenExt}</span>`:''}</summary>
+          <summary>💰 Pedido / Gasto${resumenExt?`<span class="extras-resumen">${resumenExt}</span>`:''}</summary>
           <div class="extras-form">
             <label>💸 Gasto<input type="number" inputmode="decimal" data-id="${c.id}" data-extra="gasto" value="${ext.gasto??''}" placeholder="0"></label>
             <label>💵 Importe<input type="number" inputmode="decimal" data-id="${c.id}" data-extra="importe" value="${ext.importe??''}" placeholder="0"></label>
             <label>📅 Fecha entrega<input type="date" data-id="${c.id}" data-extra="fechaEntrega" value="${ext.fechaEntrega??''}"></label>
             <label class="checkbox"><input type="checkbox" data-id="${c.id}" data-extra="cobrado" ${ext.cobrado?'checked':''}> Cobrado</label>
-            <label class="full">📝 Notas<textarea rows="2" data-id="${c.id}" data-extra="notas" placeholder="Detalle del pedido, recordatorios...">${escapeHtml(ext.notas??'')}</textarea></label>
           </div>
         </details>
       `;
@@ -1809,6 +1943,7 @@ function renderClientes(items, contId){
           ${c.dir ? `<div class="client-loc">📍 ${escapeHtml(c.dir)}</div>` : ''}
           ${c.nota ? `<div class="client-notes">${escapeHtml(c.nota)}</div>` : ''}
           <div class="estado-selector">${estadoBtns}</div>
+          ${miniNotaHtml}
           ${extrasHtml}
         </div>
         <div class="client-side">
@@ -1845,7 +1980,7 @@ function renderClientes(items, contId){
       renderStatsVM();
     });
   });
-  // Bind inputs de extras (gasto, importe, cobrado, fechaEntrega, notas)
+  // Bind inputs de extras (gasto, importe, cobrado, fechaEntrega, notas) + mini-nota
   cont.querySelectorAll('[data-extra]').forEach(inp => {
     const handler = () => {
       const id = inp.dataset.id;
@@ -1855,21 +1990,23 @@ function renderClientes(items, contId){
       else if (inp.type === 'number') val = inp.value === '' ? '' : Number(inp.value);
       else val = inp.value;
       setExtraField(id, field, val);
-      // Actualizar el resumen del summary in-place
+      // Actualizar el resumen del summary del details in-place
       const det = inp.closest('.extras-details');
-      const sum = det?.querySelector('.extras-resumen');
-      const r = extrasResumen(id);
-      if (sum) sum.textContent = r;
-      else if (r) {
-        const s = det.querySelector('summary');
-        const span = document.createElement('span');
-        span.className = 'extras-resumen';
-        span.textContent = r;
-        s.appendChild(span);
+      if (det) {
+        const sum = det.querySelector('.extras-resumen');
+        const r = extrasResumen(id);
+        if (sum) sum.textContent = r;
+        else if (r) {
+          const s = det.querySelector('summary');
+          const span = document.createElement('span');
+          span.className = 'extras-resumen';
+          span.textContent = r;
+          s.appendChild(span);
+        }
       }
     };
     inp.addEventListener('change', handler);
-    if (inp.tagName === 'TEXTAREA' || (inp.type === 'number' || inp.type === 'text')) {
+    if (inp.tagName === 'TEXTAREA' || inp.type === 'number' || inp.type === 'text') {
       inp.addEventListener('blur', handler);
     }
   });
@@ -1913,6 +2050,103 @@ function renderListadoVM(){
     return true;
   });
   renderClientes(filtrados, 'listadoVM');
+}
+
+// ============================================================
+// Recorrido (resumen día por día)
+// ============================================================
+function renderRecorrido(){
+  const cont = document.getElementById('listadoRecorrido');
+  if (!cont) return;
+  // Agrupar por día
+  const grupos = new Map();
+  POTENCIALES.forEach(c => {
+    const k = c.dayIdx ?? 99;
+    if (!grupos.has(k)) grupos.set(k, { dayIdx: k, dia: c.dia, etapa: c.etapa, items: [] });
+    grupos.get(k).items.push(c);
+  });
+  // Asegurar todos los días del viaje aunque no tengan clientes
+  Object.entries(FECHAS_VIAJE).forEach(([idx, fecha]) => {
+    const i = Number(idx);
+    if (!grupos.has(i)) {
+      const info = (POTENCIALES.find(p => p.dayIdx === i)) || {};
+      grupos.set(i, { dayIdx: i, dia: info.dia || `Día ${i+1} · ${fecha}`, etapa: info.etapa || '—', items: [] });
+    }
+  });
+  const ordenados = [...grupos.values()].sort((a,b) => a.dayIdx - b.dayIdx);
+
+  let totalGeneralImporte = 0, totalGeneralGasto = 0, totalConPedido = 0;
+  cont.innerHTML = ordenados.map(g => {
+    const fechaDia = FECHAS_VIAJE[g.dayIdx] || '';
+    const conPedido = g.items.filter(c => getEstado(c.id) === 'pedido');
+    const vapedir   = g.items.filter(c => getEstado(c.id) === 'vapedir');
+    const sumImporte = g.items.reduce((a,c)=>a + Number(getExtras(c.id).importe||0), 0);
+    const sumGastoCli = g.items.reduce((a,c)=>a + Number(getExtras(c.id).gasto||0), 0);
+    const gastosDia = gastos.filter(x => x.fecha === fechaDia).reduce((a,x)=>a + Number(x.monto||0), 0);
+    const sumGasto = sumGastoCli + gastosDia;
+    totalGeneralImporte += sumImporte;
+    totalGeneralGasto += sumGasto;
+    totalConPedido += conPedido.length;
+    const nombres = g.items.slice(0, 50).map(c => {
+      const est = getEstado(c.id);
+      const icon = est==='pedido'?'✅':est==='vapedir'?'🤔':est==='noresp'?'⏳':est==='cancel'?'❌':'·';
+      return `${icon} ${escapeHtml(c.nombre)}`;
+    }).join(' · ');
+    return `
+      <div class="recorrido-day">
+        <h4>📅 ${escapeHtml(g.dia || ('Día '+(g.dayIdx+1)))}</h4>
+        <div class="meta">${escapeHtml(g.etapa || '')} ${fechaDia?` · ${fechaDia}`:''}</div>
+        <div class="stats-mini">
+          <span>Total: <b>${g.items.length}</b></span>
+          ${conPedido.length?`<span class="pedido">✅ Con pedido: <b>${conPedido.length}</b></span>`:''}
+          ${vapedir.length?`<span>🤔 Va a pedir: <b>${vapedir.length}</b></span>`:''}
+          ${sumImporte?`<span class="dinero">💵 Pedidos: $${fmtMoney(sumImporte)}</span>`:''}
+          ${sumGasto?`<span class="dinero">💸 Gastos: $${fmtMoney(sumGasto)}</span>`:''}
+        </div>
+        ${g.items.length ? `<div class="clientes-mini">${nombres}</div>` : '<div class="clientes-mini" style="color:#aaa;">Sin clientes asignados</div>'}
+      </div>
+    `;
+  }).join('');
+  const tot = document.getElementById('recorridoTotales');
+  if (tot) tot.textContent = `${totalConPedido} con pedido · 💵 $${fmtMoney(totalGeneralImporte)} · 💸 $${fmtMoney(totalGeneralGasto)}`;
+}
+
+// ============================================================
+// Gastos generales del viaje
+// ============================================================
+function renderGastos(){
+  const cont = document.getElementById('listadoGastos');
+  if (!cont) return;
+  const ordenados = [...gastos].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+  cont.innerHTML = ordenados.length === 0
+    ? '<div style="text-align:center;padding:30px;color:#999;">Sin gastos cargados aún. Usá "+ Agregar gasto".</div>'
+    : ordenados.map(g => {
+        const cat = g.categoria ? ({combustible:'⛽',peaje:'🛣️',comida:'🍽️',hotel:'🏨',vehiculo:'🔧',varios:'📦'}[g.categoria] || '📦') : '';
+        return `
+          <div class="gasto-row" data-id="${g.id}">
+            <div class="fecha">${g.fecha || '—'}</div>
+            <div class="concepto">${cat?cat+' ':''}${escapeHtml(g.concepto||'(sin descripción)')}</div>
+            <div class="monto">$${fmtMoney(g.monto)}</div>
+            <button class="delete-gasto" title="Eliminar">×</button>
+          </div>
+        `;
+      }).join('');
+  const total = totalGastos();
+  const res = document.getElementById('gastosResumen');
+  if (res) res.textContent = `Total: $${fmtMoney(total)} · ${gastos.length} gasto${gastos.length===1?'':'s'}`;
+  const pill = document.getElementById('pillGastos');
+  if (pill) pill.textContent = '$' + fmtMoney(total);
+
+  cont.querySelectorAll('.delete-gasto').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const id = btn.closest('.gasto-row').dataset.id;
+      if (!confirm('¿Eliminar este gasto?')) return;
+      gastos = gastos.filter(x => x.id !== id);
+      guardarGastos();
+      renderGastos();
+      if (typeof renderRecorrido === 'function') renderRecorrido();
+    });
+  });
 }
 
 // ============================================================
@@ -2147,12 +2381,60 @@ document.querySelectorAll('nav.tabs button').forEach(b => {
     document.querySelectorAll('.panel').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     const tab = b.dataset.tab;
-    document.getElementById('panel-'+tab).classList.add('active');
+    const panel = document.getElementById('panel-'+tab);
+    if (panel) panel.classList.add('active');
     if (tab === 'mapa') {
       setTimeout(() => { initMapa(); if(mapa) mapa.invalidateSize(); }, 50);
+    } else if (tab === 'recorrido') {
+      renderRecorrido();
+    } else if (tab === 'gastos') {
+      renderGastos();
     }
   });
 });
+
+// ============================================================
+// Gastos del viaje (form + lista)
+// ============================================================
+const formGasto = document.getElementById('formGasto');
+const btnAddGasto = document.getElementById('btnAddGasto');
+if (btnAddGasto) {
+  btnAddGasto.addEventListener('click', () => {
+    formGasto.style.display = formGasto.style.display === 'none' ? 'block' : 'none';
+    if (formGasto.style.display === 'block') {
+      const today = new Date().toISOString().slice(0,10);
+      document.getElementById('gastoFecha').value = today;
+      document.getElementById('gastoConcepto').focus();
+    }
+  });
+}
+const gastoCancel = document.getElementById('gastoCancel');
+if (gastoCancel) {
+  gastoCancel.addEventListener('click', () => {
+    formGasto.style.display = 'none';
+    formGasto.reset();
+  });
+}
+if (formGasto) {
+  formGasto.addEventListener('submit', e => {
+    e.preventDefault();
+    const fecha = document.getElementById('gastoFecha').value;
+    const concepto = document.getElementById('gastoConcepto').value.trim();
+    const monto = Number(document.getElementById('gastoMonto').value);
+    const categoria = document.getElementById('gastoCategoria').value;
+    if (!fecha || !concepto || !monto) return;
+    gastos.push({
+      id: 'g_' + Date.now() + '_' + Math.random().toString(36).slice(2,7),
+      fecha, concepto, monto, categoria,
+      dayIdx: dayIdxByFecha(fecha)
+    });
+    guardarGastos();
+    formGasto.reset();
+    formGasto.style.display = 'none';
+    renderGastos();
+    renderRecorrido();
+  });
+}
 
 // Buscadores y selects
 document.getElementById('buscador').addEventListener('input', renderListadoPot);
@@ -2195,6 +2477,8 @@ function _onRemoteSync(key, value){
     try { localidades = JSON.parse(localStorage.getItem(SK_LOC) || '[]'); } catch(e) {}
   } else if (key === SK_EXTRAS) {
     try { extras = JSON.parse(localStorage.getItem(SK_EXTRAS) || '{}'); } catch(e) { extras = {}; }
+  } else if (key === SK_GASTOS) {
+    try { gastos = JSON.parse(localStorage.getItem(SK_GASTOS) || '[]'); } catch(e) { gastos = []; }
   }
   // Re-render
   rebuildViajeMaxi();
@@ -2202,10 +2486,12 @@ function _onRemoteSync(key, value){
   if (typeof renderStatsVM === 'function') renderStatsVM();
   if (typeof renderListadoPot === 'function') renderListadoPot();
   if (typeof renderListadoVM === 'function') renderListadoVM();
+  if (typeof renderRecorrido === 'function') renderRecorrido();
+  if (typeof renderGastos === 'function') renderGastos();
 }
 function _startSync(){
   if (!window.MaxiferSync) return;
-  window.MaxiferSync.start([SK_STATE, SK_LOC, SK_EXTRAS], {
+  window.MaxiferSync.start([SK_STATE, SK_LOC, SK_EXTRAS, SK_GASTOS], {
     statusEl: document.getElementById('sync-status'),
     onRemote: _onRemoteSync
   });

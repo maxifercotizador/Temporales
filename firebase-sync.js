@@ -84,6 +84,16 @@ class FirebaseSync {
     this._patchLocalStorage();
     keys.forEach(k => this.synced.add(k));
 
+    // Si hay datos locales sin timestamp (escritos antes de que el patch
+    // estuviera instalado, o antes de agregar Firebase), les ponemos
+    // ts=Date.now() para que la reconciliación los considere "frescos"
+    // y no los pise con el remoto.
+    keys.forEach(k => {
+      if (localStorage.getItem(k) !== null && !localStorage.getItem(tsKey(k))) {
+        Storage.prototype._origSetItem.call(localStorage, tsKey(k), String(Date.now()));
+      }
+    });
+
     this._setStatus('☁️ Sincronizando...', 'sync');
 
     // Reconciliación inicial
@@ -91,6 +101,19 @@ class FirebaseSync {
 
     // Suscripción a cambios remotos
     keys.forEach(k => this._subscribe(k));
+
+    // Flushear pushes pendientes cuando la pestaña se va a fondo / cierra
+    const flush = () => {
+      for (const [key, timer] of this.pushTimers) {
+        clearTimeout(timer);
+        this.pushTimers.delete(key);
+        this._push(key);
+      }
+    };
+    window.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') flush();
+    });
+    window.addEventListener('pagehide', flush);
 
     this.ready = true;
     this._setStatus('☁️ Sincronizado', 'ok');
