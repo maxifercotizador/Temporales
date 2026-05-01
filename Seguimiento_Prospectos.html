@@ -234,7 +234,15 @@ html, body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 12px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform .1s, border-color .15s, background .15s;
 }
+.stat:hover { transform: translateY(-1px); }
+.stat.active { border-width: 2px; padding: 11px; }
+.stat.urgent.active { border-color: var(--red); background: rgba(200,16,46,.08); }
+.stat.warm.active   { border-color: var(--yellow); background: rgba(230,194,0,.10); }
+.stat.cold.active   { border-color: var(--blue); background: rgba(70,130,200,.10); }
 
 .stat-label {
   font-size: 10px;
@@ -897,6 +905,7 @@ let state = {
   contacts: JSON.parse(localStorage.getItem('maxifer_cache') || '[]'),
   lastFetch: localStorage.getItem('maxifer_lastfetch') || null,
   currentTab: 'hoy',
+  dateFilter: 'all', // 'all' | 'overdue' | 'today' (solo aplica en pestaña Hoy)
   currentContact: null,
   filterZona: 'all',
   filterProvincia: 'all',
@@ -1177,13 +1186,16 @@ function render() {
     html += renderGeoFilters();
   } else {
     html += renderStats(items, today);
+    // Aplicar filtro de fecha (atrasados/hoy/todos)
+    if (state.dateFilter === 'overdue') items = items.filter(c => c.proximo_seg < today);
+    else if (state.dateFilter === 'today') items = items.filter(c => c.proximo_seg === today);
   }
 
   if (items.length === 0) {
     html += '<div class="empty"><div class="empty-icon">' + (state.currentTab === 'hoy' ? '✓' : '∅') + '</div>';
-    html += '<div class="empty-title">' + (state.currentTab === 'hoy' && state.smartFilter === 'all' ? '¡Al día!' : 'Sin resultados') + '</div>';
-    html += '<div class="empty-text">' + (state.smartFilter !== 'all' || state.filterZona !== 'all' || state.filterProvincia !== 'all' ? 'Probá quitando filtros.' : 'No tenés seguimientos pendientes para hoy.') + '</div></div>';
-  } else if (state.currentTab === 'hoy' && state.smartFilter === 'all') {
+    html += '<div class="empty-title">' + (state.currentTab === 'hoy' && state.smartFilter === 'all' && state.dateFilter === 'all' ? '¡Al día!' : 'Sin resultados') + '</div>';
+    html += '<div class="empty-text">' + (state.smartFilter !== 'all' || state.filterZona !== 'all' || state.filterProvincia !== 'all' || state.dateFilter !== 'all' ? 'Probá quitando filtros.' : 'No tenés seguimientos pendientes para hoy.') + '</div></div>';
+  } else if (state.currentTab === 'hoy' && state.smartFilter === 'all' && state.dateFilter === 'all') {
     html += renderHoy(items, today);
   } else {
     html += '<div class="list">' + items.map(c => renderCard(c, today)).join('') + '</div>';
@@ -1246,11 +1258,16 @@ function setGeoFilter(type, value) {
 function renderStats(items, today) {
   const overdue = items.filter(c => c.proximo_seg < today).length;
   const todayCount = items.filter(c => c.proximo_seg === today).length;
+  const f = state.dateFilter;
   return `<div class="stats">
-    <div class="stat urgent"><div class="stat-label">Atrasados</div><div class="stat-value">${overdue}</div></div>
-    <div class="stat warm"><div class="stat-label">Hoy</div><div class="stat-value">${todayCount}</div></div>
-    <div class="stat cold"><div class="stat-label">Total pendiente</div><div class="stat-value">${items.length}</div></div>
+    <div class="stat urgent ${f==='overdue'?'active':''}" onclick="setDateFilter('overdue')"><div class="stat-label">Atrasados</div><div class="stat-value">${overdue}</div></div>
+    <div class="stat warm ${f==='today'?'active':''}" onclick="setDateFilter('today')"><div class="stat-label">Hoy</div><div class="stat-value">${todayCount}</div></div>
+    <div class="stat cold ${f==='all'?'active':''}" onclick="setDateFilter('all')"><div class="stat-label">Total pendiente</div><div class="stat-value">${items.length}</div></div>
   </div>`;
+}
+function setDateFilter(key) {
+  state.dateFilter = state.dateFilter === key ? 'all' : key;
+  render();
 }
 
 function renderHoy(items, today) {
@@ -1366,6 +1383,7 @@ function switchTab(tab) {
   state.smartFilter = 'all';
   state.filterZona = 'all';
   state.filterProvincia = 'all';
+  state.dateFilter = 'all';
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
   render();
 }
