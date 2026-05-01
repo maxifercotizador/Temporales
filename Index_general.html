@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Maxifer · Index general</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card-hover: #334155;
+    --border: #334155;
+    --text: #f1f5f9;
+    --text-mute: #94a3b8;
+    --accent: #f59e0b;
+    --green: #10b981;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --pink: #ec4899;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+    background: var(--bg); color: var(--text);
+    min-height: 100vh;
+    -webkit-tap-highlight-color: transparent;
+    padding: 20px 16px 60px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+  }
+  h1 {
+    margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -.02em;
+  }
+  h1 .accent { color: var(--accent); }
+  .sub {
+    font-size: .85rem; color: var(--text-mute); margin-top: 2px;
+  }
+  .pill {
+    background: var(--card); padding: 5px 12px; border-radius: 14px;
+    font-size: .8rem; color: var(--text-mute); border: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-size: .82rem; text-transform: uppercase; letter-spacing: .12em;
+    color: var(--text-mute); margin: 28px 0 10px; font-weight: 700;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 18px; text-decoration: none; color: var(--text);
+    display: flex; flex-direction: column; gap: 6px;
+    transition: transform .15s, border-color .15s, background .15s;
+    position: relative; overflow: hidden;
+  }
+  .card::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px;
+    background: var(--accent);
+  }
+  .card.green::before  { background: var(--green); }
+  .card.blue::before   { background: var(--blue); }
+  .card.purple::before { background: var(--purple); }
+  .card.pink::before   { background: var(--pink); }
+  .card:hover {
+    transform: translateY(-2px); background: var(--card-hover); border-color: var(--accent);
+  }
+  .card .icon { font-size: 1.6rem; line-height: 1; margin-bottom: 4px; }
+  .card .name { font-weight: 700; font-size: 1.02rem; }
+  .card .desc { font-size: .8rem; color: var(--text-mute); line-height: 1.35; }
+
+  footer {
+    margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border);
+    text-align: center; color: var(--text-mute); font-size: .75rem;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  @media (max-width: 480px) {
+    body { padding: 16px 12px 40px; }
+    h1 { font-size: 1.4rem; }
+    .grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .card { padding: 14px; }
+    .card .name { font-size: .92rem; }
+    .card .desc { font-size: .72rem; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <h1>Maxi<span class="accent">fer</span> · Index</h1>
+    <div class="sub">Acceso rápido a todas mis apps</div>
+  </div>
+  <div class="pill" id="hora"></div>
+</header>
+
+<!-- ============ TEMPORALES ============ -->
+<div class="section-title">📋 Apps de gestión</div>
+<div class="grid">
+  <a class="card green" href="./Prospectos.html">
+    <div class="icon">🔥</div>
+    <div class="name">Prospectos</div>
+    <div class="desc">CRM Monday: contactos, leads, clientes y seguimientos</div>
+  </a>
+  <a class="card blue" href="./VIAJE_SUR.html">
+    <div class="icon">🚗</div>
+    <div class="name">Viaje Sur</div>
+    <div class="desc">Itinerario, clientes, gastos y recorrido del viaje</div>
+  </a>
+  <a class="card purple" href="./postventa_monday.html">
+    <div class="icon">📞</div>
+    <div class="name">Postventa</div>
+    <div class="desc">Pedidos y clientes con seguimiento postventa</div>
+  </a>
+  <a class="card pink" href="./Notas_Pendientes.html">
+    <div class="icon">📝</div>
+    <div class="name">Notas / Pendientes</div>
+    <div class="desc">Lista de pendientes con grupos e historial</div>
+  </a>
+  <a class="card" href="./analisis_financiero.html">
+    <div class="icon">📊</div>
+    <div class="name">Análisis Financiero</div>
+    <div class="desc">Reportes y métricas mensuales</div>
+  </a>
+</div>
+
+<!-- ============ PRESUPUESTADOR ============ -->
+<div class="section-title">💼 Presupuestador</div>
+<div class="grid">
+  <a class="card blue" href="https://maxifercotizador.github.io/Presupuestador/index.html">
+    <div class="icon">🧮</div>
+    <div class="name">Maxifer Tools</div>
+    <div class="desc">Menú: Presupuestador, Compras, 3en1, Listas</div>
+  </a>
+</div>
+
+<!-- ============ PROYECTO PRIVADO ============ -->
+<div class="section-title">🔒 Proyecto privado</div>
+<div class="grid">
+  <a class="card pink" href="https://maxifercotizador.github.io/Proyecto-Privado/index.html">
+    <div class="icon">🏛️</div>
+    <div class="name">Panel privado</div>
+    <div class="desc">Costos, pedidos, gastos, ventas y salud</div>
+  </a>
+</div>
+
+<footer>
+  Solo para uso personal · <a href="https://github.com/maxifercotizador" target="_blank">GitHub</a>
+</footer>
+
+</div>
+
+<script>
+function tickHora() {
+  const d = new Date();
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const dia = ['dom','lun','mar','mié','jue','vie','sáb'][d.getDay()];
+  const fecha = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  document.getElementById('hora').textContent = `${dia} ${fecha} · ${h}:${m}`;
+}
+tickHora(); setInterval(tickHora, 30000);
+</script>
+
+</body>
+</html>
