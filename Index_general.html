@@ -8,6 +8,7 @@
 <style>
   :root {
     --bg: #0f172a;
+    --bg-2: #1e293b;
     --card: #1e293b;
     --card-hover: #334155;
     --border: #334155;
@@ -18,50 +19,82 @@
     --blue: #3b82f6;
     --purple: #8b5cf6;
     --pink: #ec4899;
+    --red: #ef4444;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--bg); color: var(--text);
-    min-height: 100vh;
+    min-height: 100vh; padding: 16px 14px 60px;
     -webkit-tap-highlight-color: transparent;
-    padding: 20px 16px 60px;
   }
-  .wrap { max-width: 880px; margin: 0 auto; }
-  header {
+  .wrap { max-width: 980px; margin: 0 auto; }
+
+  header.top {
     display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 28px; flex-wrap: wrap; gap: 12px;
+    margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
   }
-  h1 {
-    margin: 0; font-size: 1.8rem; font-weight: 800; letter-spacing: -.02em;
-  }
+  h1 { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; }
   h1 .accent { color: var(--accent); }
-  .sub {
-    font-size: .85rem; color: var(--text-mute); margin-top: 2px;
-  }
+  .sub { font-size: .8rem; color: var(--text-mute); margin-top: 2px; }
   .pill {
     background: var(--card); padding: 5px 12px; border-radius: 14px;
     font-size: .8rem; color: var(--text-mute); border: 1px solid var(--border);
   }
 
-  .section-title {
-    font-size: .82rem; text-transform: uppercase; letter-spacing: .12em;
-    color: var(--text-mute); margin: 28px 0 10px; font-weight: 700;
-    display: flex; align-items: center; gap: 8px;
+  /* Buscador */
+  .search-wrap {
+    position: sticky; top: 0; z-index: 50; padding: 8px 0;
+    background: linear-gradient(180deg, var(--bg) 70%, transparent);
+    margin-bottom: 14px;
   }
-  .section-title::after {
-    content: ''; flex: 1; height: 1px; background: var(--border);
+  .search-input {
+    width: 100%; padding: 12px 16px 12px 44px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 28px;
+    color: var(--text); font-size: 15px; font-family: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: 14px center;
+  }
+  .search-input:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .search-status {
+    font-size: .72rem; color: var(--text-mute); margin-top: 6px; padding: 0 4px;
   }
 
+  /* Tabs */
+  nav.tabs {
+    display: flex; gap: 4px; overflow-x: auto; margin-bottom: 16px;
+    border-bottom: 1px solid var(--border); -webkit-overflow-scrolling: touch;
+  }
+  nav.tabs::-webkit-scrollbar { display: none; }
+  nav.tabs button {
+    background: transparent; border: none; color: var(--text-mute);
+    padding: 10px 14px; font-size: .9rem; font-weight: 600; font-family: inherit;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    white-space: nowrap; transition: all .15s; user-select: none;
+  }
+  nav.tabs button:hover { color: var(--text); }
+  nav.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+  nav.tabs button .count {
+    background: var(--card); padding: 1px 8px; border-radius: 10px;
+    font-size: .72rem; margin-left: 4px;
+  }
+  nav.tabs button.active .count { background: var(--accent); color: #1e1e1e; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Cards grid */
   .grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 12px;
   }
   .card {
     background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-    padding: 18px; text-decoration: none; color: var(--text);
-    display: flex; flex-direction: column; gap: 6px;
+    padding: 16px; text-decoration: none; color: var(--text);
+    display: flex; flex-direction: column; gap: 5px;
     transition: transform .15s, border-color .15s, background .15s;
     position: relative; overflow: hidden;
   }
@@ -73,97 +106,211 @@
   .card.blue::before   { background: var(--blue); }
   .card.purple::before { background: var(--purple); }
   .card.pink::before   { background: var(--pink); }
-  .card:hover {
-    transform: translateY(-2px); background: var(--card-hover); border-color: var(--accent);
+  .card.red::before    { background: var(--red); }
+  .card:hover { transform: translateY(-2px); background: var(--card-hover); border-color: var(--accent); }
+  .card .icon { font-size: 1.5rem; line-height: 1; margin-bottom: 4px; }
+  .card .name { font-weight: 700; font-size: 1rem; }
+  .card .desc { font-size: .78rem; color: var(--text-mute); line-height: 1.35; }
+
+  /* Archivos */
+  .file-row {
+    display: grid; grid-template-columns: auto 1fr auto auto; gap: 12px;
+    align-items: center; padding: 12px 14px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 8px; text-decoration: none; color: var(--text);
+    transition: background .15s, border-color .15s;
   }
-  .card .icon { font-size: 1.6rem; line-height: 1; margin-bottom: 4px; }
-  .card .name { font-weight: 700; font-size: 1.02rem; }
-  .card .desc { font-size: .8rem; color: var(--text-mute); line-height: 1.35; }
+  .file-row:hover { background: var(--card-hover); border-color: var(--accent); }
+  .file-row .ficon { font-size: 1.4rem; }
+  .file-row .fname { font-weight: 600; font-size: .94rem; }
+  .file-row .fpath { font-size: .72rem; color: var(--text-mute); }
+  .file-row .fdate { font-size: .76rem; color: var(--text-mute); white-space: nowrap; text-align: right; }
+  .file-row .fdate b { color: var(--text); display: block; }
+  .file-row .fopen {
+    background: var(--accent); color: #1a1a1a; padding: 5px 12px;
+    border-radius: 14px; font-size: .76rem; font-weight: 700;
+  }
+
+  /* Search results */
+  .search-results { display: none; }
+  .search-results.active { display: block; }
+  .panels-wrap.searching .panel { display: none !important; }
+  .panels-wrap.searching nav.tabs { display: none; }
+
+  .result-group { margin-bottom: 22px; }
+  .result-group h3 {
+    margin: 0 0 8px; font-size: .82rem; text-transform: uppercase;
+    letter-spacing: .12em; color: var(--text-mute);
+  }
+  .result-group h3 b { color: var(--accent); }
+  .result-row {
+    display: grid; grid-template-columns: 1fr auto; gap: 10px;
+    padding: 10px 14px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 6px; text-decoration: none; color: var(--text);
+    align-items: center;
+  }
+  .result-row:hover { background: var(--card-hover); border-color: var(--accent); }
+  .result-row .rname { font-weight: 600; font-size: .9rem; }
+  .result-row .rmeta { font-size: .74rem; color: var(--text-mute); margin-top: 2px; }
+  .result-row .rprice { color: var(--green); font-weight: 700; font-size: .9rem; white-space: nowrap; }
+  .result-row mark { background: var(--accent); color: #1a1a1a; padding: 0 2px; border-radius: 3px; }
+
+  .empty-search {
+    text-align: center; padding: 40px 16px; color: var(--text-mute);
+  }
 
   footer {
-    margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--border);
-    text-align: center; color: var(--text-mute); font-size: .75rem;
+    margin-top: 36px; padding-top: 18px; border-top: 1px solid var(--border);
+    text-align: center; color: var(--text-mute); font-size: .74rem;
   }
-  footer a { color: var(--accent); text-decoration: none; }
 
   @media (max-width: 480px) {
-    body { padding: 16px 12px 40px; }
-    h1 { font-size: 1.4rem; }
+    body { padding: 12px 10px 40px; }
+    h1 { font-size: 1.3rem; }
     .grid { grid-template-columns: 1fr 1fr; gap: 10px; }
-    .card { padding: 14px; }
-    .card .name { font-size: .92rem; }
-    .card .desc { font-size: .72rem; }
+    .card { padding: 12px; }
+    .card .name { font-size: .88rem; }
+    .card .desc { font-size: .7rem; }
+    .file-row { grid-template-columns: auto 1fr auto; row-gap: 4px; }
+    .file-row .fdate { grid-column: 2 / 3; text-align: left; }
+    .file-row .fopen { grid-row: 1 / 3; grid-column: 3; align-self: center; }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<header>
+<header class="top">
   <div>
     <h1>Maxi<span class="accent">fer</span> · Index</h1>
-    <div class="sub">Acceso rápido a todas mis apps</div>
+    <div class="sub">Acceso rápido a todas mis apps y archivos</div>
   </div>
   <div class="pill" id="hora"></div>
 </header>
 
-<!-- ============ TEMPORALES ============ -->
-<div class="section-title">📋 Apps de gestión</div>
-<div class="grid">
-  <a class="card green" href="./Prospectos.html?from=menu">
-    <div class="icon">🔥</div>
-    <div class="name">Prospectos</div>
-    <div class="desc">CRM Monday: contactos, leads, clientes y seguimientos</div>
-  </a>
-  <a class="card blue" href="./VIAJE_SUR.html?from=menu">
-    <div class="icon">🚗</div>
-    <div class="name">Viaje Sur</div>
-    <div class="desc">Itinerario, clientes, gastos y recorrido del viaje</div>
-  </a>
-  <a class="card purple" href="./postventa_monday.html?from=menu">
-    <div class="icon">📞</div>
-    <div class="name">Postventa</div>
-    <div class="desc">Pedidos y clientes con seguimiento postventa</div>
-  </a>
-  <a class="card pink" href="./Notas_Pendientes.html?from=menu">
-    <div class="icon">📝</div>
-    <div class="name">Notas / Pendientes</div>
-    <div class="desc">Lista de pendientes con grupos e historial</div>
-  </a>
-  <a class="card" href="./analisis_financiero.html?from=menu">
-    <div class="icon">📊</div>
-    <div class="name">Análisis Financiero</div>
-    <div class="desc">Reportes y métricas mensuales</div>
-  </a>
+<div class="search-wrap">
+  <input class="search-input" id="buscador" type="search" placeholder="Buscar en todo: app, producto, cliente, archivo..." autocomplete="off">
+  <div class="search-status" id="searchStatus">Cargando catálogos para búsqueda...</div>
 </div>
 
-<!-- ============ PRESUPUESTADOR ============ -->
-<div class="section-title">💼 Presupuestador</div>
-<div class="grid">
-  <a class="card blue" href="https://maxifercotizador.github.io/Presupuestador/index.html?from=menu">
-    <div class="icon">🧮</div>
-    <div class="name">Maxifer Tools</div>
-    <div class="desc">Menú: Presupuestador, Compras, 3en1, Listas</div>
-  </a>
+<div class="panels-wrap" id="panelsWrap">
+
+<nav class="tabs" role="tablist" id="tabs">
+  <button class="active" data-tab="apps">📋 Apps gestión <span class="count">5</span></button>
+  <button data-tab="presupuestador">💼 Presupuestador <span class="count">5</span></button>
+  <button data-tab="privado">🔒 Proyecto privado <span class="count">7</span></button>
+  <button data-tab="archivos">📂 Archivos <span class="count" id="countArchivos">…</span></button>
+</nav>
+
+<!-- ======== APPS DE GESTIÓN ======== -->
+<section class="panel active" id="panel-apps">
+  <div class="grid">
+    <a class="card green" href="./Prospectos.html?from=menu">
+      <div class="icon">🔥</div><div class="name">Prospectos</div>
+      <div class="desc">CRM Monday: contactos, leads y seguimientos</div>
+    </a>
+    <a class="card blue" href="./VIAJE_SUR.html?from=menu">
+      <div class="icon">🚗</div><div class="name">Viaje Sur</div>
+      <div class="desc">Itinerario, clientes, gastos y recorrido</div>
+    </a>
+    <a class="card purple" href="./postventa_monday.html?from=menu">
+      <div class="icon">📞</div><div class="name">Postventa</div>
+      <div class="desc">Pedidos y seguimiento postventa</div>
+    </a>
+    <a class="card pink" href="./Notas_Pendientes.html?from=menu">
+      <div class="icon">📝</div><div class="name">Notas / Pendientes</div>
+      <div class="desc">Lista de pendientes con grupos e historial</div>
+    </a>
+    <a class="card" href="./analisis_financiero.html?from=menu">
+      <div class="icon">📊</div><div class="name">Análisis Financiero</div>
+      <div class="desc">Reportes y métricas mensuales</div>
+    </a>
+  </div>
+</section>
+
+<!-- ======== PRESUPUESTADOR ======== -->
+<section class="panel" id="panel-presupuestador">
+  <div class="grid">
+    <a class="card blue" href="https://maxifercotizador.github.io/Presupuestador/index.html?from=menu">
+      <div class="icon">🧮</div><div class="name">Menú general</div>
+      <div class="desc">Hub con todas las herramientas</div>
+    </a>
+    <a class="card green" href="https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu">
+      <div class="icon">💰</div><div class="name">Presupuestador</div>
+      <div class="desc">Generador de cotizaciones</div>
+    </a>
+    <a class="card purple" href="https://maxifercotizador.github.io/Presupuestador/compras.html?from=menu">
+      <div class="icon">🛒</div><div class="name">Compras</div>
+      <div class="desc">Pedidos a proveedores con historial</div>
+    </a>
+    <a class="card pink" href="https://maxifercotizador.github.io/Presupuestador/3en1.html?from=menu">
+      <div class="icon">🔁</div><div class="name">3 en 1</div>
+      <div class="desc">Comparador y conversor de listas</div>
+    </a>
+    <a class="card" href="https://maxifercotizador.github.io/Presupuestador/listas.html?from=menu">
+      <div class="icon">📑</div><div class="name">Listas</div>
+      <div class="desc">PDF y Excel de listas de precios</div>
+    </a>
+  </div>
+</section>
+
+<!-- ======== PROYECTO PRIVADO ======== -->
+<section class="panel" id="panel-privado">
+  <div class="grid">
+    <a class="card pink" href="https://maxifercotizador.github.io/Proyecto-Privado/index.html?from=menu">
+      <div class="icon">🏛️</div><div class="name">Panel privado</div>
+      <div class="desc">Hub de módulos privados</div>
+    </a>
+    <a class="card green" href="https://maxifercotizador.github.io/Proyecto-Privado/analisis_ventas.html?from=menu">
+      <div class="icon">📈</div><div class="name">Análisis ventas</div>
+      <div class="desc">Métricas y evolución de ventas</div>
+    </a>
+    <a class="card blue" href="https://maxifercotizador.github.io/Proyecto-Privado/costos.html?from=menu">
+      <div class="icon">💸</div><div class="name">Costos</div>
+      <div class="desc">Compras, costos y fábricas</div>
+    </a>
+    <a class="card purple" href="https://maxifercotizador.github.io/Proyecto-Privado/gastos.html?from=menu">
+      <div class="icon">🧾</div><div class="name">Gastos</div>
+      <div class="desc">Gastos fijos y variables</div>
+    </a>
+    <a class="card red" href="https://maxifercotizador.github.io/Proyecto-Privado/pedidos.html?from=menu">
+      <div class="icon">📦</div><div class="name">Pedidos</div>
+      <div class="desc">Pedidos a fábrica</div>
+    </a>
+    <a class="card" href="https://maxifercotizador.github.io/Proyecto-Privado/salud.html?from=menu">
+      <div class="icon">❤️‍🩹</div><div class="name">Salud</div>
+      <div class="desc">Salud financiera del negocio</div>
+    </a>
+    <a class="card pink" href="https://maxifercotizador.github.io/Proyecto-Privado/surtidos.html?from=menu">
+      <div class="icon">🧰</div><div class="name">Surtidos</div>
+      <div class="desc">Configuración de surtidos</div>
+    </a>
+  </div>
+</section>
+
+<!-- ======== ARCHIVOS ======== -->
+<section class="panel" id="panel-archivos">
+  <div id="archivosLista">Cargando archivos...</div>
+</section>
+
 </div>
 
-<!-- ============ PROYECTO PRIVADO ============ -->
-<div class="section-title">🔒 Proyecto privado</div>
-<div class="grid">
-  <a class="card pink" href="https://maxifercotizador.github.io/Proyecto-Privado/index.html?from=menu">
-    <div class="icon">🏛️</div>
-    <div class="name">Panel privado</div>
-    <div class="desc">Costos, pedidos, gastos, ventas y salud</div>
-  </a>
-</div>
+<!-- ======== SEARCH RESULTS ======== -->
+<div class="search-results" id="searchResults"></div>
 
 <footer>
-  Solo para uso personal · <a href="https://github.com/maxifercotizador" target="_blank">GitHub</a>
+  Solo para uso personal · datos de búsqueda cargados en memoria
 </footer>
 
 </div>
 
 <script>
+'use strict';
+
+// ============================================================
+// Reloj
+// ============================================================
 function tickHora() {
   const d = new Date();
   const h = String(d.getHours()).padStart(2, '0');
@@ -173,6 +320,306 @@ function tickHora() {
   document.getElementById('hora').textContent = `${dia} ${fecha} · ${h}:${m}`;
 }
 tickHora(); setInterval(tickHora, 30000);
+
+// ============================================================
+// Tabs
+// ============================================================
+document.querySelectorAll('#tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#tabs button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ============================================================
+// Search index
+// ============================================================
+function norm(s) {
+  return String(s||'').toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'');
+}
+function escapeHtml(s) {
+  return String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function highlight(text, q) {
+  if (!q) return escapeHtml(text);
+  const t = String(text||'');
+  const lc = norm(t);
+  const qn = norm(q);
+  const idx = lc.indexOf(qn);
+  if (idx < 0) return escapeHtml(t);
+  return escapeHtml(t.slice(0, idx)) + '<mark>' + escapeHtml(t.slice(idx, idx + q.length)) + '</mark>' + escapeHtml(t.slice(idx + q.length));
+}
+function fmtMoney(n) {
+  return Number(n||0).toLocaleString('es-AR', { maximumFractionDigits: 2 });
+}
+
+const APPS_INDEX = [
+  // Apps gestión
+  { type:'app', icon:'🔥', name:'Prospectos', desc:'CRM Monday', url:'./Prospectos.html?from=menu', tab:'apps' },
+  { type:'app', icon:'🚗', name:'Viaje Sur', desc:'Itinerario y clientes', url:'./VIAJE_SUR.html?from=menu', tab:'apps' },
+  { type:'app', icon:'📞', name:'Postventa', desc:'Seguimiento postventa', url:'./postventa_monday.html?from=menu', tab:'apps' },
+  { type:'app', icon:'📝', name:'Notas / Pendientes', desc:'Pendientes con grupos', url:'./Notas_Pendientes.html?from=menu', tab:'apps' },
+  { type:'app', icon:'📊', name:'Análisis Financiero', desc:'Reportes mensuales', url:'./analisis_financiero.html?from=menu', tab:'apps' },
+  // Presupuestador
+  { type:'app', icon:'🧮', name:'Menú Presupuestador', desc:'Hub Maxifer Tools', url:'https://maxifercotizador.github.io/Presupuestador/index.html?from=menu', tab:'presupuestador' },
+  { type:'app', icon:'💰', name:'Presupuestador', desc:'Cotizaciones', url:'https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu', tab:'presupuestador' },
+  { type:'app', icon:'🛒', name:'Compras', desc:'Pedidos a proveedores', url:'https://maxifercotizador.github.io/Presupuestador/compras.html?from=menu', tab:'presupuestador' },
+  { type:'app', icon:'🔁', name:'3 en 1', desc:'Comparador de listas', url:'https://maxifercotizador.github.io/Presupuestador/3en1.html?from=menu', tab:'presupuestador' },
+  { type:'app', icon:'📑', name:'Listas', desc:'PDFs y Excel de listas', url:'https://maxifercotizador.github.io/Presupuestador/listas.html?from=menu', tab:'presupuestador' },
+  // Privado
+  { type:'app', icon:'🏛️', name:'Panel privado', desc:'Hub privado', url:'https://maxifercotizador.github.io/Proyecto-Privado/index.html?from=menu', tab:'privado' },
+  { type:'app', icon:'📈', name:'Análisis ventas', desc:'Métricas de ventas', url:'https://maxifercotizador.github.io/Proyecto-Privado/analisis_ventas.html?from=menu', tab:'privado' },
+  { type:'app', icon:'💸', name:'Costos', desc:'Compras y fábricas', url:'https://maxifercotizador.github.io/Proyecto-Privado/costos.html?from=menu', tab:'privado' },
+  { type:'app', icon:'🧾', name:'Gastos', desc:'Gastos fijos', url:'https://maxifercotizador.github.io/Proyecto-Privado/gastos.html?from=menu', tab:'privado' },
+  { type:'app', icon:'📦', name:'Pedidos', desc:'Pedidos a fábrica', url:'https://maxifercotizador.github.io/Proyecto-Privado/pedidos.html?from=menu', tab:'privado' },
+  { type:'app', icon:'❤️‍🩹', name:'Salud', desc:'Salud financiera', url:'https://maxifercotizador.github.io/Proyecto-Privado/salud.html?from=menu', tab:'privado' },
+  { type:'app', icon:'🧰', name:'Surtidos privado', desc:'Config de surtidos', url:'https://maxifercotizador.github.io/Proyecto-Privado/surtidos.html?from=menu', tab:'privado' },
+];
+
+// Catálogos: cargados perezosos en memoria
+let catalogs = { productos: [], surtidos: [], ventas: [], loaded: false };
+
+async function loadCatalogs() {
+  const status = document.getElementById('searchStatus');
+  try {
+    const [pr, su, ve] = await Promise.allSettled([
+      fetch('https://maxifercotizador.github.io/Presupuestador/productos.json').then(r => r.json()),
+      fetch('https://maxifercotizador.github.io/Presupuestador/surtidos.json').then(r => r.json()),
+      fetch('https://maxifercotizador.github.io/Proyecto-Privado/ventas_monday.json').then(r => r.json()),
+    ]);
+    if (pr.status === 'fulfilled') catalogs.productos = pr.value || [];
+    if (su.status === 'fulfilled') catalogs.surtidos = su.value || {};
+    if (ve.status === 'fulfilled') catalogs.ventas = ve.value || [];
+    catalogs.loaded = true;
+    status.textContent = `Listo · ${catalogs.productos.length} productos · ${Object.keys(catalogs.surtidos).length} surtidos · ${catalogs.ventas.length} ventas indexadas`;
+  } catch (e) {
+    status.textContent = '⚠️ Error cargando catálogos: ' + e.message;
+  }
+}
+
+// ============================================================
+// Búsqueda
+// ============================================================
+function searchAll(q) {
+  const qn = norm(q);
+  if (!qn) return null;
+  const out = { apps: [], productos: [], surtidos: [], ventas: [], archivos: [] };
+
+  // Apps
+  for (const a of APPS_INDEX) {
+    const hay = norm(a.name + ' ' + a.desc);
+    if (hay.includes(qn)) out.apps.push(a);
+  }
+
+  // Productos: buscar en descripción, código, número, proveedor, código proveedor, familia
+  const MAX = 60;
+  for (const p of catalogs.productos) {
+    const hay = norm(`${p.d||''} ${p.c||''} ${p.n||''} ${p.prov||''} ${p.cp||''} ${p.p||''}`);
+    if (hay.includes(qn)) {
+      out.productos.push(p);
+      if (out.productos.length >= MAX) break;
+    }
+  }
+
+  // Surtidos
+  for (const [code, surt] of Object.entries(catalogs.surtidos)) {
+    const hay = norm(`${code} ${surt.n||''} ${surt.c||''}`);
+    if (hay.includes(qn)) {
+      out.surtidos.push({ code, ...surt });
+    } else if (Array.isArray(surt.i)) {
+      // buscar dentro de items
+      const matchedItem = surt.i.find(it => norm(`${it.d||''} ${it.n||''}`).includes(qn));
+      if (matchedItem) out.surtidos.push({ code, ...surt, _matched: matchedItem });
+    }
+    if (out.surtidos.length >= 30) break;
+  }
+
+  // Ventas (clientes / vendedores / surtido)
+  for (const v of catalogs.ventas) {
+    const hay = norm(`${v.cliente||''} ${v.vendedor||''} ${v.surtido||''}`);
+    if (hay.includes(qn)) {
+      out.ventas.push(v);
+      if (out.ventas.length >= 40) break;
+    }
+  }
+
+  // Archivos
+  for (const f of ARCHIVOS_LIST) {
+    const hay = norm(`${f.name} ${f.repo}`);
+    if (hay.includes(qn)) out.archivos.push(f);
+  }
+
+  return out;
+}
+
+function renderResults(q, res) {
+  const cont = document.getElementById('searchResults');
+  if (!res) { cont.classList.remove('active'); cont.innerHTML = ''; document.getElementById('panelsWrap').classList.remove('searching'); return; }
+  document.getElementById('panelsWrap').classList.add('searching');
+  cont.classList.add('active');
+
+  const total = res.apps.length + res.productos.length + res.surtidos.length + res.ventas.length + res.archivos.length;
+  if (total === 0) {
+    cont.innerHTML = `<div class="empty-search">🔍 Sin resultados para <b>${escapeHtml(q)}</b></div>`;
+    return;
+  }
+
+  let html = '';
+
+  if (res.apps.length) {
+    html += `<div class="result-group"><h3>Apps · <b>${res.apps.length}</b></h3>`;
+    for (const a of res.apps) {
+      html += `<a class="result-row" href="${a.url}">
+        <div><div class="rname">${a.icon} ${highlight(a.name, q)}</div>
+        <div class="rmeta">${highlight(a.desc, q)}</div></div>
+      </a>`;
+    }
+    html += '</div>';
+  }
+
+  if (res.productos.length) {
+    html += `<div class="result-group"><h3>Productos · <b>${res.productos.length}</b></h3>`;
+    for (const p of res.productos) {
+      html += `<a class="result-row" href="https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu" target="_self">
+        <div><div class="rname">${highlight(p.d||'', q)}</div>
+        <div class="rmeta">${highlight(p.prov||'', q)} · cód <b>${highlight(p.c||'', q)}</b> · #${highlight(p.n||'', q)} · ${highlight(p.p||'', q)}</div></div>
+        <div class="rprice">$${fmtMoney(p.pl)}</div>
+      </a>`;
+    }
+    html += '</div>';
+  }
+
+  if (res.surtidos.length) {
+    html += `<div class="result-group"><h3>Surtidos · <b>${res.surtidos.length}</b></h3>`;
+    for (const s of res.surtidos) {
+      const sub = s._matched ? `incluye: ${escapeHtml(s._matched.d||'')}` : `${(s.i||[]).length} ítems`;
+      html += `<a class="result-row" href="https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu">
+        <div><div class="rname">${highlight(s.n || s.code, q)}</div>
+        <div class="rmeta">cód <b>${highlight(s.code, q)}</b> · ${sub}</div></div>
+      </a>`;
+    }
+    html += '</div>';
+  }
+
+  if (res.ventas.length) {
+    html += `<div class="result-group"><h3>Ventas / Clientes · <b>${res.ventas.length}</b></h3>`;
+    for (const v of res.ventas) {
+      html += `<a class="result-row" href="https://maxifercotizador.github.io/Proyecto-Privado/analisis_ventas.html?from=menu">
+        <div><div class="rname">${highlight(v.cliente||'(sin nombre)', q)}</div>
+        <div class="rmeta">${highlight(v.vendedor||'', q)} · ${highlight(v.surtido||'', q)} · ${escapeHtml(v.fecha||'')}</div></div>
+      </a>`;
+    }
+    html += '</div>';
+  }
+
+  if (res.archivos.length) {
+    html += `<div class="result-group"><h3>Archivos · <b>${res.archivos.length}</b></h3>`;
+    for (const f of res.archivos) {
+      html += `<a class="result-row" href="${f.url}" target="_blank">
+        <div><div class="rname">${f.icon} ${highlight(f.name, q)}</div>
+        <div class="rmeta">${highlight(f.repo, q)}${f.date ? ' · actualizado ' + f.date : ''}</div></div>
+      </a>`;
+    }
+    html += '</div>';
+  }
+
+  cont.innerHTML = html;
+}
+
+let searchTimer = null;
+document.getElementById('buscador').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  const q = e.target.value.trim();
+  if (!q) { renderResults('', null); return; }
+  searchTimer = setTimeout(() => {
+    if (!catalogs.loaded) {
+      document.getElementById('searchResults').innerHTML = '<div class="empty-search">⏳ Esperá, los catálogos están cargando...</div>';
+      document.getElementById('searchResults').classList.add('active');
+      document.getElementById('panelsWrap').classList.add('searching');
+      return;
+    }
+    renderResults(q, searchAll(q));
+  }, 120);
+});
+
+// ============================================================
+// Archivos
+// ============================================================
+const ARCHIVOS_LIST = [
+  { repo: 'Presupuestador', path: 'Listas Maxifer.xlsx',                icon: '📊', name: 'Listas Maxifer' },
+  { repo: 'Presupuestador', path: 'Precio Surtidos.xlsx',               icon: '📊', name: 'Precio Surtidos' },
+  { repo: 'Presupuestador', path: 'listas/00 LISTA MAXIFER - 2026.xlsx',icon: '📊', name: 'Lista Maxifer 2026' },
+  { repo: 'Proyecto-Privado', path: '01 COMPRAS - COSTOS - FABRICAS.xlsm', icon: '🏭', name: 'Compras / Costos / Fábricas' },
+  { repo: 'Proyecto-Privado', path: '03 Pedidos Fabricas.xlsm',         icon: '📦', name: 'Pedidos Fábricas' },
+  { repo: 'Proyecto-Privado', path: 'Gastos Fijos.xlsx',                icon: '🧾', name: 'Gastos Fijos' },
+];
+
+ARCHIVOS_LIST.forEach(f => {
+  f.url  = 'https://maxifercotizador.github.io/' + f.repo + '/' + encodeURI(f.path);
+  f.view = 'https://github.com/maxifercotizador/' + f.repo + '/blob/main/' + encodeURI(f.path);
+});
+
+async function fetchLastCommit(repo, path) {
+  try {
+    const url = `https://api.github.com/repos/maxifercotizador/${repo}/commits?path=${encodeURIComponent(path)}&per_page=1`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (Array.isArray(j) && j.length && j[0].commit?.author?.date) {
+      return new Date(j[0].commit.author.date);
+    }
+    return null;
+  } catch (e) { return null; }
+}
+
+function fmtRelDate(d) {
+  if (!d) return '—';
+  const ms = Date.now() - d.getTime();
+  const days = Math.floor(ms / 86400000);
+  if (days < 1) return 'hoy';
+  if (days < 2) return 'ayer';
+  if (days < 30) return `hace ${days} días`;
+  if (days < 365) return `hace ${Math.floor(days/30)} meses`;
+  return `hace ${Math.floor(days/365)} años`;
+}
+function fmtAbsDate(d) {
+  if (!d) return '';
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).slice(-2)}`;
+}
+
+async function renderArchivos() {
+  const cont = document.getElementById('archivosLista');
+  // Render inicial sin fechas
+  cont.innerHTML = ARCHIVOS_LIST.map((f, i) => `
+    <a class="file-row" href="${f.url}" target="_blank">
+      <div class="ficon">${f.icon}</div>
+      <div>
+        <div class="fname">${escapeHtml(f.name)}</div>
+        <div class="fpath">${escapeHtml(f.repo)} / ${escapeHtml(f.path)}</div>
+      </div>
+      <div class="fdate" id="fdate-${i}">…</div>
+      <div class="fopen">Abrir</div>
+    </a>
+  `).join('');
+  document.getElementById('countArchivos').textContent = ARCHIVOS_LIST.length;
+
+  // Cargar fechas en paralelo
+  await Promise.all(ARCHIVOS_LIST.map(async (f, i) => {
+    const d = await fetchLastCommit(f.repo, f.path);
+    f.date = d ? fmtAbsDate(d) : '';
+    const el = document.getElementById('fdate-' + i);
+    if (el) el.innerHTML = d ? `<b>${fmtRelDate(d)}</b>${fmtAbsDate(d)}` : '<span style="color:#666">sin datos</span>';
+  }));
+}
+
+// ============================================================
+// Init
+// ============================================================
+loadCatalogs();
+renderArchivos();
 </script>
 
 </body>
