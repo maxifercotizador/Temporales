@@ -1011,6 +1011,7 @@ async function loadData() {
             items {
               id
               name
+              created_at
               group { id title }
               column_values { id text value }
               subitems {
@@ -1070,6 +1071,7 @@ function parseItem(item) {
   return {
     id: item.id,
     name: item.name,
+    created_at: (item.created_at || '').slice(0, 10),  // YYYY-MM-DD (cuando se cargó a Monday)
     group: item.group.title,
     groupId: item.group.id,
     phone: cols[COL.phone]?.text || '',
@@ -1188,9 +1190,12 @@ function render() {
     html += renderGeoFilters();
   } else {
     html += renderStats(items, today);
-    // Aplicar filtro de fecha (atrasados/hoy/todos)
+    // Aplicar filtro de fecha
     if (state.dateFilter === 'overdue') items = items.filter(c => c.proximo_seg < today);
-    else if (state.dateFilter === 'today') items = items.filter(c => c.proximo_seg === today);
+    else if (state.dateFilter === 'today') {
+      // "HOY" = cargados hoy a Monday (todos los grupos, ignora proximo_seg)
+      items = state.contacts.filter(c => (c.created_at || '') === today);
+    }
   }
 
   if (items.length === 0) {
@@ -1259,11 +1264,11 @@ function setGeoFilter(type, value) {
 
 function renderStats(items, today) {
   const overdue = items.filter(c => c.proximo_seg < today).length;
-  const todayCount = items.filter(c => c.proximo_seg === today).length;
+  const cargadosHoy = state.contacts.filter(c => (c.created_at||'') === today).length;
   const f = state.dateFilter;
   return `<div class="stats">
     <div class="stat urgent ${f==='overdue'?'active':''}" onclick="setDateFilter('overdue')"><div class="stat-label">Atrasados</div><div class="stat-value">${overdue}</div></div>
-    <div class="stat warm ${f==='today'?'active':''}" onclick="setDateFilter('today')"><div class="stat-label">Hoy</div><div class="stat-value">${todayCount}</div></div>
+    <div class="stat warm ${f==='today'?'active':''}" onclick="setDateFilter('today')"><div class="stat-label">Cargados hoy</div><div class="stat-value">${cargadosHoy}</div></div>
     <div class="stat cold ${f==='all'?'active':''}" onclick="setDateFilter('all')"><div class="stat-label">Total pendiente</div><div class="stat-value">${items.length}</div></div>
   </div>`;
 }
