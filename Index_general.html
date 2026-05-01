@@ -228,7 +228,7 @@
 <nav class="tabs" role="tablist" id="tabs">
   <button class="active" data-tab="apps">📋 Apps gestión <span class="count">5</span></button>
   <button data-tab="presupuestador">💼 Presupuestador <span class="count">4</span></button>
-  <button data-tab="privado">🔒 Proyecto privado <span class="count">6</span></button>
+  <button data-tab="privado">🔒 Proyecto privado <span class="count">5</span></button>
   <button data-tab="archivos">📂 Archivos <span class="count" id="countArchivos">…</span></button>
 </nav>
 
@@ -283,29 +283,25 @@
 <!-- ======== PROYECTO PRIVADO ======== -->
 <section class="panel" id="panel-privado">
   <div class="grid">
-    <a class="card green" href="https://maxifercotizador.github.io/Proyecto-Privado/analisis_ventas.html?from=menu">
-      <div class="icon">📈</div><div class="name">Análisis ventas</div>
-      <div class="desc">Métricas y evolución de ventas</div>
+    <a class="card green" href="https://maxifercotizador.github.io/Proyecto-Privado/Venta_Surtidos_Monday.html?from=menu">
+      <div class="icon">📈</div><div class="name">Venta Surtidos Monday</div>
+      <div class="desc">Margen real de cada venta cruzando Monday + costos</div>
     </a>
-    <a class="card blue" href="https://maxifercotizador.github.io/Proyecto-Privado/costos.html?from=menu">
-      <div class="icon">💸</div><div class="name">Costos</div>
-      <div class="desc">Compras, costos y fábricas</div>
+    <a class="card blue" href="https://maxifercotizador.github.io/Proyecto-Privado/Analisis_de_Costos.html?from=menu">
+      <div class="icon">💸</div><div class="name">Análisis de Costos</div>
+      <div class="desc">Costos por proveedor y por producto</div>
     </a>
-    <a class="card purple" href="https://maxifercotizador.github.io/Proyecto-Privado/gastos.html?from=menu">
-      <div class="icon">🧾</div><div class="name">Gastos</div>
-      <div class="desc">Gastos fijos y variables</div>
+    <a class="card purple" href="https://maxifercotizador.github.io/Proyecto-Privado/Analisis_de_Gastos.html?from=menu">
+      <div class="icon">🧾</div><div class="name">Análisis de Gastos</div>
+      <div class="desc">Gastos fijos, mercadería y otros del mes</div>
     </a>
-    <a class="card red" href="https://maxifercotizador.github.io/Proyecto-Privado/pedidos.html?from=menu">
-      <div class="icon">📦</div><div class="name">Pedidos</div>
-      <div class="desc">Pedidos a fábrica</div>
-    </a>
-    <a class="card" href="https://maxifercotizador.github.io/Proyecto-Privado/salud.html?from=menu">
-      <div class="icon">❤️‍🩹</div><div class="name">Salud</div>
-      <div class="desc">Salud financiera del negocio</div>
+    <a class="card red" href="https://maxifercotizador.github.io/Proyecto-Privado/Pedidos_a_Fabrica.html?from=menu">
+      <div class="icon">📦</div><div class="name">Pedidos a Fábrica</div>
+      <div class="desc">Pedidos pendientes y deudas a proveedores</div>
     </a>
     <a class="card pink" href="https://maxifercotizador.github.io/Proyecto-Privado/surtidos.html?from=menu">
       <div class="icon">🧰</div><div class="name">Surtidos</div>
-      <div class="desc">Configuración de surtidos</div>
+      <div class="desc">Rentabilidad y completitud por surtido</div>
     </a>
   </div>
 </section>
@@ -434,12 +430,11 @@ const APPS_INDEX = [
   { type:'app', icon:'🔁', name:'3 en 1', desc:'Comparador de listas', url:'https://maxifercotizador.github.io/Presupuestador/3en1.html?from=menu', tab:'presupuestador' },
   { type:'app', icon:'📑', name:'Listas', desc:'PDFs y Excel de listas', url:'https://maxifercotizador.github.io/Presupuestador/listas.html?from=menu', tab:'presupuestador' },
   // Privado
-  { type:'app', icon:'📈', name:'Análisis ventas', desc:'Métricas de ventas', url:'https://maxifercotizador.github.io/Proyecto-Privado/analisis_ventas.html?from=menu', tab:'privado' },
-  { type:'app', icon:'💸', name:'Costos', desc:'Compras y fábricas', url:'https://maxifercotizador.github.io/Proyecto-Privado/costos.html?from=menu', tab:'privado' },
-  { type:'app', icon:'🧾', name:'Gastos', desc:'Gastos fijos', url:'https://maxifercotizador.github.io/Proyecto-Privado/gastos.html?from=menu', tab:'privado' },
-  { type:'app', icon:'📦', name:'Pedidos', desc:'Pedidos a fábrica', url:'https://maxifercotizador.github.io/Proyecto-Privado/pedidos.html?from=menu', tab:'privado' },
-  { type:'app', icon:'❤️‍🩹', name:'Salud', desc:'Salud financiera', url:'https://maxifercotizador.github.io/Proyecto-Privado/salud.html?from=menu', tab:'privado' },
-  { type:'app', icon:'🧰', name:'Surtidos privado', desc:'Config de surtidos', url:'https://maxifercotizador.github.io/Proyecto-Privado/surtidos.html?from=menu', tab:'privado' },
+  { type:'app', icon:'📈', name:'Venta Surtidos Monday', desc:'Margen real cruzando Monday + costos', url:'https://maxifercotizador.github.io/Proyecto-Privado/Venta_Surtidos_Monday.html?from=menu', tab:'privado' },
+  { type:'app', icon:'💸', name:'Análisis de Costos', desc:'Costos por proveedor y producto', url:'https://maxifercotizador.github.io/Proyecto-Privado/Analisis_de_Costos.html?from=menu', tab:'privado' },
+  { type:'app', icon:'🧾', name:'Análisis de Gastos', desc:'Gastos fijos, mercadería y otros', url:'https://maxifercotizador.github.io/Proyecto-Privado/Analisis_de_Gastos.html?from=menu', tab:'privado' },
+  { type:'app', icon:'📦', name:'Pedidos a Fábrica', desc:'Pedidos pendientes y deudas', url:'https://maxifercotizador.github.io/Proyecto-Privado/Pedidos_a_Fabrica.html?from=menu', tab:'privado' },
+  { type:'app', icon:'🧰', name:'Surtidos', desc:'Rentabilidad por surtido', url:'https://maxifercotizador.github.io/Proyecto-Privado/surtidos.html?from=menu', tab:'privado' },
 ];
 
 // Catálogos: cargados perezosos en memoria
