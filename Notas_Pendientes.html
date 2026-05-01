@@ -583,6 +583,21 @@
   }
   .check-item.done label span { text-decoration: line-through; color: #9ca3af; }
   .check-item.done { opacity: .7; }
+  .tasks-section { margin-top: 10px; }
+  .tasks-title { font-weight: 600; font-size: .9rem; margin-bottom: 4px; }
+  /* Form task inputs */
+  .form-task { display: flex; gap: 6px; margin-bottom: 6px; }
+  .form-task input[type="text"] { flex: 1; }
+  .form-task .f-task-remove {
+    background: transparent; border: 1px solid #e5e5e5; color: #c8102e;
+    width: 36px; cursor: pointer; border-radius: 6px; font-size: 16px;
+  }
+  .btn-add-task {
+    background: transparent; border: 1px dashed #cbd5e1; color: #64748b;
+    padding: 7px 12px; border-radius: 6px; cursor: pointer; font-size: 13px;
+    width: 100%; font-family: inherit;
+  }
+  .btn-add-task:hover { background: #f8fafc; border-color: #94a3b8; }
 </style>
 <script>window.MAXIFER_SYNC_NAMESPACE = 'pendientes_maxifer';</script>
 <script type="module" src="./firebase-sync.js"></script>
@@ -664,6 +679,11 @@
     <div class="field">
       <label>Detalle completo (opcional)</label>
       <textarea id="f-detail" placeholder="Toda la info del pendiente..."></textarea>
+    </div>
+    <div class="field">
+      <label>Tareas / checklist (opcional)</label>
+      <div id="f-tasks-list"></div>
+      <button type="button" class="btn-add-task" id="f-tasks-add">+ Agregar tarea</button>
     </div>
     <div class="field">
       <label class="checkbox-field">
@@ -778,6 +798,19 @@ function formatDetail(text, item) {
   return result;
 }
 
+function renderTasksChecklist(item) {
+  if (!item.tasks || !item.tasks.length) return '';
+  const checks = item.checks || {};
+  let html = '<div class="tasks-section"><div class="tasks-title">📋 Tareas</div><ul class="check-list">';
+  item.tasks.forEach((t, idx) => {
+    const k = 't_' + idx;
+    const isChecked = !!checks[k];
+    html += `<li class="check-item ${isChecked?'done':''}"><label><input type="checkbox" class="check-box" data-item="${item.id}" data-idx="${k}" ${isChecked?'checked':''}><span>${escapeHTML(t)}</span></label></li>`;
+  });
+  html += '</ul></div>';
+  return html;
+}
+
 function formatDate(iso) {
   const d = new Date(iso);
   const dd = String(d.getDate()).padStart(2,'0');
@@ -880,6 +913,7 @@ function buildItem(item) {
   div.draggable = true;
 
   const detailHtml = formatDetail(item.detail, item);
+  const tasksHtml = renderTasksChecklist(item);
 
   div.innerHTML = `
     <div class="item-header" onclick="toggleItem(this, event)">
@@ -897,7 +931,8 @@ function buildItem(item) {
     </div>
     <div class="item-body">
       <div class="item-body-inner">
-        ${detailHtml || '<p style="color:var(--text-muted);font-style:italic;">Sin detalle.</p>'}
+        ${detailHtml || (tasksHtml ? '' : '<p style="color:var(--text-muted);font-style:italic;">Sin detalle.</p>')}
+        ${tasksHtml}
         <div class="item-actions">
           <button class="action-btn" onclick="event.stopPropagation();editItem('${item.id}')">✏️ Editar</button>
           <button class="action-btn danger" onclick="event.stopPropagation();askDelete('${item.id}')">🗑️ Eliminar</button>
@@ -994,6 +1029,19 @@ function askDelete(id) {
   }
 }
 
+function renderFormTasks(tasks) {
+  const cont = document.getElementById('f-tasks-list');
+  cont.innerHTML = (tasks || []).map(t => `
+    <div class="form-task">
+      <input type="text" class="f-task-input" value="${escapeHTML(t)}" placeholder="Descripción de la tarea">
+      <button type="button" class="f-task-remove" onclick="this.parentElement.remove()" title="Quitar">×</button>
+    </div>
+  `).join('');
+}
+function collectFormTasks() {
+  return [...document.querySelectorAll('.f-task-input')].map(i => i.value.trim()).filter(Boolean);
+}
+
 function openModal(item = null) {
   editingId = item ? item.id : null;
   document.getElementById('modal-title').textContent = item ? 'Editar pendiente' : 'Nuevo pendiente';
@@ -1003,6 +1051,7 @@ function openModal(item = null) {
   document.getElementById('f-detail').value = item ? (item.detail || '') : '';
   document.getElementById('f-urgent').checked = item ? item.urgent : false;
   document.getElementById('f-newgroup').value = '';
+  renderFormTasks(item ? (item.tasks || []) : []);
 
   const sel = document.getElementById('f-group');
   sel.innerHTML = '';
@@ -1042,7 +1091,8 @@ function saveItem() {
     group,
     summary: document.getElementById('f-summary').value.trim(),
     detail: document.getElementById('f-detail').value.trim(),
-    urgent: document.getElementById('f-urgent').checked
+    urgent: document.getElementById('f-urgent').checked,
+    tasks: collectFormTasks()
   };
 
   if (editingId) {
@@ -1170,6 +1220,16 @@ function importData() {
   };
   input.click();
 }
+
+// Bind botón "+ Agregar tarea" (form)
+document.getElementById('f-tasks-add').addEventListener('click', () => {
+  const cont = document.getElementById('f-tasks-list');
+  const div = document.createElement('div');
+  div.className = 'form-task';
+  div.innerHTML = `<input type="text" class="f-task-input" placeholder="Descripción de la tarea"><button type="button" class="f-task-remove" onclick="this.parentElement.remove()" title="Quitar">×</button>`;
+  cont.appendChild(div);
+  div.querySelector('input').focus();
+});
 
 // Bind checklist checkboxes (event delegation)
 document.addEventListener('change', (e) => {
