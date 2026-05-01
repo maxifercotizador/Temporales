@@ -144,7 +144,7 @@
   }
   .result-group h3 b { color: var(--accent); }
   .result-row {
-    display: grid; grid-template-columns: 1fr auto; gap: 10px;
+    display: grid; grid-template-columns: 1fr auto auto; gap: 10px;
     padding: 10px 14px; background: var(--card);
     border: 1px solid var(--border); border-radius: 10px;
     margin-bottom: 6px; text-decoration: none; color: var(--text);
@@ -155,6 +155,13 @@
   .result-row .rmeta { font-size: .74rem; color: var(--text-mute); margin-top: 2px; }
   .result-row .rprice { color: var(--green); font-weight: 700; font-size: .9rem; white-space: nowrap; }
   .result-row mark { background: var(--accent); color: #1a1a1a; padding: 0 2px; border-radius: 3px; }
+  .result-row .rgo {
+    background: var(--accent); color: #1a1a1a; padding: 6px 12px; border-radius: 14px;
+    font-size: .76rem; font-weight: 700; white-space: nowrap; display: flex; align-items: center; gap: 4px;
+  }
+  .result-row .rgo:hover { background: #fbbf24; }
+  .result-row.is-file .rgo { background: var(--green); color: white; }
+  .result-row.is-pdf .rgo { background: var(--red); color: white; }
 
   .empty-search {
     text-align: center; padding: 40px 16px; color: var(--text-mute);
@@ -475,6 +482,8 @@ function renderResults(q, res) {
       html += `<a class="result-row" href="${a.url}">
         <div><div class="rname">${a.icon} ${highlight(a.name, q)}</div>
         <div class="rmeta">${highlight(a.desc, q)}</div></div>
+        <div></div>
+        <div class="rgo">Abrir →</div>
       </a>`;
     }
     html += '</div>';
@@ -483,10 +492,11 @@ function renderResults(q, res) {
   if (res.productos.length) {
     html += `<div class="result-group"><h3>Productos · <b>${res.productos.length}</b></h3>`;
     for (const p of res.productos) {
-      html += `<a class="result-row" href="https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu" target="_self">
+      html += `<a class="result-row" href="https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu&buscar=${encodeURIComponent(p.c||p.d||'')}">
         <div><div class="rname">${highlight(p.d||'', q)}</div>
         <div class="rmeta">${highlight(p.prov||'', q)} · cód <b>${highlight(p.c||'', q)}</b> · #${highlight(p.n||'', q)} · ${highlight(p.p||'', q)}</div></div>
         <div class="rprice">$${fmtMoney(p.pl)}</div>
+        <div class="rgo">Ver →</div>
       </a>`;
     }
     html += '</div>';
@@ -496,9 +506,11 @@ function renderResults(q, res) {
     html += `<div class="result-group"><h3>Surtidos · <b>${res.surtidos.length}</b></h3>`;
     for (const s of res.surtidos) {
       const sub = s._matched ? `incluye: ${escapeHtml(s._matched.d||'')}` : `${(s.i||[]).length} ítems`;
-      html += `<a class="result-row" href="https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu">
+      html += `<a class="result-row" href="https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu&buscar=${encodeURIComponent(s.code)}">
         <div><div class="rname">${highlight(s.n || s.code, q)}</div>
         <div class="rmeta">cód <b>${highlight(s.code, q)}</b> · ${sub}</div></div>
+        <div></div>
+        <div class="rgo">Ver →</div>
       </a>`;
     }
     html += '</div>';
@@ -510,6 +522,8 @@ function renderResults(q, res) {
       html += `<a class="result-row" href="https://maxifercotizador.github.io/Proyecto-Privado/analisis_ventas.html?from=menu">
         <div><div class="rname">${highlight(v.cliente||'(sin nombre)', q)}</div>
         <div class="rmeta">${highlight(v.vendedor||'', q)} · ${highlight(v.surtido||'', q)} · ${escapeHtml(v.fecha||'')}</div></div>
+        <div></div>
+        <div class="rgo">Ver →</div>
       </a>`;
     }
     html += '</div>';
@@ -518,9 +532,15 @@ function renderResults(q, res) {
   if (res.archivos.length) {
     html += `<div class="result-group"><h3>Archivos · <b>${res.archivos.length}</b></h3>`;
     for (const f of res.archivos) {
-      html += `<a class="result-row" href="${f.url}" target="_blank">
+      const ext = (f.path.split('.').pop()||'').toLowerCase();
+      const isPdf = ext === 'pdf';
+      const cls = isPdf ? 'is-pdf' : 'is-file';
+      const lbl = isPdf ? 'Abrir PDF' : (ext.startsWith('xls') ? 'Abrir Excel' : 'Abrir');
+      html += `<a class="result-row ${cls}" href="${f.url}" target="_blank">
         <div><div class="rname">${f.icon} ${highlight(f.name, q)}</div>
         <div class="rmeta">${highlight(f.repo, q)}${f.date ? ' · actualizado ' + f.date : ''}</div></div>
+        <div></div>
+        <div class="rgo">${lbl} →</div>
       </a>`;
     }
     html += '</div>';
