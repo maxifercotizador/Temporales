@@ -569,6 +569,20 @@
   #sync-status[data-sync-type="ok"]   { color: #2a7a2a; }
   #sync-status[data-sync-type="err"]  { color: #c8102e; }
   #sync-status[data-sync-type="sync"] { color: #1a3a7a; }
+  /* Checklists dentro de cada tarea */
+  .check-list { list-style: none; padding-left: 4px; margin: 8px 0; }
+  .check-item { padding: 5px 0; }
+  .check-item label {
+    display: flex; align-items: flex-start; gap: 9px;
+    cursor: pointer; line-height: 1.4;
+    transition: opacity .15s;
+  }
+  .check-item input[type="checkbox"] {
+    margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px;
+    cursor: pointer; accent-color: #10b981;
+  }
+  .check-item.done label span { text-decoration: line-through; color: #9ca3af; }
+  .check-item.done { opacity: .7; }
 </style>
 <script>window.MAXIFER_SYNC_NAMESPACE = 'pendientes_maxifer';</script>
 <script type="module" src="./firebase-sync.js"></script>
@@ -734,7 +748,7 @@ function escapeHTML(s) {
   return (s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function formatDetail(text) {
+function formatDetail(text, item) {
   if (!text) return '';
   let html = escapeHTML(text);
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
@@ -743,10 +757,15 @@ function formatDetail(text) {
   const lines = html.split('\n');
   let result = '';
   let inList = false;
+  let bulletIdx = 0;
+  const checks = (item && item.checks) || {};
+  const itemId = item?.id || '';
   for (const line of lines) {
     if (line.startsWith('- ')) {
-      if (!inList) { result += '<ul>'; inList = true; }
-      result += `<li>${line.slice(2)}</li>`;
+      if (!inList) { result += '<ul class="check-list">'; inList = true; }
+      const idx = bulletIdx++;
+      const isChecked = !!checks[idx];
+      result += `<li class="check-item ${isChecked?'done':''}"><label><input type="checkbox" class="check-box" data-item="${itemId}" data-idx="${idx}" ${isChecked?'checked':''}><span>${line.slice(2)}</span></label></li>`;
     } else {
       if (inList) { result += '</ul>'; inList = false; }
       if (line.trim()) {
@@ -860,7 +879,7 @@ function buildItem(item) {
   div.dataset.id = item.id;
   div.draggable = true;
 
-  const detailHtml = formatDetail(item.detail);
+  const detailHtml = formatDetail(item.detail, item);
 
   div.innerHTML = `
     <div class="item-header" onclick="toggleItem(this, event)">
@@ -1151,6 +1170,21 @@ function importData() {
   };
   input.click();
 }
+
+// Bind checklist checkboxes (event delegation)
+document.addEventListener('change', (e) => {
+  if (!e.target.classList || !e.target.classList.contains('check-box')) return;
+  const itemId = e.target.dataset.item;
+  const idx = e.target.dataset.idx;
+  const checked = e.target.checked;
+  const item = state.items.find(i => i.id === itemId);
+  if (!item) return;
+  if (!item.checks) item.checks = {};
+  if (checked) item.checks[idx] = true;
+  else delete item.checks[idx];
+  e.target.closest('.check-item')?.classList.toggle('done', checked);
+  saveState();
+});
 
 // Init
 renderActive();
