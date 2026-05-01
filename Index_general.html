@@ -217,8 +217,8 @@
 
 <nav class="tabs" role="tablist" id="tabs">
   <button class="active" data-tab="apps">📋 Apps gestión <span class="count">5</span></button>
-  <button data-tab="presupuestador">💼 Presupuestador <span class="count">5</span></button>
-  <button data-tab="privado">🔒 Proyecto privado <span class="count">7</span></button>
+  <button data-tab="presupuestador">💼 Presupuestador <span class="count">4</span></button>
+  <button data-tab="privado">🔒 Proyecto privado <span class="count">6</span></button>
   <button data-tab="archivos">📂 Archivos <span class="count" id="countArchivos">…</span></button>
 </nav>
 
@@ -251,10 +251,6 @@
 <!-- ======== PRESUPUESTADOR ======== -->
 <section class="panel" id="panel-presupuestador">
   <div class="grid">
-    <a class="card blue" href="https://maxifercotizador.github.io/Presupuestador/index.html?from=menu">
-      <div class="icon">🧮</div><div class="name">Menú general</div>
-      <div class="desc">Hub con todas las herramientas</div>
-    </a>
     <a class="card green" href="https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu">
       <div class="icon">💰</div><div class="name">Presupuestador</div>
       <div class="desc">Generador de cotizaciones</div>
@@ -277,10 +273,6 @@
 <!-- ======== PROYECTO PRIVADO ======== -->
 <section class="panel" id="panel-privado">
   <div class="grid">
-    <a class="card pink" href="https://maxifercotizador.github.io/Proyecto-Privado/index.html?from=menu">
-      <div class="icon">🏛️</div><div class="name">Panel privado</div>
-      <div class="desc">Hub de módulos privados</div>
-    </a>
     <a class="card green" href="https://maxifercotizador.github.io/Proyecto-Privado/analisis_ventas.html?from=menu">
       <div class="icon">📈</div><div class="name">Análisis ventas</div>
       <div class="desc">Métricas y evolución de ventas</div>
@@ -417,13 +409,11 @@ const APPS_INDEX = [
   { type:'app', icon:'📝', name:'Notas / Pendientes', desc:'Pendientes con grupos', url:'./Notas_Pendientes.html?from=menu', tab:'apps' },
   { type:'app', icon:'📊', name:'Análisis Financiero', desc:'Reportes mensuales', url:'./analisis_financiero.html?from=menu', tab:'apps' },
   // Presupuestador
-  { type:'app', icon:'🧮', name:'Menú Presupuestador', desc:'Hub Maxifer Tools', url:'https://maxifercotizador.github.io/Presupuestador/index.html?from=menu', tab:'presupuestador' },
   { type:'app', icon:'💰', name:'Presupuestador', desc:'Cotizaciones', url:'https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu', tab:'presupuestador' },
   { type:'app', icon:'🛒', name:'Compras', desc:'Pedidos a proveedores', url:'https://maxifercotizador.github.io/Presupuestador/compras.html?from=menu', tab:'presupuestador' },
   { type:'app', icon:'🔁', name:'3 en 1', desc:'Comparador de listas', url:'https://maxifercotizador.github.io/Presupuestador/3en1.html?from=menu', tab:'presupuestador' },
   { type:'app', icon:'📑', name:'Listas', desc:'PDFs y Excel de listas', url:'https://maxifercotizador.github.io/Presupuestador/listas.html?from=menu', tab:'presupuestador' },
   // Privado
-  { type:'app', icon:'🏛️', name:'Panel privado', desc:'Hub privado', url:'https://maxifercotizador.github.io/Proyecto-Privado/index.html?from=menu', tab:'privado' },
   { type:'app', icon:'📈', name:'Análisis ventas', desc:'Métricas de ventas', url:'https://maxifercotizador.github.io/Proyecto-Privado/analisis_ventas.html?from=menu', tab:'privado' },
   { type:'app', icon:'💸', name:'Costos', desc:'Compras y fábricas', url:'https://maxifercotizador.github.io/Proyecto-Privado/costos.html?from=menu', tab:'privado' },
   { type:'app', icon:'🧾', name:'Gastos', desc:'Gastos fijos', url:'https://maxifercotizador.github.io/Proyecto-Privado/gastos.html?from=menu', tab:'privado' },
