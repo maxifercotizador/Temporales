@@ -598,6 +598,15 @@
     width: 100%; font-family: inherit;
   }
   .btn-add-task:hover { background: #f8fafc; border-color: #94a3b8; }
+  /* Badge de avance */
+  .item-progress {
+    background: #e5e7eb; color: #475569;
+    padding: 2px 9px; border-radius: 10px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+    margin-left: 4px; transition: background .2s, color .2s;
+  }
+  .item-progress.partial  { background: #fef3c7; color: #92400e; }
+  .item-progress.complete { background: #d1fae5; color: #059669; }
 </style>
 <script>window.MAXIFER_SYNC_NAMESPACE = 'pendientes_maxifer';</script>
 <script type="module" src="./firebase-sync.js"></script>
@@ -798,6 +807,19 @@ function formatDetail(text, item) {
   return result;
 }
 
+function calcProgress(item) {
+  if (!item.tasks || !item.tasks.length) return null;
+  const checks = item.checks || {};
+  const done = item.tasks.filter((_, i) => !!checks['t_' + i]).length;
+  return { done, total: item.tasks.length };
+}
+function progressBadgeHtml(item) {
+  const p = calcProgress(item);
+  if (!p) return '';
+  const cls = p.done === p.total ? 'complete' : (p.done > 0 ? 'partial' : '');
+  return `<span class="item-progress ${cls}" data-item="${item.id}">${p.done}/${p.total}</span>`;
+}
+
 function renderTasksChecklist(item) {
   if (!item.tasks || !item.tasks.length) return '';
   const checks = item.checks || {};
@@ -923,6 +945,7 @@ function buildItem(item) {
         <div class="item-title">
           ${item.emoji ? `<span class="item-emoji">${escapeHTML(item.emoji)}</span>` : ''}
           <span>${escapeHTML(item.title)}</span>
+          ${progressBadgeHtml(item)}
           ${item.urgent ? '<span class="badge">URGENTE</span>' : ''}
         </div>
         ${item.summary ? `<div class="item-summary">${escapeHTML(item.summary)}</div>` : ''}
@@ -1243,6 +1266,17 @@ document.addEventListener('change', (e) => {
   if (checked) item.checks[idx] = true;
   else delete item.checks[idx];
   e.target.closest('.check-item')?.classList.toggle('done', checked);
+  // Actualizar el badge de progreso del item
+  const itemEl = document.querySelector(`.item[data-id="${itemId}"]`);
+  const badge = itemEl?.querySelector('.item-progress');
+  if (badge) {
+    const p = calcProgress(item);
+    if (p) {
+      badge.textContent = `${p.done}/${p.total}`;
+      badge.classList.toggle('complete', p.done === p.total);
+      badge.classList.toggle('partial', p.done > 0 && p.done < p.total);
+    }
+  }
   saveState();
 });
 
