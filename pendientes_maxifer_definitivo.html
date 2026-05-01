@@ -558,9 +558,23 @@
     opacity: 1;
     transform: translateX(-50%) translateY(0);
   }
+  /* Firebase sync status */
+  #sync-status {
+    position: fixed; top: 8px; right: 8px; z-index: 9999;
+    font-size: 11px; padding: 3px 8px; border-radius: 10px;
+    background: rgba(255,255,255,0.92); color: #555;
+    box-shadow: 0 1px 3px rgba(0,0,0,.15); user-select: none;
+    pointer-events: none; transition: opacity .3s;
+  }
+  #sync-status[data-sync-type="ok"]   { color: #2a7a2a; }
+  #sync-status[data-sync-type="err"]  { color: #c8102e; }
+  #sync-status[data-sync-type="sync"] { color: #1a3a7a; }
 </style>
+<script>window.MAXIFER_SYNC_NAMESPACE = 'pendientes_maxifer';</script>
+<script type="module" src="./firebase-sync.js"></script>
 </head>
 <body>
+<div id="sync-status">☁️ ...</div>
 <div class="container">
   <header>
     <h1><span class="dot"></span>Pendientes MAXIFER</h1>
@@ -1139,6 +1153,28 @@ function importData() {
 // Init
 renderActive();
 renderHistory();
+
+// ============================================================
+// Firebase sync
+// ============================================================
+function _onRemoteSync(){
+  try {
+    const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    if (s && s.items) state = s;
+  } catch(e) {}
+  renderActive();
+  renderHistory();
+}
+function _startSync(){
+  if (!window.MaxiferSync) return;
+  window.MaxiferSync.start([STORAGE_KEY], {
+    statusEl: document.getElementById('sync-status'),
+    onRemote: _onRemoteSync
+  });
+}
+if (window.MaxiferSync) _startSync();
+else window.addEventListener('maxifer-sync-ready', _startSync);
+window.addEventListener('maxifer-sync-started', _onRemoteSync);
 </script>
 </body>
 </html>
