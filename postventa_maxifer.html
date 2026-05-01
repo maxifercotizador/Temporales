@@ -1142,9 +1142,23 @@
     @media (min-width: 769px) {
         .mobile-filter-bar { display: none !important; }
     }
+    /* Firebase sync status */
+    #sync-status {
+        position: fixed; top: 8px; right: 12px; z-index: 99999;
+        font-size: 11px; padding: 3px 8px; border-radius: 10px;
+        background: rgba(255,255,255,0.92); color: #555;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2); user-select: none;
+        pointer-events: none; transition: opacity .3s;
+    }
+    #sync-status[data-sync-type="ok"]   { color: #2a7a2a; }
+    #sync-status[data-sync-type="err"]  { color: #c8102e; }
+    #sync-status[data-sync-type="sync"] { color: #1a3a7a; }
 </style>
+<script>window.MAXIFER_SYNC_NAMESPACE = 'postventa';</script>
+<script type="module" src="./firebase-sync.js"></script>
 </head>
 <body>
+<div id="sync-status">☁️ ...</div>
 
 <!-- Token -->
 <div id="tokenScreen" class="container">
@@ -1651,7 +1665,9 @@ const TABLE_COLUMNS = [
         if (!lc) return '—';
         const d = daysSinceContact(o.clientName);
         const icon = (CONTACT_TYPES[lc.type]?.label || '').split(' ')[0];
-        return `${icon} ${d}d`;
+        const dt = new Date(lc.ts);
+        const fechaCorta = `${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
+        return `${icon} ${fechaCorta} · ${d}d`;
     }, sortVal: o => daysSinceContact(o.clientName) },
     { id: 'estado', label: 'Estado', default: true, sortable: true, getValue: o => o.estado },
     { id: 'pago', label: 'Pago', default: false, sortable: true, getValue: o => o.pago },
@@ -4353,6 +4369,34 @@ function escapeHtml(s) {
     return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 }
+
+// ============ FIREBASE SYNC (Firestore) ============
+function _onRemotePostventaSync(key) {
+    // Releer el localStorage al estado actualizado
+    if (key === CONTACTS_KEY) {
+        try { contactsLog = JSON.parse(localStorage.getItem(CONTACTS_KEY) || '{}'); } catch(e){ contactsLog = {}; }
+    } else if (key === NOTES_KEY) {
+        try { notesLog = JSON.parse(localStorage.getItem(NOTES_KEY) || '{}'); } catch(e){ notesLog = {}; }
+    } else if (key === 'maxifer_postventa_cols') {
+        try { visibleCols = new Set(JSON.parse(localStorage.getItem('maxifer_postventa_cols') || '[]')); } catch(e){}
+    }
+    // Re-render lo que esté visible
+    try { if (typeof renderPedidosTable === 'function') renderPedidosTable(); } catch(e){}
+    try { if (typeof renderTableHead === 'function') renderTableHead(); } catch(e){}
+    try { if (typeof renderClientListTrack === 'function') renderClientListTrack(); } catch(e){}
+    try { if (typeof renderNotesTab === 'function') renderNotesTab(); } catch(e){}
+    try { if (typeof renderCriticosTab === 'function') renderCriticosTab(); } catch(e){}
+}
+function _startPostventaSync() {
+    if (!window.MaxiferSync) return;
+    window.MaxiferSync.start([CONTACTS_KEY, NOTES_KEY, 'maxifer_postventa_cols'], {
+        statusEl: document.getElementById('sync-status'),
+        onRemote: _onRemotePostventaSync
+    });
+}
+if (window.MaxiferSync) _startPostventaSync();
+else window.addEventListener('maxifer-sync-ready', _startPostventaSync);
+window.addEventListener('maxifer-sync-started', () => _onRemotePostventaSync(CONTACTS_KEY));
 </script>
 
 <!-- Overlay Mapa -->

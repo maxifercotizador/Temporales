@@ -845,9 +845,50 @@
     .stats { grid-template-columns: repeat(2, 1fr); }
     #mapa { height: calc(100vh - 240px); }
   }
+  /* Firebase sync status */
+  #sync-status {
+    position: fixed; top: 6px; right: 8px; z-index: 9999;
+    font-size: 11px; padding: 3px 8px; border-radius: 10px;
+    background: rgba(255,255,255,0.92); color: #555;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15); user-select: none;
+    pointer-events: none; transition: opacity .3s;
+  }
+  #sync-status[data-sync-type="ok"]   { color: #2a7a2a; }
+  #sync-status[data-sync-type="err"]  { color: #c8102e; }
+  #sync-status[data-sync-type="sync"] { color: #1a3a7a; }
+  /* Extras del cliente (gasto/importe/cobrado/fecha entrega/notas) */
+  .extras-details { margin-top: 8px; }
+  .extras-details summary {
+    cursor: pointer; padding: 6px 10px; border-radius: 6px;
+    background: #f7f7f7; font-size: 12px; user-select: none;
+    list-style: none; display: flex; align-items: center; gap: 6px;
+    border: 1px solid #e5e5e5;
+  }
+  .extras-details summary::-webkit-details-marker { display: none; }
+  .extras-details summary::after { content: '▼'; margin-left: auto; font-size: 9px; opacity: .5; transition: transform .2s; }
+  .extras-details[open] summary::after { transform: rotate(180deg); }
+  .extras-details summary .extras-resumen { color: #777; font-size: 11px; margin-left: 4px; }
+  .extras-form {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    padding: 10px; background: #fafafa; border-radius: 0 0 6px 6px;
+    border: 1px solid #e5e5e5; border-top: none; margin-top: -1px;
+  }
+  .extras-form label { display: flex; flex-direction: column; gap: 2px; font-size: 11px; color: #555; }
+  .extras-form label.full { grid-column: 1 / -1; }
+  .extras-form label.checkbox { flex-direction: row; align-items: center; gap: 6px; }
+  .extras-form input[type="number"], .extras-form input[type="date"], .extras-form textarea {
+    padding: 5px 7px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; font-family: inherit;
+  }
+  .extras-form textarea { resize: vertical; min-height: 36px; }
+  @media (max-width: 480px) {
+    .extras-form { grid-template-columns: 1fr; }
+  }
 </style>
+<script>window.MAXIFER_SYNC_NAMESPACE = 'viaje_sur';</script>
+<script type="module" src="./firebase-sync.js"></script>
 </head>
 <body>
+<div id="sync-status">☁️ ...</div>
 
 <header class="top">
   <div class="brand">
@@ -992,6 +1033,7 @@ const SK_STATE = 'maxifer_viaje_estado_v3';
 const SK_LOC   = 'maxifer_viaje_localidades_v3';
 const SK_EXCL  = 'maxifer_viaje_excluidos_v3';
 const SK_LASTSYNC = 'maxifer_viaje_lastsync_v3';
+const SK_EXTRAS = 'maxifer_viaje_extras_v3'; // { clienteId: {gasto, importe, cobrado, fechaEntrega, notas} }
 
 const BOARD_ID = 8921412317;
 const EQUIPO_BOARD_ID = 7212937829;        // Board "Equipo MAXIFER" (pedidos)
@@ -1225,11 +1267,32 @@ try {
   localidades = stored ? JSON.parse(stored) : [...LOCALIDADES_DEFAULT];
 } catch(e) { localidades = [...LOCALIDADES_DEFAULT]; }
 
+let extras = {};
+try { extras = JSON.parse(localStorage.getItem(SK_EXTRAS) || '{}'); } catch(e) { extras = {}; }
+
 // Excluidos: SIEMPRE usar la constante hardcodeada (no localStorage)
 excluidos = [...EXCLUIDOS_DEFAULT];
 
 function guardarEstado(){ try { localStorage.setItem(SK_STATE, JSON.stringify(estado)); } catch(e){} }
 function guardarLocalidades(){ try { localStorage.setItem(SK_LOC, JSON.stringify(localidades)); } catch(e){} }
+function guardarExtras(){ try { localStorage.setItem(SK_EXTRAS, JSON.stringify(extras)); } catch(e){} }
+function getExtras(id){ return extras[id] || {}; }
+function setExtraField(id, field, value){
+  const e = { ...getExtras(id), [field]: value };
+  // Limpiar campos vacíos
+  if (value === '' || value === null || value === undefined || value === false) delete e[field];
+  if (Object.keys(e).length === 0) delete extras[id]; else extras[id] = e;
+  guardarExtras();
+}
+function fmtMoney(n){ return Number(n||0).toLocaleString('es-AR', { maximumFractionDigits: 0 }); }
+function extrasResumen(id){
+  const e = getExtras(id); if (!e || !Object.keys(e).length) return '';
+  const parts = [];
+  if (e.gasto) parts.push(`💸 $${fmtMoney(e.gasto)}`);
+  if (e.importe) parts.push(`💵 $${fmtMoney(e.importe)}${e.cobrado?' ✅':''}`);
+  if (e.fechaEntrega) parts.push(`📅 ${e.fechaEntrega}`);
+  return parts.join(' · ');
+}
 
 function esExcluido(cliente){
   const nombre = norm(cliente.nombre || cliente.n || '');
@@ -1248,7 +1311,40 @@ function getEstado(id){
   if (typeof e === 'string') return e;
   return 'sin';
 }
-function setEstado(id, key){ estado[id] = key; guardarEstado(); }
+function setEstado(id, key){
+  const prev = getEstado(id);
+  estado[id] = key;
+  guardarEstado();
+  // Si entró o salió de "pedido", el cliente cambia de pestaña Viaje Maxi
+  if (prev === 'pedido' || key === 'pedido') {
+    rebuildViajeMaxi();
+    if (typeof renderListadoVM === 'function') renderListadoVM();
+  }
+}
+// Reconstruye VIAJEMAXI desde CLIENTES + estado local + Monday, sin tocar POTENCIALES
+function rebuildViajeMaxi(){
+  if (!Array.isArray(CLIENTES) || CLIENTES.length === 0) return;
+  VIAJEMAXI = [];
+  CLIENTES.forEach(c => {
+    if (esExcluido(c)) return;
+    const confirmadoAnterior = esConfirmadoAnterior(c);
+    const esVMEnMonday = c.etiq === 'VIAJE MAXI';
+    const localPedido = getEstado(c.id) === 'pedido';
+    const tienePedidoActivo = IDS_CON_PEDIDO_ACTIVO.size === 0
+      || IDS_CON_PEDIDO_ACTIVO.has(String(c.id));
+    if ((esVMEnMonday && tienePedidoActivo) || localPedido) {
+      const info = (confirmadoAnterior ? null : null) || dayInfoFromLoc(c.dir);
+      const coords = getCoords(c.dir);
+      VIAJEMAXI.push({
+        ...c, ...info,
+        lat: coords[0], lng: coords[1],
+        confirmadoAnterior: !!confirmadoAnterior,
+        manual: false
+      });
+    }
+  });
+  const pillVM = document.getElementById('pillVM'); if (pillVM) pillVM.textContent = VIAJEMAXI.length;
+}
 
 // ============================================================
 // Monday API
@@ -1494,12 +1590,12 @@ function procesarClientes(){
       });
     }
 
-    // VIAJEMAXI = etiqueta VIAJE MAXI en Monday Y pedido activo en Equipo MAXIFER
-    // Si todavía no se sincronizaron los pedidos activos (set vacío), mostramos todos
-    // los VIAJE MAXI igual para que el HTML no quede en blanco antes de la primera sync.
+    // VIAJEMAXI = etiqueta VIAJE MAXI en Monday Y pedido activo en Equipo MAXIFER,
+    // O bien estado local "pedido" (sin duplicar — los IDs de CLIENTES son únicos).
     const tienePedidoActivo = IDS_CON_PEDIDO_ACTIVO.size === 0
       || IDS_CON_PEDIDO_ACTIVO.has(String(c.id));
-    if (esVMEnMonday && tienePedidoActivo) {
+    const localPedido = getEstado(c.id) === 'pedido';
+    if ((esVMEnMonday && tienePedidoActivo) || localPedido) {
       VIAJEMAXI.push({
         ...c, ...info,
         lat: coords[0], lng: coords[1],
@@ -1683,6 +1779,22 @@ function renderClientes(items, contId){
         return `<button class="estado-btn ${est.clsBtn} ${on?'on':''}" data-id="${c.id}" data-est="${est.key}">${est.icon} ${est.label}</button>`;
       }).join('');
 
+      const ext = getExtras(c.id);
+      const resumenExt = extrasResumen(c.id);
+      const tieneExtras = !!resumenExt;
+      const extrasHtml = `
+        <details class="extras-details" ${tieneExtras?'open':''}>
+          <summary>💰 Extras${resumenExt?`<span class="extras-resumen">${resumenExt}</span>`:''}</summary>
+          <div class="extras-form">
+            <label>💸 Gasto<input type="number" inputmode="decimal" data-id="${c.id}" data-extra="gasto" value="${ext.gasto??''}" placeholder="0"></label>
+            <label>💵 Importe<input type="number" inputmode="decimal" data-id="${c.id}" data-extra="importe" value="${ext.importe??''}" placeholder="0"></label>
+            <label>📅 Fecha entrega<input type="date" data-id="${c.id}" data-extra="fechaEntrega" value="${ext.fechaEntrega??''}"></label>
+            <label class="checkbox"><input type="checkbox" data-id="${c.id}" data-extra="cobrado" ${ext.cobrado?'checked':''}> Cobrado</label>
+            <label class="full">📝 Notas<textarea rows="2" data-id="${c.id}" data-extra="notas" placeholder="Detalle del pedido, recordatorios...">${escapeHtml(ext.notas??'')}</textarea></label>
+          </div>
+        </details>
+      `;
+
       row.innerHTML = `
         <div class="client-main">
           <div class="client-name-row">
@@ -1697,6 +1809,7 @@ function renderClientes(items, contId){
           ${c.dir ? `<div class="client-loc">📍 ${escapeHtml(c.dir)}</div>` : ''}
           ${c.nota ? `<div class="client-notes">${escapeHtml(c.nota)}</div>` : ''}
           <div class="estado-selector">${estadoBtns}</div>
+          ${extrasHtml}
         </div>
         <div class="client-side">
           <span class="tag ${tagClass}">${escapeHtml(c.etiq || '—')}</span>
@@ -1730,9 +1843,35 @@ function renderClientes(items, contId){
       // Refresh stats sin re-render completo
       renderStatsPot();
       renderStatsVM();
-      // Actualizar contadores del día sin re-render completo
-      // (un re-render parcial sería ideal, pero re-render todo es seguro)
     });
+  });
+  // Bind inputs de extras (gasto, importe, cobrado, fechaEntrega, notas)
+  cont.querySelectorAll('[data-extra]').forEach(inp => {
+    const handler = () => {
+      const id = inp.dataset.id;
+      const field = inp.dataset.extra;
+      let val;
+      if (inp.type === 'checkbox') val = inp.checked;
+      else if (inp.type === 'number') val = inp.value === '' ? '' : Number(inp.value);
+      else val = inp.value;
+      setExtraField(id, field, val);
+      // Actualizar el resumen del summary in-place
+      const det = inp.closest('.extras-details');
+      const sum = det?.querySelector('.extras-resumen');
+      const r = extrasResumen(id);
+      if (sum) sum.textContent = r;
+      else if (r) {
+        const s = det.querySelector('summary');
+        const span = document.createElement('span');
+        span.className = 'extras-resumen';
+        span.textContent = r;
+        s.appendChild(span);
+      }
+    };
+    inp.addEventListener('change', handler);
+    if (inp.tagName === 'TEXTAREA' || (inp.type === 'number' || inp.type === 'text')) {
+      inp.addEventListener('blur', handler);
+    }
   });
 }
 
@@ -2044,6 +2183,36 @@ if (!tieneToken && !tieneCache) {
 } else if (tieneToken && !tieneCache) {
   fetchTodosClientes();
 }
+
+// ============================================================
+// Firebase sync (Firestore)
+// ============================================================
+function _onRemoteSync(key, value){
+  // Releer de localStorage la versión más reciente
+  if (key === SK_STATE) {
+    try { estado = JSON.parse(localStorage.getItem(SK_STATE) || '{}'); } catch(e) { estado = {}; }
+  } else if (key === SK_LOC) {
+    try { localidades = JSON.parse(localStorage.getItem(SK_LOC) || '[]'); } catch(e) {}
+  } else if (key === SK_EXTRAS) {
+    try { extras = JSON.parse(localStorage.getItem(SK_EXTRAS) || '{}'); } catch(e) { extras = {}; }
+  }
+  // Re-render
+  rebuildViajeMaxi();
+  if (typeof renderStatsPot === 'function') renderStatsPot();
+  if (typeof renderStatsVM === 'function') renderStatsVM();
+  if (typeof renderListadoPot === 'function') renderListadoPot();
+  if (typeof renderListadoVM === 'function') renderListadoVM();
+}
+function _startSync(){
+  if (!window.MaxiferSync) return;
+  window.MaxiferSync.start([SK_STATE, SK_LOC, SK_EXTRAS], {
+    statusEl: document.getElementById('sync-status'),
+    onRemote: _onRemoteSync
+  });
+}
+if (window.MaxiferSync) _startSync();
+else window.addEventListener('maxifer-sync-ready', _startSync);
+window.addEventListener('maxifer-sync-started', () => _onRemoteSync(SK_STATE));
 
 </script>
 </body>

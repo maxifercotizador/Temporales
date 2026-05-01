@@ -703,9 +703,23 @@ html, body {
 @media (min-width: 720px) {
   .stats { grid-template-columns: repeat(6, 1fr); }
 }
+/* Firebase sync status */
+#sync-status {
+  position: fixed; top: 6px; right: 8px; z-index: 9999;
+  font-size: 11px; padding: 3px 8px; border-radius: 10px;
+  background: rgba(255,255,255,0.92); color: #555;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15); user-select: none;
+  pointer-events: none; transition: opacity .3s;
+}
+#sync-status[data-sync-type="ok"]   { color: #2a7a2a; }
+#sync-status[data-sync-type="err"]  { color: #c8102e; }
+#sync-status[data-sync-type="sync"] { color: #1a3a7a; }
 </style>
+<script>window.MAXIFER_SYNC_NAMESPACE = 'seguimiento_prospectos';</script>
+<script type="module" src="./firebase-sync.js"></script>
 </head>
 <body>
+<div id="sync-status">☁️ ...</div>
 <div class="app" id="app">
   <div id="setup" class="setup" style="display:none;">
     <div class="setup-logo">MAXIFER</div>
@@ -1484,6 +1498,7 @@ async function markContacted(id) {
     const c = state.contacts.find(x => x.id === id);
     if (c) { c.fecha_ultimo = today; c.proximo_seg = ''; }
     localStorage.setItem('maxifer_cache', JSON.stringify(state.contacts));
+    logAction({ contactId: id, name: c?.name || '', action: 'contacted', date: today });
     toast('Marcado como contactado ✓', 'success');
     render();
   } catch (err) {
@@ -1519,6 +1534,7 @@ async function applyPostpone(dateStr) {
     await mondayMutation(c.id, { [COL.proximo_seg]: { date: dateStr } });
     c.proximo_seg = dateStr;
     localStorage.setItem('maxifer_cache', JSON.stringify(state.contacts));
+    logAction({ contactId: c.id, name: c.name, action: 'postponed', proximoSeg: dateStr });
     toast(`Pospuesto al ${formatDate(dateStr)} ✓`, 'success');
     closeModal('modal-postpone');
     render();
@@ -1526,6 +1542,29 @@ async function applyPostpone(dateStr) {
     toast('Error: ' + err.message, 'error');
   }
 }
+
+// ======================================================
+// Action log + Firebase sync
+// ======================================================
+const ACTIONS_KEY = 'maxifer_action_log';
+function readActionLog(){
+  try { return JSON.parse(localStorage.getItem(ACTIONS_KEY) || '[]'); } catch(e) { return []; }
+}
+function logAction(entry){
+  const log = readActionLog();
+  log.push({ ts: Date.now(), ...entry });
+  // Mantener máximo 500 entradas
+  if (log.length > 500) log.splice(0, log.length - 500);
+  try { localStorage.setItem(ACTIONS_KEY, JSON.stringify(log)); } catch(e){}
+}
+function _startProspSync(){
+  if (!window.MaxiferSync) return;
+  window.MaxiferSync.start([ACTIONS_KEY], {
+    statusEl: document.getElementById('sync-status')
+  });
+}
+if (window.MaxiferSync) _startProspSync();
+else window.addEventListener('maxifer-sync-ready', _startProspSync);
 
 async function mondayMutation(itemId, colValues) {
   const query = `mutation ($itemId: ID!, $boardId: ID!, $colValues: JSON!) {
