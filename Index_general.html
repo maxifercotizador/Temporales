@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0f172a">
+<link rel="icon" type="image/svg+xml" href="./favicon.svg">
+<link rel="apple-touch-icon" href="./favicon.svg">
 <title>Maxifer · Index general</title>
 <style>
   :root {
@@ -34,6 +37,10 @@
   header.top {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 14px; flex-wrap: wrap; gap: 10px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-logo {
+    border-radius: 10px; box-shadow: 0 2px 8px rgba(245,158,11,.18);
   }
   h1 { margin: 0; font-size: 1.6rem; font-weight: 800; letter-spacing: -.02em; }
   h1 .accent { color: var(--accent); }
@@ -201,9 +208,12 @@
 <div class="wrap">
 
 <header class="top">
-  <div>
-    <h1>Maxi<span class="accent">fer</span> · Index</h1>
-    <div class="sub">Acceso rápido a todas mis apps y archivos</div>
+  <div class="brand">
+    <img src="./favicon.svg" alt="" class="brand-logo" width="44" height="44">
+    <div>
+      <h1>Maxi<span class="accent">fer</span> · Admin</h1>
+      <div class="sub">Acceso rápido a todas mis apps y archivos</div>
+    </div>
   </div>
   <div class="pill" id="hora"></div>
 </header>
