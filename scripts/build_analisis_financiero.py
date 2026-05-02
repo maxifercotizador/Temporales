@@ -40,15 +40,28 @@ JS_OUT = ROOT / "analisis_financiero_datos.js"
 VENDEDOR_PAPA = "Gordillo, Victor"
 TIPOS_NC = {"NCA", "NCB", "NCC", "NCM", "NC"}
 
-# Palabras clave para detectar tarjetas en extractos bancarios
-TARJETA_PATTERNS = {
-    "Tarjeta Galicia - VISA":    [r"galicia.*visa", r"visa.*galicia"],
-    "Tarjeta Galicia + MASTER":  [r"galicia.*master", r"master.*galicia"],
-    "Tarjeta Galicia + VISA":    [r"galicia.*visa.*\+"],
-    "Tarjeta Galicia - BUSINESS":[r"galicia.*business"],
-    "Tarjeta ICBC":              [r"icbc"],
-    "Tarjeta Santander Rio - VISA": [r"santander.*visa", r"santanderrio.*visa"],
-    "Tarjeta Santander Rio - AMEX": [r"santander.*amex", r"santanderrio.*amex", r"amex"],
+# Tarjetas: matcheo por últimos dígitos (más confiable que palabras clave).
+# El concepto en el extracto suele incluir los últimos 4 dígitos.
+TARJETAS_DIGITOS = {
+    "Tarjeta Galicia - VISA":      ["2884"],
+    "Tarjeta Galicia - AMEX":      ["0793"],
+    "Tarjeta Galicia - BUSINESS":  ["9091"],
+    "Tarjeta Galicia + VISA":      ["3394"],
+    "Tarjeta Galicia + MASTER":    ["6770"],
+    "Tarjeta Santander Rio - VISA":["2857"],
+    "Tarjeta Santander Rio - AMEX":["62044", "2044"],
+    "Tarjeta ICBC":                ["7406"],
+}
+# Patrones de palabras clave como fallback si el extracto no tiene los dígitos
+TARJETAS_PALABRAS = {
+    "Tarjeta Galicia - VISA":      ["pago tarjeta visa", "pago visa galicia"],
+    "Tarjeta Galicia - AMEX":      ["pago tarjeta amex galicia", "amex galicia"],
+    "Tarjeta Galicia - BUSINESS":  ["business"],
+    "Tarjeta Galicia + VISA":      ["plus visa", "+visa", "+ visa"],
+    "Tarjeta Galicia + MASTER":    ["plus master", "+master", "+ master"],
+    "Tarjeta Santander Rio - VISA":["pago tarjeta visa", "pago visa", "visa santander"],
+    "Tarjeta Santander Rio - AMEX":["amex", "american express"],
+    "Tarjeta ICBC":                ["icbc"],
 }
 
 
@@ -378,9 +391,11 @@ def parse_gastos_bs_xlsx(path, ano_mes):
     return round(total_comisiones, 2)
 
 
-def parse_extracto_galicia(path, ano_mes):
-    """Detecta pagos de tarjetas en el extracto Galicia.
-    Devuelve dict: {tarjeta_nombre: monto_total_mes}
+def parse_extracto_bancario(path, ano_mes, banco_filtro):
+    """Parsea un extracto bancario (todas sus hojas). Detecta pagos de tarjetas
+    usando los últimos dígitos. Devuelve dict {tarjeta: monto_mes}.
+
+    banco_filtro: 'galicia' o 'santander' para limitar las tarjetas a buscar.
     """
     try:
         import openpyxl
@@ -388,56 +403,86 @@ def parse_extracto_galicia(path, ano_mes):
         return {}
     try:
         wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
-        ws = wb.active
     except Exception as e:
-        log(f"  extracto_galicia: error: {e}")
-        return {}
-
-    rows = list(ws.iter_rows(values_only=True))
-    header_row = None
-    for i, r in enumerate(rows[:15]):
-        cells = [s(c).lower() for c in r]
-        if any("fecha" in c for c in cells):
-            header_row = i
-            break
-    if header_row is None:
-        return {}
-
-    headers = [s(c).lower() for c in rows[header_row]]
-    col_fecha = next((i for i, h in enumerate(headers) if "fecha" in h), None)
-    col_concepto = next((i for i, h in enumerate(headers)
-                         if "concepto" in h or "detalle" in h or "descripcion" in h), None)
-    col_debe = next((i for i, h in enumerate(headers) if "debe" in h or "debito" in h), None)
-    col_importe = next((i for i, h in enumerate(headers)
-                        if "importe" in h or "monto" in h), None)
-
-    if col_fecha is None or col_concepto is None:
+        log(f"  extracto {banco_filtro}: error: {e}")
         return {}
 
     pagos = defaultdict(float)
-    for r in rows[header_row + 1:]:
-        f = parse_date(r[col_fecha]) if col_fecha < len(r) else None
-        if not f or f.strftime("%Y-%m") != ano_mes:
-            continue
-        conc = s(r[col_concepto]).lower() if col_concepto < len(r) else ""
-        # importe: priorizar "debe" si existe, sino "importe"
-        importe = 0
-        if col_debe is not None and col_debe < len(r):
-            importe = abs(num(r[col_debe]))
-        if importe == 0 and col_importe is not None and col_importe < len(r):
-            importe = abs(num(r[col_importe]))
-        if importe <= 0:
+
+    # Filtrar tarjetas relevantes para este banco
+    tarjetas_relevantes = {
+        nombre: digitos for nombre, digitos in TARJETAS_DIGITOS.items()
+        if banco_filtro.lower() in nombre.lower()
+    }
+    palabras_relevantes = {
+        nombre: pals for nombre, pals in TARJETAS_PALABRAS.items()
+        if banco_filtro.lower() in nombre.lower()
+    }
+
+    for sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]
+        rows = list(ws.iter_rows(values_only=True))
+        if not rows:
             continue
 
-        for tarjeta, patrones in TARJETA_PATTERNS.items():
-            if "galicia" not in tarjeta.lower():
+        # Detectar header
+        header_row = None
+        for i, r in enumerate(rows[:15]):
+            cells = [s(c).lower() for c in r]
+            if any("fecha" in c for c in cells):
+                header_row = i
+                break
+        if header_row is None:
+            continue
+
+        headers = [s(c).lower() for c in rows[header_row]]
+        col_fecha = next((i for i, h in enumerate(headers) if "fecha" in h), None)
+        col_concepto = next((i for i, h in enumerate(headers)
+                             if "concepto" in h or "detalle" in h or "descripcion" in h
+                             or "movimiento" in h or "operacion" in h), None)
+        col_debe = next((i for i, h in enumerate(headers)
+                         if "debe" in h or "debito" in h or "egreso" in h or "salida" in h), None)
+        col_importe = next((i for i, h in enumerate(headers)
+                            if "importe" in h or "monto" in h), None)
+
+        if col_fecha is None or col_concepto is None:
+            continue
+
+        for r in rows[header_row + 1:]:
+            f = parse_date(r[col_fecha]) if col_fecha < len(r) else None
+            if not f or f.strftime("%Y-%m") != ano_mes:
                 continue
-            for pat in patrones:
-                if re.search(pat, conc, re.IGNORECASE):
+            conc = s(r[col_concepto]) if col_concepto < len(r) else ""
+            conc_low = conc.lower()
+            importe = 0
+            if col_debe is not None and col_debe < len(r):
+                importe = abs(num(r[col_debe]))
+            if importe == 0 and col_importe is not None and col_importe < len(r):
+                importe = abs(num(r[col_importe]))
+            if importe <= 0:
+                continue
+
+            # 1) Match por últimos dígitos (más confiable)
+            matched = False
+            for tarjeta, digitos in tarjetas_relevantes.items():
+                if any(d in conc for d in digitos):
+                    pagos[tarjeta] += importe
+                    matched = True
+                    break
+            if matched:
+                continue
+
+            # 2) Fallback: match por palabras clave
+            for tarjeta, palabras in palabras_relevantes.items():
+                if any(p in conc_low for p in palabras):
                     pagos[tarjeta] += importe
                     break
 
     return {k: round(v, 2) for k, v in pagos.items()}
+
+
+def parse_extracto_galicia(path, ano_mes):
+    return parse_extracto_bancario(path, ano_mes, 'galicia')
 
 
 def parse_resumen_tarjeta_pdf(path, ano_mes, tarjeta_nombre):
@@ -620,14 +665,23 @@ def process_month(month_dir, data):
             data["gastos_por_mes"][ano_mes] = existing
             cambios.append(f"comisiones_reales ${comisiones:,.0f}")
 
-    # 4. extracto_galicia.xlsx (en Excels/) — todas las cuentas Galicia consolidadas
+    # 4a. extracto_galicia.xlsx (en Excels/) — todas las cuentas Galicia consolidadas
     fpath = find("Excels", "extracto_galicia.xlsx") or find("", "extracto_galicia.xlsx")
     if fpath:
-        pagos = parse_extracto_galicia(fpath, ano_mes)
+        pagos = parse_extracto_bancario(fpath, ano_mes, 'galicia')
         if pagos:
             for tarjeta, monto in pagos.items():
                 data["tarjetas_pagos"].setdefault(tarjeta, {})[ano_mes] = monto
             cambios.append(f"galicia tarjetas ({len(pagos)})")
+
+    # 4b. extracto_santander.xlsx (en Excels/)
+    fpath = find("Excels", "extracto_santander.xlsx") or find("", "extracto_santander.xlsx")
+    if fpath:
+        pagos = parse_extracto_bancario(fpath, ano_mes, 'santander')
+        if pagos:
+            for tarjeta, monto in pagos.items():
+                data["tarjetas_pagos"].setdefault(tarjeta, {})[ano_mes] = monto
+            cambios.append(f"santander tarjetas ({len(pagos)})")
 
     # 5. PDFs de tarjetas (Galicia/, Santander/, ICBC/)
     pdf_specs = [

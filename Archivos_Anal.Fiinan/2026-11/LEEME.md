@@ -6,7 +6,8 @@ Tirá los archivos en sus carpetas correspondientes:
 - [ ] `facturacion.xlsx` — BS Gestión, comprobantes emitidos 01/04 al 30/04
 - [ ] `gastos_excel.xlsx` — Hoja abril del Gastos_2026.xlsx
 - [ ] `gastos_bs.xlsx` — BS Gestión, gastos 01/04 al 30/04
-- [ ] `extracto_galicia.xlsx` — 3 cuentas Galicia consolidadas
+- [ ] `extracto_galicia.xlsx` — 3 cuentas Galicia consolidadas (movimientos día x día)
+- [ ] `extracto_santander.xlsx` — Cuentas Santander Río (movimientos día x día)
 
 ## 📂 Galicia/ (PDFs de tarjeta — solo las que usaste)
 - [ ] `resumen_visa.pdf` — Galicia VISA-2884

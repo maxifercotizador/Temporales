@@ -851,7 +851,8 @@
           <li><b>facturacion.xlsx</b> — BS Gestión → Comprobantes emitidos del 01 al fin de mes</li>
           <li><b>gastos_excel.xlsx</b> — Tu archivo personal <code>Gastos_2026.xlsx</code>, hoja del mes</li>
           <li><b>gastos_bs.xlsx</b> — BS Gestión → Gastos del mes (saca comisiones reales)</li>
-          <li><b>extracto_galicia.xlsx</b> — Home banking Galicia → 3 cuentas consolidadas (Cta.Corr + C.Ahorro + C.Ahorro G+)</li>
+          <li><b>extracto_galicia.xlsx</b> — Home banking Galicia → 3 cuentas consolidadas (Cta.Corr + C.Ahorro + C.Ahorro G+) con movimientos día por día</li>
+          <li><b>extracto_santander.xlsx</b> — Home banking Santander Río → cuenta(s) consolidadas con movimientos día por día</li>
         </ul>
         <h4 style="color:var(--text);margin-top:12px;">📂 Galicia/, Santander/, ICBC/</h4>
         <p>Los PDFs de tarjeta los bajás del home banking de cada banco. <b>Si una tarjeta no la usaste ese mes, no subís ese PDF.</b></p>
@@ -1796,7 +1797,8 @@ const CARGAR_CATEGORIAS = [
       { name: 'facturacion.xlsx',     desc: 'BS Gestión — comprobantes emitidos del mes' },
       { name: 'gastos_excel.xlsx',    desc: 'Tu Gastos_2026, hoja del mes' },
       { name: 'gastos_bs.xlsx',       desc: 'BS Gestión — gastos del mes (comisiones)' },
-      { name: 'extracto_galicia.xlsx',desc: 'Home banking Galicia — 3 cuentas consolidadas' },
+      { name: 'extracto_galicia.xlsx',desc: 'Home banking Galicia — 3 cuentas consolidadas (movimientos diarios)' },
+      { name: 'extracto_santander.xlsx',desc: 'Home banking Santander Río — todas las cuentas (movimientos diarios)' },
     ],
   },
   {

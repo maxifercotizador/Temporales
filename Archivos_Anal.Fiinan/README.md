@@ -10,7 +10,8 @@ Archivos_Anal.Fiinan/2026-04/
 │   ├── facturacion.xlsx
 │   ├── gastos_excel.xlsx
 │   ├── gastos_bs.xlsx
-│   └── extracto_galicia.xlsx        (3 cuentas Galicia consolidadas)
+│   └── extracto_galicia.xlsx        (3 cuentas Galicia, movimientos diarios)
+│   └── extracto_santander.xlsx      (cuenta(s) Santander, movimientos diarios)
 ├── Galicia/                         ← PDFs de tarjeta (las que uses)
 │   ├── resumen_visa.pdf             (VISA-2884)
 │   ├── resumen_amex.pdf             (AMEX-0793)
