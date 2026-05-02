@@ -771,6 +771,18 @@ def process_month(month_dir, data):
             data["top_conceptos"][ano_mes] = top
             cambios.append(f"gastos_excel ({len(lista)} items)")
 
+            # Detectar tarjetas en los items y actualizar tarjetas_pagos
+            # Usa los nombres canónicos de TARJETAS_DIGITOS para matchear
+            tarjetas_canon = list(TARJETAS_DIGITOS.keys())
+            for item in lista:
+                conc = item["Concepto"]
+                conc_norm = _norm_txt(conc)
+                # Match exacto si el concepto coincide con el nombre canónico (sin acentos)
+                for tarjeta_canon in tarjetas_canon:
+                    if _norm_txt(tarjeta_canon) == conc_norm:
+                        data["tarjetas_pagos"].setdefault(tarjeta_canon, {})[ano_mes] = item["Importe"]
+                        break
+
     # 3. gastos_bs.xlsx (en Excels/)
     fpath = find("Excels", "gastos_bs.xlsx") or find("", "gastos_bs.xlsx")
     if fpath:
