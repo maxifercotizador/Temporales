@@ -1,0 +1,44 @@
+name: Regenerar Analisis Financiero
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Archivos_Anal.Fiinan/**'
+      - 'scripts/build_analisis_financiero.py'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependencias
+        run: |
+          pip install openpyxl pdfplumber
+
+      - name: Regenerar analisis_financiero_datos.js
+        run: |
+          python3 scripts/build_analisis_financiero.py
+
+      - name: Commitear cambios si hubo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add analisis_financiero_datos.js
+          if git diff --staged --quiet; then
+            echo "Sin cambios en el JS"
+          else
+            git commit -m "regenera analisis_financiero_datos.js [skip ci]"
+            git push
+          fi
