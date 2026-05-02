@@ -716,6 +716,64 @@ def parse_saldos_txt(path):
     return out
 
 
+def parse_consumos_txt(path):
+    """Parsea archivos _resumen_*_consumos.txt y extrae transacciones detalladas.
+    Soporta dos formatos:
+      A) Detalle línea-a-línea bajo 'DETALLE MOVIMIENTOS' o 'DETALLE CONSUMOS':
+         '  29/04/2026  CONCEPTO              USD 100,00'  o  '  ... $ 12.345,67'
+      B) Solo categorías agregadas (sin línea-a-línea) — devuelve [].
+
+    Devuelve lista de dicts: [{fecha, concepto, monto, moneda, tarjeta_sub}, ...]
+    Si hay subcuentas (Nadia/Nora/Victor/Maxi), las detecta por contexto.
+    """
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    lines = text.split("\n")
+    txns = []
+    current_subcuenta = None
+    in_detail = False
+    in_cuotas = False
+    for line in lines:
+        ls = line.strip()
+        # Detectar bloque de detalle
+        upper = ls.upper()
+        if "DETALLE MOVIMIENTOS" in upper or "DETALLE CONSUMOS" in upper:
+            in_detail = True
+            continue
+        if in_detail and ("CATEGORÍAS" in upper or "CATEGORIAS" in upper or
+                         "TOTALES" in upper or "NOTA:" in upper.replace("Á", "A")):
+            in_detail = False
+            continue
+        # Detectar subcuenta
+        m_sub = re.match(r'\s*(?:VISA|AMEX)[- ]?(\d{4}|\w+\d+)\s*\(([^)]+)\)', ls, re.IGNORECASE)
+        if m_sub:
+            current_subcuenta = m_sub.group(2).strip()
+        m_sub2 = re.match(r'^([A-Z]+)\s+(?:titular|adicional)\s+(\w+)', ls)
+        if m_sub2:
+            current_subcuenta = m_sub2.group(2)
+
+        if not in_detail:
+            continue
+
+        # Patrón de transacción:
+        # '  29/04/2026  CONCEPTO ...  USD 100,00'
+        # '  09/10/2025 - dloel outlet abertu (cuota 7/12) - $40.749,63'
+        m = re.match(
+            r'^\s*(\d{1,2}/\d{1,2}/\d{2,4})\s*[-–]?\s*(.*?)\s+(USD|U\$S|\$)\s*([\d\.,]+)\s*$',
+            line.replace('\xa0', ' ')
+        )
+        if m:
+            fecha, concepto, moneda, monto_str = m.groups()
+            monto = num(monto_str)
+            txns.append({
+                "fecha": fecha,
+                "concepto": concepto.strip(),
+                "monto": monto,
+                "moneda": "USD" if moneda.upper().startswith("U") else "ARS",
+                "subcuenta": current_subcuenta or "",
+            })
+    return txns
+
+
 def parse_clientes_saldos_txt(path):
     """Parsea clientes_saldos.txt (TSV con header de comentarios):
        Cod\tCliente\tNombre Fantasia\tVendedor Asociado\tSaldo\tFecha
@@ -1067,6 +1125,36 @@ def process_month(month_dir, data):
             pdfs_procesados += 1
     if pdfs_procesados:
         cambios.append(f"PDFs tarjeta ({pdfs_procesados})")
+
+    # 5b. Fallback: archivos _resumen_*_consumos.txt (cuando los PDFs no parsean
+    # o cuando hay datos manualmente cargados desde imágenes)
+    consumos_specs = [
+        ("Galicia",   "_resumen_visa_consumos.txt",     "Tarjeta Galicia - VISA"),
+        ("Galicia",   "_resumen_amex_consumos.txt",     "Tarjeta Galicia - AMEX"),
+        ("Galicia",   "_resumen_business_consumos.txt", "Tarjeta Galicia - BUSINESS"),
+        ("Galicia",   "_resumen_plus_visa_consumos.txt","Tarjeta Galicia + VISA"),
+        ("Galicia",   "_resumen_plus_master_consumos.txt","Tarjeta Galicia + MASTER"),
+        ("Santander", "_resumen_visa_consumos.txt",     "Tarjeta Santander Rio - VISA"),
+        ("Santander", "_resumen_amex_consumos.txt",     "Tarjeta Santander Rio - AMEX"),
+        ("ICBC",      "_resumen_visa_consumos.txt",     "Tarjeta ICBC"),
+    ]
+    consumos_procesados = 0
+    for folder, fname, tarjeta_nombre in consumos_specs:
+        fpath = find(folder, fname)
+        if not fpath:
+            continue
+        txns = parse_consumos_txt(fpath)
+        if not txns:
+            continue
+        # Solo agregar si no hay detalle por PDF ya cargado
+        existing = data.get("tarjetas_detalle", {}).get(tarjeta_nombre, {}).get(ano_mes)
+        if existing:
+            continue
+        data.setdefault("tarjetas_detalle", {}) \
+            .setdefault(tarjeta_nombre, {})[ano_mes] = txns
+        consumos_procesados += 1
+    if consumos_procesados:
+        cambios.append(f"consumos.txt ({consumos_procesados})")
 
     # 6. cobranzas.txt (en raíz del mes)
     fpath = find("", "cobranzas.txt")
