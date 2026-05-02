@@ -614,8 +614,8 @@ def parse_resumen_tarjeta_pdf(path, ano_mes, tarjeta_nombre):
     """
     try:
         import pdfplumber
-    except ImportError:
-        log(f"  PDF: pdfplumber no disponible, skip {path.name}")
+    except BaseException as e:
+        log(f"  PDF: pdfplumber no disponible ({type(e).__name__}: {e}), skip {path.name}")
         return None
     try:
         with pdfplumber.open(path) as pdf:
@@ -714,6 +714,230 @@ def parse_saldos_txt(path):
         k, v = line.split(":", 1)
         out[k.strip().lower()] = num(v)
     return out
+
+
+def parse_clientes_saldos_txt(path):
+    """Parsea clientes_saldos.txt (TSV con header de comentarios):
+       Cod\tCliente\tNombre Fantasia\tVendedor Asociado\tSaldo\tFecha
+    Devuelve lista de dicts y total + fecha más reciente.
+    """
+    deudores = []
+    fecha_max = ""
+    for line in path.read_text(encoding="utf-8", errors="ignore").splitlines():
+        line = line.rstrip()
+        if not line or line.startswith("=") or line.startswith("Saldos") or \
+           line.startswith("Origen") or line.startswith("Formato") or \
+           line.startswith("Columnas"):
+            continue
+        parts = line.split("\t")
+        if len(parts) < 5:
+            continue
+        try:
+            saldo = num(parts[4])
+        except Exception:
+            continue
+        fecha = parts[5].strip() if len(parts) >= 6 else ""
+        if fecha and fecha > fecha_max:
+            fecha_max = fecha
+        deudores.append({
+            "codigo": parts[0].strip(),
+            "cliente": parts[1].strip(),
+            "fantasia": parts[2].strip(),
+            "vendedor": parts[3].strip(),
+            "saldo": saldo,
+            "fecha": fecha,
+        })
+    deudores.sort(key=lambda d: -d["saldo"])
+    return {
+        "lista": deudores,
+        "total": round(sum(d["saldo"] for d in deudores), 2),
+        "fecha": fecha_max,
+    }
+
+
+def parse_ventas_detalle_tsv(path):
+    """Parsea _ventas_detalle_raw.tsv (export de BS Gestion paste).
+    Header: Fecha\tTipo\tNroComprobante\tCliente\tProducto\tNumero\tCantidad\t$ Neto\tPrecioTotal\tVendedor
+    Devuelve lista de tuplas (producto, numero, precio_total, fecha).
+    """
+    rows = []
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    lines = text.split("\n")
+    if not lines:
+        return rows
+    for line in lines[1:]:
+        parts = line.split("\t")
+        if len(parts) < 10:
+            continue
+        fecha, tipo, nrocom, cliente, producto, numero, cant, neto, preciototal, vendedor = parts[:10]
+        if not fecha or fecha.lower().startswith("total") or not producto:
+            continue
+        try:
+            pt = float(preciototal.replace(".", "").replace(",", "."))
+        except ValueError:
+            continue
+        rows.append({
+            "fecha": fecha, "producto": producto, "numero": numero,
+            "precio_total": pt, "cliente": cliente, "vendedor": vendedor,
+        })
+    return rows
+
+
+def cargar_listas_maxifer():
+    """Carga el archivo Listas Maxifer.xlsx (con columna Fabrica) si está disponible.
+    Devuelve dicts para mapear (Producto, Descripcion) -> Fabrica.
+    """
+    import unicodedata
+    listas_path = ROOT / ".." / "Presupuestador" / "Listas Maxifer.xlsx"
+    if not listas_path.exists():
+        log(f"  victor: no encuentro Listas Maxifer en {listas_path}")
+        return None
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(listas_path, read_only=True, data_only=True)
+        ws = wb["LISTAS Y BD"]
+    except Exception as e:
+        log(f"  victor: error abriendo Listas Maxifer: {e}")
+        return None
+
+    def strip_accents(s):
+        return ''.join(c for c in unicodedata.normalize('NFKD', str(s or '')) if not unicodedata.combining(c))
+
+    def norm(s):
+        s = strip_accents(s).strip().upper().replace("'", "").replace('"', "")
+        return ' '.join(s.split())
+
+    prod_pos = {}    # (producto, str(numero_pos)) -> fabrica
+    prod_desc = {}   # (producto, descripcion_norm) -> fabrica
+    prod_fabricas = {}  # producto -> Counter de fabricas
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if not row[1]:
+            continue
+        producto = norm(row[1])
+        numero = row[4]
+        desc = norm(row[5])
+        fabrica = str(row[7]).strip().upper() if row[7] else "?"
+        if numero is not None:
+            prod_pos[(producto, str(numero).strip())] = fabrica
+        if desc:
+            prod_desc[(producto, desc)] = fabrica
+        prod_fabricas.setdefault(producto, Counter())[fabrica] += 1
+    return {"pos": prod_pos, "desc": prod_desc, "fabricas": prod_fabricas, "norm": norm}
+
+
+# Aliases de productos: nombre en ventas -> nombre en Listas Maxifer
+PRODUCTO_ALIAS = {
+    "CONECTORES PARA COMBUSTIBLE": "CONECTORES DE COMBUSTIBLE",
+    "GAVETA CH": "GAVETAS",
+    "GAVETA GR": "GAVETAS",
+    "GAVETA ME": "GAVETAS",
+    "PLASTICOS IMPORTADOS": "PLASTICOS",
+    "TORNILLOS Y BULONES ESPECIALES": "TORNILLERIA ESPECIAL",
+}
+
+
+def calcular_ventas_maxifer(ventas, listas):
+    """Devuelve total de ventas con Fabrica == MAXIFER cruzando productos."""
+    if not listas or not ventas:
+        return 0.0
+    total = 0.0
+    norm = listas["norm"]
+    for v in ventas:
+        pn = norm(v["producto"])
+        pn = PRODUCTO_ALIAS.get(pn, pn)
+        nn_desc = norm(v["numero"])
+        fabrica = listas["desc"].get((pn, nn_desc))
+        if fabrica is None:
+            fabrica = listas["pos"].get((pn, str(v["numero"]).strip()))
+        if fabrica is None:
+            fabricas = listas["fabricas"].get(pn)
+            if fabricas and len(fabricas) == 1:
+                fabrica = list(fabricas.keys())[0]
+            elif fabricas:
+                fabrica = fabricas.most_common(1)[0][0]
+        if fabrica == "MAXIFER":
+            total += v["precio_total"]
+    return round(total, 2)
+
+
+# Materia prima fábrica: keywords que identifican proveedores/conceptos
+MATERIA_PRIMA_KEYWORDS = [
+    "alumina", "argon", "j l metales", "jl metales", "soldanex",
+    "vische", "billordo", "cerminaro", "flejes", "varillas", "caños lumina",
+    "caños de aluminio", "caños de alum",
+    "aceros inoxidables", "union y fuerza", "soldaduras",
+    "piso de goma", "pisos de goma", "gases y soldaduras",
+]
+
+# Sueldos fábrica: nombres
+SUELDOS_FABRICA_KEYWORDS = ["nacho", "wilber", "lucas"]
+
+
+def calcular_materia_prima_bs(bs_path, ano_mes):
+    """Extrae materia prima desde gastos_bs.xlsx (tiene proveedores explícitos)."""
+    try:
+        import openpyxl
+        wb = openpyxl.load_workbook(bs_path, read_only=True, data_only=True)
+        ws = wb.active
+    except Exception as e:
+        log(f"  victor: error abriendo gastos_bs: {e}")
+        return 0.0, set()
+
+    rows = list(ws.iter_rows(values_only=True))
+    header_row = None
+    for i, r in enumerate(rows[:10]):
+        cells = [s(c).lower() for c in r]
+        if any("fecha" in c for c in cells) and any("importe" in c or "total" in c for c in cells):
+            header_row = i
+            break
+    if header_row is None:
+        return 0.0, set()
+
+    total = 0.0
+    montos_vistos = set()
+    for r in rows[header_row + 1:]:
+        f = parse_date(r[0]) if r else None
+        if not f or f.strftime("%Y-%m") != ano_mes:
+            continue
+        # Concatenar todo el texto del row para buscar keywords
+        text_all = " ".join(s(v) for v in r if isinstance(v, str)).lower()
+        if any(k in text_all for k in MATERIA_PRIMA_KEYWORDS):
+            # Buscar el monto: última columna numérica
+            importe = 0
+            for v in reversed(r):
+                if isinstance(v, (int, float)) and v != 0:
+                    importe = abs(v)
+                    break
+            if importe > 0:
+                total += importe
+                montos_vistos.add(round(importe, 0))
+    return round(total, 2), montos_vistos
+
+
+def calcular_pusiste(gastos_lista, ano_mes, bs_path=None):
+    """Suma sueldos fábrica + materia prima del mes (cruzando excel + bs sin duplicar)."""
+    sueldos = 0.0
+    materia_prima_bs = 0.0
+    montos_bs = set()
+    if bs_path:
+        materia_prima_bs, montos_bs = calcular_materia_prima_bs(bs_path, ano_mes)
+
+    materia_prima_excel = 0.0
+    for g in gastos_lista:
+        if g.get("AnoMes") != ano_mes:
+            continue
+        concepto = (g.get("Concepto") or "").lower()
+        importe = abs(num(g.get("Importe")))
+        if any(k in concepto for k in SUELDOS_FABRICA_KEYWORDS):
+            sueldos += importe
+            continue
+        if any(k in concepto for k in MATERIA_PRIMA_KEYWORDS):
+            # Si ya está en BS, no duplicar
+            if round(importe, 0) in montos_bs:
+                continue
+            materia_prima_excel += importe
+    materia_prima = round(materia_prima_bs + materia_prima_excel, 2)
+    return round(sueldos, 2), materia_prima
 
 
 # =====================================================================
@@ -900,6 +1124,59 @@ def process_month(month_dir, data):
             sb.sort(key=lambda e: e.get("fecha", ""))
             data["saldos_bancarios"] = sb
             cambios.append(f"saldos al {fecha}")
+
+    # 8. clientes_saldos.txt -> deudores (último mes manda)
+    fpath = find("", "clientes_saldos.txt")
+    if fpath:
+        d = parse_clientes_saldos_txt(fpath)
+        # Solo sobrescribimos si este mes es más reciente que lo que ya tenemos
+        prev = data.get("deudores", {})
+        if d["fecha"] >= prev.get("fecha", ""):
+            data["deudores"] = d
+            cambios.append(f"deudores ({len(d['lista'])} clientes, ${d['total']:,.0f})")
+
+    # 9. _ventas_detalle_raw.tsv -> Cierre con Víctor del mes
+    fpath = find("Excels", "_ventas_detalle_raw.tsv")
+    if fpath:
+        ventas = parse_ventas_detalle_tsv(fpath)
+        listas = cargar_listas_maxifer()
+        if ventas and listas:
+            ventas_maxifer = calcular_ventas_maxifer(ventas, listas)
+            bs_path = find("Excels", "gastos_bs.xlsx") or find("", "gastos_bs.xlsx")
+            sueldos, materia_prima = calcular_pusiste(data.get("gastos_lista", []), ano_mes, bs_path)
+
+            # Override manual: _victor_overrides.json en Excels/
+            # Formato: {"sueldos_fabrica": 3000000, "materia_prima_extra": 0, "notas": "..."}
+            ov_path = find("Excels", "_victor_overrides.json")
+            if ov_path:
+                try:
+                    ov = json.loads(Path(ov_path).read_text(encoding="utf-8"))
+                    if "sueldos_fabrica" in ov:
+                        sueldos = float(ov["sueldos_fabrica"])
+                    if "materia_prima_extra" in ov:
+                        materia_prima += float(ov["materia_prima_extra"])
+                except Exception as e:
+                    log(f"  victor: error leyendo overrides: {e}")
+            pusiste = round(sueldos + materia_prima, 2)
+            # Detectar mes parcial: si última fecha < día 28
+            ultimas = sorted({v["fecha"] for v in ventas if v.get("fecha")})
+            parcial = False
+            if ultimas:
+                ult = ultimas[-1]  # formato "DD/MM/YY"
+                try:
+                    dia = int(ult.split("/")[0])
+                    parcial = dia < 28
+                except Exception:
+                    pass
+            data.setdefault("cierre_victor", {}).setdefault("por_mes", {})[ano_mes] = {
+                "sueldos": sueldos,
+                "materia_prima": materia_prima,
+                "pusiste": pusiste,
+                "ventas_maxifer": ventas_maxifer,
+                "recibiste": ventas_maxifer,
+                "parcial": parcial,
+            }
+            cambios.append(f"victor: puso ${pusiste:,.0f} / recibió ${ventas_maxifer:,.0f}")
 
     if cambios and ano_mes not in data.get("meses", []):
         data.setdefault("meses", []).append(ano_mes)
