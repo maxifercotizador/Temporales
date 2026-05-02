@@ -1,0 +1,3 @@
+total_cobrado: 80316038
+cantidad: 187
+cobrado_papa: 6593458
