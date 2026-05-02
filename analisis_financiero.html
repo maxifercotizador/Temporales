@@ -337,6 +337,7 @@
     <button class="tab" data-pane="tarjetas">💳 Tarjetas</button>
     <button class="tab" data-pane="bancos">🏦 Bancos</button>
     <button class="tab" data-pane="prestamos">📋 Préstamos</button>
+    <button class="tab" data-pane="cargar">📤 Cargar mes</button>
     <button class="tab" data-pane="manual">📖 Manual Actualización</button>
   </div>
 </nav>
@@ -817,6 +818,57 @@
   </section>
   
   <!-- MANUAL -->
+  <section class="pane" id="cargar">
+    <h2>📤 Cargar archivos de un mes</h2>
+    <p class="hint">Tirá los archivos del mes en sus carpetas correspondientes. Cada botón te lleva directo a GitHub para drag-and-drop. Cuando termines, en 1-2 minutos el dashboard se actualiza solo.</p>
+
+    <div style="display:flex;gap:10px;align-items:center;margin:14px 0;flex-wrap:wrap;">
+      <label style="font-size:13px;color:var(--text-mute);">Mes a cargar:</label>
+      <select id="cargar-mes" style="padding:8px 12px;background:var(--bg-card);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;">
+        <option value="2026-04">Abril 2026</option>
+        <option value="2026-05">Mayo 2026</option>
+        <option value="2026-06">Junio 2026</option>
+        <option value="2026-07">Julio 2026</option>
+        <option value="2026-08">Agosto 2026</option>
+        <option value="2026-09">Septiembre 2026</option>
+        <option value="2026-10">Octubre 2026</option>
+        <option value="2026-11">Noviembre 2026</option>
+        <option value="2026-12">Diciembre 2026</option>
+      </select>
+      <button id="cargar-refresh" style="padding:8px 14px;background:var(--accent);color:#1a1a1a;border:none;border-radius:6px;cursor:pointer;font-weight:600;">🔄 Verificar archivos subidos</button>
+      <span id="cargar-status" style="font-size:12px;color:var(--text-mute);"></span>
+    </div>
+
+    <div id="cargar-categorias">
+      <!-- Se llena con JS -->
+    </div>
+
+    <details style="margin-top:24px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;padding:14px;">
+      <summary style="cursor:pointer;font-weight:600;font-size:14px;">📋 Detalle de cada archivo (qué es y de dónde sacarlo)</summary>
+      <div style="margin-top:12px;font-size:13px;line-height:1.6;color:var(--text-mute);">
+        <h4 style="color:var(--text);margin-top:8px;">📂 Excels/</h4>
+        <ul>
+          <li><b>facturacion.xlsx</b> — BS Gestión → Comprobantes emitidos del 01 al fin de mes</li>
+          <li><b>gastos_excel.xlsx</b> — Tu archivo personal <code>Gastos_2026.xlsx</code>, hoja del mes</li>
+          <li><b>gastos_bs.xlsx</b> — BS Gestión → Gastos del mes (saca comisiones reales)</li>
+          <li><b>extracto_galicia.xlsx</b> — Home banking Galicia → 3 cuentas consolidadas (Cta.Corr + C.Ahorro + C.Ahorro G+)</li>
+        </ul>
+        <h4 style="color:var(--text);margin-top:12px;">📂 Galicia/, Santander/, ICBC/</h4>
+        <p>Los PDFs de tarjeta los bajás del home banking de cada banco. <b>Si una tarjeta no la usaste ese mes, no subís ese PDF.</b></p>
+        <h4 style="color:var(--text);margin-top:12px;">📄 cobranzas.txt</h4>
+        <pre style="background:#0a0a0a;padding:8px;border-radius:6px;font-size:12px;color:var(--text);">total_cobrado: 9100000
+cantidad: 30
+cobrado_papa: 1200000</pre>
+        <h4 style="color:var(--text);margin-top:12px;">📄 saldos.txt</h4>
+        <pre style="background:#0a0a0a;padding:8px;border-radius:6px;font-size:12px;color:var(--text);">galicia_principal: 2738.61
+galicia_caja_ahorro: 2.14
+galicia_plus: 0
+santander: -411739.31
+usd: 2.20</pre>
+      </div>
+    </details>
+  </section>
+
   <section class="pane" id="manual">
     <h2>Manual de actualización mensual</h2>
     <p class="hint">A fin de mes me pasás <strong>solo los archivos del mes recién cerrado</strong>. Yo me encargo de agregarlo al dashboard manteniendo todo lo anterior. No hace falta que mandes los 12 meses cada vez.</p>
@@ -1725,8 +1777,153 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById(tab.dataset.pane).classList.add('active');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (tab.dataset.pane === 'cargar') renderCargarMes();
   });
 });
+
+// ============================================================
+// MÓDULO CARGA GUIADA DE MES
+// ============================================================
+const CARGAR_REPO = 'maxifercotizador/Temporales';
+const CARGAR_BASE_PATH = 'Archivos_Anal.Fiinan';
+const CARGAR_CATEGORIAS = [
+  {
+    titulo: '📂 Excels',
+    folder: 'Excels',
+    icon: '📊',
+    color: '#10b981',
+    archivos: [
+      { name: 'facturacion.xlsx',     desc: 'BS Gestión — comprobantes emitidos del mes' },
+      { name: 'gastos_excel.xlsx',    desc: 'Tu Gastos_2026, hoja del mes' },
+      { name: 'gastos_bs.xlsx',       desc: 'BS Gestión — gastos del mes (comisiones)' },
+      { name: 'extracto_galicia.xlsx',desc: 'Home banking Galicia — 3 cuentas consolidadas' },
+    ],
+  },
+  {
+    titulo: '🏦 Galicia',
+    folder: 'Galicia',
+    icon: '🏦',
+    color: '#fbbf24',
+    archivos: [
+      { name: 'resumen_visa.pdf',        desc: 'VISA-2884 (Galicia)' },
+      { name: 'resumen_amex.pdf',        desc: 'AMEX-0793 (Galicia)' },
+      { name: 'resumen_business.pdf',    desc: 'VISA-9091 (Galicia BUSINESS)' },
+      { name: 'resumen_plus_visa.pdf',   desc: 'VISA-3394 (Galicia +)' },
+      { name: 'resumen_plus_master.pdf', desc: 'MASTER-6770 (Galicia +)' },
+    ],
+  },
+  {
+    titulo: '🏦 Santander Río',
+    folder: 'Santander',
+    icon: '🏦',
+    color: '#ef4444',
+    archivos: [
+      { name: 'resumen_visa.pdf', desc: 'VISA-2857 (Santander)' },
+      { name: 'resumen_amex.pdf', desc: 'AMEX-62044 (Santander)' },
+    ],
+  },
+  {
+    titulo: '🏦 ICBC',
+    folder: 'ICBC',
+    icon: '🏦',
+    color: '#3b82f6',
+    archivos: [
+      { name: 'resumen_visa.pdf', desc: 'VISA-7406 (ICBC)' },
+    ],
+  },
+  {
+    titulo: '📄 Manuales (texto plano)',
+    folder: '',
+    icon: '✍️',
+    color: '#8b5cf6',
+    archivos: [
+      { name: 'cobranzas.txt', desc: 'total_cobrado / cantidad / cobrado_papa' },
+      { name: 'saldos.txt',    desc: 'galicia_principal / galicia_caja_ahorro / galicia_plus / santander / usd' },
+    ],
+  },
+];
+
+function uploadUrl(mes, folder) {
+  const path = folder
+    ? `${CARGAR_BASE_PATH}/${mes}/${folder}`
+    : `${CARGAR_BASE_PATH}/${mes}`;
+  return `https://github.com/${CARGAR_REPO}/upload/main/${path}`;
+}
+function newFileUrl(mes, folder, filename) {
+  const path = folder
+    ? `${CARGAR_BASE_PATH}/${mes}/${folder}/${filename}`
+    : `${CARGAR_BASE_PATH}/${mes}/${filename}`;
+  return `https://github.com/${CARGAR_REPO}/new/main?filename=${encodeURIComponent(path)}`;
+}
+function viewFolderUrl(mes, folder) {
+  const path = folder
+    ? `${CARGAR_BASE_PATH}/${mes}/${folder}`
+    : `${CARGAR_BASE_PATH}/${mes}`;
+  return `https://github.com/${CARGAR_REPO}/tree/main/${path}`;
+}
+
+async function fetchFolderContents(mes, folder) {
+  const path = folder ? `${CARGAR_BASE_PATH}/${mes}/${folder}` : `${CARGAR_BASE_PATH}/${mes}`;
+  try {
+    const r = await fetch(`https://api.github.com/repos/${CARGAR_REPO}/contents/${path}?_=${Date.now()}`);
+    if (!r.ok) return [];
+    const j = await r.json();
+    return Array.isArray(j) ? j.map(x => x.name.toLowerCase()) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+async function renderCargarMes() {
+  const mes = document.getElementById('cargar-mes').value;
+  const cont = document.getElementById('cargar-categorias');
+  const status = document.getElementById('cargar-status');
+  status.textContent = '⏳ Verificando...';
+
+  // Render placeholder mientras consultamos
+  cont.innerHTML = CARGAR_CATEGORIAS.map(cat => `
+    <div class="cargar-cat" style="background:var(--bg-card);border:1px solid var(--border);border-left:4px solid ${cat.color};border-radius:8px;padding:14px;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <h3 style="margin:0;font-size:15px;color:var(--text);">${cat.titulo}</h3>
+        <div style="display:flex;gap:6px;">
+          <a href="${viewFolderUrl(mes, cat.folder)}" target="_blank" style="padding:5px 10px;background:transparent;color:var(--text-mute);border:1px solid var(--border);border-radius:6px;font-size:11px;text-decoration:none;">📁 Ver carpeta</a>
+          <a href="${uploadUrl(mes, cat.folder)}" target="_blank" style="padding:5px 10px;background:${cat.color};color:#0a0a0a;border-radius:6px;font-size:11px;font-weight:700;text-decoration:none;">📤 Subir aquí</a>
+        </div>
+      </div>
+      <div class="cargar-archivos">
+        ${cat.archivos.map(a => `
+          <div data-folder="${cat.folder}" data-name="${a.name.toLowerCase()}" style="display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px dashed var(--border);">
+            <span class="status" style="font-size:14px;width:18px;text-align:center;">⏳</span>
+            <span style="font-family:monospace;font-size:12px;color:var(--text);flex:0 0 auto;">${a.name}</span>
+            <span style="font-size:11px;color:var(--text-mute);flex:1;">${a.desc}</span>
+            ${a.name.endsWith('.txt') ? `<a href="${newFileUrl(mes, cat.folder, a.name)}" target="_blank" style="padding:3px 8px;background:transparent;color:${cat.color};border:1px solid ${cat.color};border-radius:4px;font-size:10px;text-decoration:none;">✍️ Crear/editar</a>` : ''}
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  // Verificar qué archivos existen
+  let totalEsperados = 0, totalEncontrados = 0;
+  for (const cat of CARGAR_CATEGORIAS) {
+    const files = await fetchFolderContents(mes, cat.folder);
+    cat.archivos.forEach(a => {
+      totalEsperados++;
+      const found = files.includes(a.name.toLowerCase());
+      if (found) totalEncontrados++;
+      const sel = `[data-folder="${cat.folder}"][data-name="${a.name.toLowerCase()}"] .status`;
+      const el = document.querySelector(sel);
+      if (el) {
+        el.textContent = found ? '✅' : '⏳';
+        el.title = found ? 'Archivo subido' : 'Falta';
+      }
+    });
+  }
+  status.textContent = `${totalEncontrados} / ${totalEsperados} archivos subidos`;
+}
+
+document.getElementById('cargar-mes')?.addEventListener('change', renderCargarMes);
+document.getElementById('cargar-refresh')?.addEventListener('click', renderCargarMes);
 
 Chart.defaults.color = '#8b98ad';
 Chart.defaults.borderColor = '#1e2a3a';

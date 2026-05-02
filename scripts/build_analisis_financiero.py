@@ -440,39 +440,85 @@ def parse_extracto_galicia(path, ano_mes):
     return {k: round(v, 2) for k, v in pagos.items()}
 
 
-def parse_resumen_santander_pdf(path, ano_mes):
-    """Extrae pagos de tarjetas Santander del PDF.
-    Busca lineas con 'TOTAL VENCIMIENTO' o similar.
+def parse_resumen_tarjeta_pdf(path, ano_mes, tarjeta_nombre):
+    """Parsea un PDF de resumen de tarjeta. Extrae:
+       - total: total a pagar del mes (busca lineas tipo "TOTAL"/"PAGO MINIMO"/"VENCIMIENTO")
+       - transacciones: lista de {fecha, concepto, monto, cuotas}
+
+    Es un parser GENERICO que se va a refinar cuando tengamos PDFs de muestra
+    de cada banco (Galicia, Santander, ICBC tienen formatos distintos).
     """
     try:
         import pdfplumber
     except ImportError:
-        log(f"  santander: pdfplumber no disponible (instalar)")
-        return {}
+        log(f"  PDF: pdfplumber no disponible, skip {path.name}")
+        return None
     try:
         with pdfplumber.open(path) as pdf:
             text = "\n".join(p.extract_text() or "" for p in pdf.pages)
     except Exception as e:
-        log(f"  santander: error: {e}")
-        return {}
+        log(f"  PDF {path.name}: error abriendo: {e}")
+        return None
 
-    pagos = {}
-    # Heuristica: buscar "VISA" y "AMEX" con monto cercano
-    for tarjeta, _patterns in [
-        ("Tarjeta Santander Rio - VISA", ["VISA"]),
-        ("Tarjeta Santander Rio - AMEX", ["AMEX", "AMERICAN"]),
-    ]:
-        for line in text.splitlines():
-            up = line.upper()
-            if any(p in up for p in _patterns) and \
-               ("TOTAL" in up or "PAGO MINIMO" in up or "VENCIMIENTO" in up):
-                m = re.search(r"\$?\s*([\d.,]+)\s*$", line)
-                if m:
-                    importe = num(m.group(1).replace(".", "").replace(",", "."))
-                    if importe > 100:
-                        pagos[tarjeta] = max(pagos.get(tarjeta, 0), importe)
-                        break
-    return pagos
+    info = {"total": 0, "transacciones": []}
+
+    # ===== Total a pagar (heurística genérica) =====
+    # Busca el monto más alto que aparezca cerca de palabras clave de "total/vencimiento"
+    candidatos = []
+    for line in text.splitlines():
+        up = line.upper()
+        if ("TOTAL" in up or "PAGO MINIMO" in up or "VENCIMIENTO" in up or "SALDO ACTUAL" in up):
+            for m in re.finditer(r"\$?\s*([\d.,]+)\s*$|\$\s*([\d.,]+)", line):
+                txt = (m.group(1) or m.group(2) or "").replace(".", "").replace(",", ".")
+                try:
+                    v = float(txt)
+                    if v > 100:
+                        candidatos.append(v)
+                except ValueError:
+                    pass
+    if candidatos:
+        info["total"] = round(max(candidatos), 2)
+
+    # ===== Transacciones (heurística genérica) =====
+    # Busca líneas con patrón: fecha (dd/mm o dd-mm-yy) + descripción + monto al final
+    yy_corto = ano_mes[2:4]
+    mm = int(ano_mes.split("-")[1])
+    for line in text.splitlines():
+        # Patrón: dd/mm + concepto + monto
+        m = re.match(r"\s*(\d{2})[/-](\d{2})(?:[/-](\d{2,4}))?\s+(.+?)\s+\$?\s*([\d.,]+)\s*$", line)
+        if not m:
+            continue
+        d, mes, _, concepto, monto = m.groups()
+        try:
+            d = int(d); mes = int(mes)
+            if mes < 1 or mes > 12 or d < 1 or d > 31:
+                continue
+            v = float(monto.replace(".", "").replace(",", "."))
+            if v < 1 or v > 100_000_000:
+                continue
+        except ValueError:
+            continue
+        # Cuotas (texto tipo "C.01/12")
+        cuotas = None
+        m_cuotas = re.search(r"C\.?\s*(\d{1,2})\s*/\s*(\d{1,2})", concepto)
+        if m_cuotas:
+            cuotas = f"{m_cuotas.group(1)}/{m_cuotas.group(2)}"
+        info["transacciones"].append({
+            "fecha": f"{d:02d}/{mes:02d}",
+            "concepto": concepto.strip()[:100],
+            "monto": round(v, 2),
+            "cuotas": cuotas,
+        })
+
+    return info
+
+
+def parse_resumen_santander_pdf(path, ano_mes):
+    # Compat: ahora redirigimos al parser genérico (Santander VISA único)
+    info = parse_resumen_tarjeta_pdf(path, ano_mes, "Tarjeta Santander Rio - VISA")
+    if info and info.get("total"):
+        return {"Tarjeta Santander Rio - VISA": info["total"]}
+    return {}
 
 
 def parse_cobranzas_txt(path):
@@ -516,17 +562,30 @@ def process_month(month_dir, data):
         return False
     ano_mes = name
 
-    files = {f.name.lower(): f for f in month_dir.iterdir() if f.is_file()}
-    files_relevantes = {k for k in files if k != "leeme.md" and k != ".gitkeep"}
-    if not files_relevantes:
+    # Recolectar todos los archivos: raíz del mes + subcarpetas (Excels, Galicia, Santander, ICBC)
+    files = {}
+    for f in month_dir.rglob("*"):
+        if not f.is_file():
+            continue
+        if f.name.lower() in ("leeme.md", ".gitkeep"):
+            continue
+        # Key: tuple (subcarpeta_lower, filename_lower)
+        rel_parent = f.parent.name.lower() if f.parent != month_dir else ""
+        files[(rel_parent, f.name.lower())] = f
+
+    if not files:
         return False
 
-    log(f"Procesando {ano_mes} ({len(files_relevantes)} archivos)...")
+    def find(folder, name_lower):
+        return files.get((folder.lower(), name_lower.lower()))
+
+    log(f"Procesando {ano_mes} ({len(files)} archivos en {len(set(k[0] for k in files))} carpetas)...")
     cambios = []
 
-    # 1. facturacion.xlsx
-    if "facturacion.xlsx" in files:
-        r = parse_facturacion_xlsx(files["facturacion.xlsx"], ano_mes)
+    # 1. facturacion.xlsx (en Excels/)
+    fpath = find("Excels", "facturacion.xlsx") or find("", "facturacion.xlsx")
+    if fpath:
+        r = parse_facturacion_xlsx(fpath, ano_mes)
         if r:
             resumen, entries, vol = r
             data["facturacion_por_mes"][ano_mes] = resumen
@@ -534,9 +593,10 @@ def process_month(month_dir, data):
             data["fact_lista"] = remove_month_from_lista(data.get("fact_lista", []), ano_mes) + entries
             cambios.append(f"facturacion ({len(entries)} comprobantes)")
 
-    # 2. gastos_excel.xlsx
-    if "gastos_excel.xlsx" in files:
-        r = parse_gastos_excel_xlsx(files["gastos_excel.xlsx"], ano_mes)
+    # 2. gastos_excel.xlsx (en Excels/)
+    fpath = find("Excels", "gastos_excel.xlsx") or find("", "gastos_excel.xlsx")
+    if fpath:
+        r = parse_gastos_excel_xlsx(fpath, ano_mes)
         if r:
             resumen, lista, top = r
             existing = data["gastos_por_mes"].get(ano_mes, {})
@@ -547,9 +607,10 @@ def process_month(month_dir, data):
             data["top_conceptos"][ano_mes] = top
             cambios.append(f"gastos_excel ({len(lista)} items)")
 
-    # 3. gastos_bs.xlsx
-    if "gastos_bs.xlsx" in files:
-        comisiones = parse_gastos_bs_xlsx(files["gastos_bs.xlsx"], ano_mes)
+    # 3. gastos_bs.xlsx (en Excels/)
+    fpath = find("Excels", "gastos_bs.xlsx") or find("", "gastos_bs.xlsx")
+    if fpath:
+        comisiones = parse_gastos_bs_xlsx(fpath, ano_mes)
         if comisiones:
             existing = data["gastos_por_mes"].get(ano_mes, {})
             existing["comisiones_reales"] = comisiones
@@ -559,25 +620,46 @@ def process_month(month_dir, data):
             data["gastos_por_mes"][ano_mes] = existing
             cambios.append(f"comisiones_reales ${comisiones:,.0f}")
 
-    # 4. extracto_galicia.xlsx
-    if "extracto_galicia.xlsx" in files:
-        pagos = parse_extracto_galicia(files["extracto_galicia.xlsx"], ano_mes)
+    # 4. extracto_galicia.xlsx (en Excels/) — todas las cuentas Galicia consolidadas
+    fpath = find("Excels", "extracto_galicia.xlsx") or find("", "extracto_galicia.xlsx")
+    if fpath:
+        pagos = parse_extracto_galicia(fpath, ano_mes)
         if pagos:
             for tarjeta, monto in pagos.items():
                 data["tarjetas_pagos"].setdefault(tarjeta, {})[ano_mes] = monto
             cambios.append(f"galicia tarjetas ({len(pagos)})")
 
-    # 5. resumen_santander.pdf
-    if "resumen_santander.pdf" in files:
-        pagos = parse_resumen_santander_pdf(files["resumen_santander.pdf"], ano_mes)
-        if pagos:
-            for tarjeta, monto in pagos.items():
-                data["tarjetas_pagos"].setdefault(tarjeta, {})[ano_mes] = monto
-            cambios.append(f"santander tarjetas ({len(pagos)})")
+    # 5. PDFs de tarjetas (Galicia/, Santander/, ICBC/)
+    pdf_specs = [
+        ("Galicia",   "resumen_visa.pdf",         "Tarjeta Galicia - VISA"),
+        ("Galicia",   "resumen_amex.pdf",         "Tarjeta Galicia - AMEX"),
+        ("Galicia",   "resumen_business.pdf",     "Tarjeta Galicia - BUSINESS"),
+        ("Galicia",   "resumen_plus_visa.pdf",    "Tarjeta Galicia + VISA"),
+        ("Galicia",   "resumen_plus_master.pdf",  "Tarjeta Galicia + MASTER"),
+        ("Santander", "resumen_visa.pdf",         "Tarjeta Santander Rio - VISA"),
+        ("Santander", "resumen_amex.pdf",         "Tarjeta Santander Rio - AMEX"),
+        ("ICBC",      "resumen_visa.pdf",         "Tarjeta ICBC"),
+    ]
+    pdfs_procesados = 0
+    for folder, fname, tarjeta_nombre in pdf_specs:
+        fpath = find(folder, fname)
+        if not fpath:
+            continue
+        info = parse_resumen_tarjeta_pdf(fpath, ano_mes, tarjeta_nombre)
+        if info and info.get("total"):
+            data["tarjetas_pagos"].setdefault(tarjeta_nombre, {})[ano_mes] = info["total"]
+            # Detalle de transacciones para análisis
+            if info.get("transacciones"):
+                data.setdefault("tarjetas_detalle", {}) \
+                    .setdefault(tarjeta_nombre, {})[ano_mes] = info["transacciones"]
+            pdfs_procesados += 1
+    if pdfs_procesados:
+        cambios.append(f"PDFs tarjeta ({pdfs_procesados})")
 
-    # 6. cobranzas.txt
-    if "cobranzas.txt" in files:
-        c = parse_cobranzas_txt(files["cobranzas.txt"])
+    # 6. cobranzas.txt (en raíz del mes)
+    fpath = find("", "cobranzas.txt")
+    if fpath:
+        c = parse_cobranzas_txt(fpath)
         if c.get("total_cobrado"):
             cob = data.get("cobranzas_2026", {})
             por_mes = cob.setdefault("por_mes", {})
@@ -585,32 +667,41 @@ def process_month(month_dir, data):
                 "monto": int(c.get("total_cobrado", 0)),
                 "cantidad": int(c.get("cantidad", 0)),
             }
-            # Recalcular total
             cob["total_cobrado"] = sum(v["monto"] for v in por_mes.values())
             cob["total_cobranzas"] = sum(v["cantidad"] for v in por_mes.values())
-            if c.get("cobrado_papa"):
-                cob["cobrado_papa_2026"] = cob.get("cobrado_papa_2026", 0)
-                # No acumulamos automáticamente; el usuario sabe el total anual
             data["cobranzas_2026"] = cob
             cambios.append(f"cobranzas ${c['total_cobrado']:,.0f}")
 
-    # 7. saldos.txt
-    if "saldos.txt" in files:
-        sal = parse_saldos_txt(files["saldos.txt"])
+    # 7. saldos.txt (en raíz del mes)
+    fpath = find("", "saldos.txt")
+    if fpath:
+        sal = parse_saldos_txt(fpath)
         if sal:
-            # Fecha: ultimo dia del mes
             yr, mo = map(int, ano_mes.split("-"))
             from calendar import monthrange
             last_day = monthrange(yr, mo)[1]
             fecha = f"{ano_mes}-{last_day:02d}"
+            # Soporta tanto formato viejo (galicia/santander/usd) como nuevo (galicia_principal/galicia_caja_ahorro/galicia_plus/santander/usd)
+            galicia_total = (
+                sal.get("galicia_principal", 0) +
+                sal.get("galicia_caja_ahorro", 0) +
+                sal.get("galicia_plus", 0) +
+                sal.get("galicia", 0)  # backwards compat
+            )
             entry = {
                 "fecha": fecha,
-                "galicia": int(sal.get("galicia", 0)),
+                "galicia": int(galicia_total),
                 "santander": int(sal.get("santander", 0)),
                 "usd": sal.get("usd", 0),
             }
             entry["total"] = entry["galicia"] + entry["santander"]
-            # Reemplazar si ya existe la fecha
+            # Detalle de cuentas (si vino con el nuevo formato)
+            if any(k in sal for k in ("galicia_principal", "galicia_caja_ahorro", "galicia_plus")):
+                entry["detalle"] = {
+                    "galicia_principal": sal.get("galicia_principal", 0),
+                    "galicia_caja_ahorro": sal.get("galicia_caja_ahorro", 0),
+                    "galicia_plus": sal.get("galicia_plus", 0),
+                }
             sb = data.get("saldos_bancarios", [])
             sb = [e for e in sb if e.get("fecha") != fecha]
             sb.append(entry)
@@ -618,7 +709,6 @@ def process_month(month_dir, data):
             data["saldos_bancarios"] = sb
             cambios.append(f"saldos al {fecha}")
 
-    # Asegurar que el mes este en la lista
     if cambios and ano_mes not in data.get("meses", []):
         data.setdefault("meses", []).append(ano_mes)
         data["meses"].sort()

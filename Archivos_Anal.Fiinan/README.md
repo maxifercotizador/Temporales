@@ -1,31 +1,51 @@
 # Archivos del Análisis Financiero
 
-Este sistema arranca **a partir de abril 2026**. Los meses anteriores ya están cargados en `analisis_financiero_datos.js` y no hace falta tocar nada.
+A partir de **abril 2026**. Los meses anteriores ya están cargados en `analisis_financiero_datos.js`.
 
-## Cómo se usa cada mes
+## Estructura de cada mes
 
-1. Abrís la carpeta del mes (ej. `2026-04/`).
-2. Vas tirando los archivos a medida que los tenés. **Respetá los nombres de archivo** de la lista de abajo, así el sistema los reconoce.
-3. Cuando termines de cargar todo el mes, push a `main`. El análisis se regenera con esos datos.
+```
+Archivos_Anal.Fiinan/2026-04/
+├── Excels/                          ← 4 archivos
+│   ├── facturacion.xlsx
+│   ├── gastos_excel.xlsx
+│   ├── gastos_bs.xlsx
+│   └── extracto_galicia.xlsx        (3 cuentas Galicia consolidadas)
+├── Galicia/                         ← PDFs de tarjeta (las que uses)
+│   ├── resumen_visa.pdf             (VISA-2884)
+│   ├── resumen_amex.pdf             (AMEX-0793)
+│   ├── resumen_business.pdf         (VISA-9091)
+│   ├── resumen_plus_visa.pdf        (VISA-3394)
+│   └── resumen_plus_master.pdf      (MASTER-6770)
+├── Santander/
+│   ├── resumen_visa.pdf             (VISA-2857)
+│   └── resumen_amex.pdf             (AMEX-62044)
+├── ICBC/
+│   └── resumen_visa.pdf             (VISA-7406)
+├── cobranzas.txt
+├── saldos.txt
+└── LEEME.md
+```
 
-## Archivos que van en cada carpeta del mes
+## Cómo cargar un mes
 
-Estos son los **nombres exactos** que tienen que tener los archivos. Si los nombrás distinto, no se levantan.
+**Lo más fácil:** desde el dashboard `analisis_financiero.html` → tab **📤 Cargar mes** → te lleva directo a cada carpeta de GitHub.
 
-| # | Archivo (nombre exacto) | Origen | Para qué sirve |
-|---|---|---|---|
-| 1 | `facturacion.xlsx` | BS Gestión → Comprobantes emitidos del 01/MM al fin de mes | Facturación del mes (FA, FB, NC), por vendedor, volumen |
-| 2 | `gastos_excel.xlsx` | Tu `Gastos_2026.xlsx`, hoja del mes | Mercadería, fijos, varios, sueldos |
-| 3 | `gastos_bs.xlsx` | BS Gestión, gastos del 01/MM al fin de mes | Comisiones reales del mes |
-| 4 | `extracto_galicia.xlsx` | Home banking Galicia, movimientos del 01/MM al fin de mes | Pagos tarjetas Galicia, gastos bancarios |
-| 5 | `resumen_santander.pdf` | PDF del resumen Santander del mes | Pagos tarjetas Santander |
-| 6 | `cobranzas.png` (o `.jpg` o `.txt`) | Captura del dashboard de cobranzas, o 3 números en txt | Cobranzas del mes |
-| 7 | `saldos.txt` (o `.png`) | Saldos al cierre, ver formato abajo | Saldos al cierre del mes |
+## Formatos
 
-### Si usás imagen para cobranzas/saldos
-Tirás el screenshot tal cual (`cobranzas.png`, `saldos.png`). El pipeline lo lee con OCR.
+### Excels (formato .xlsx)
+| Archivo | De dónde |
+|---|---|
+| `facturacion.xlsx` | BS Gestión → Comprobantes emitidos del mes |
+| `gastos_excel.xlsx` | Tu Excel personal `Gastos_2026.xlsx`, hoja del mes |
+| `gastos_bs.xlsx` | BS Gestión → Gastos del mes (para comisiones reales) |
+| `extracto_galicia.xlsx` | Home banking Galicia → 3 cuentas en uno |
 
-### Si usás txt (más confiable, más rápido)
+### PDFs de tarjeta (formato .pdf)
+- Bajás del home banking de cada banco.
+- Si una tarjeta no la usaste un mes, **no subís ese PDF** (el script lo ignora).
+
+### Texto plano (.txt)
 
 `cobranzas.txt`:
 ```
@@ -34,22 +54,21 @@ cantidad: 30
 cobrado_papa: 1200000
 ```
 
-`saldos.txt`:
+`saldos.txt` (saldos al cierre del mes):
 ```
-galicia: 2529212
-santander: 7613
-usd: 44.62
+galicia_principal: 2738.61
+galicia_caja_ahorro: 2.14
+galicia_plus: 0
+santander: -411739.31
+usd: 2.20
 ```
 
-## Datos que NO vienen de archivos
+## Datos manuales en el JS
 
-Estos se actualizan a mano en `analisis_financiero_datos.js`, solo cuando cambian:
+Estos NO vienen de archivos, se editan a mano en `analisis_financiero_datos.js`:
+- **Préstamos vigentes** (clave `prestamos`)
+- **Tumini** (clave `problemas_tumini`)
 
-- **Préstamos vigentes** (clave `prestamos`): cuando se agrega o termina uno.
-- **Tumini** (clave `problemas_tumini`): monto adeudado y facturado.
+## Flujo automático
 
-## Nota sobre la automatización
-
-Cuando subas los archivos por primera vez, te armo el pipeline (GitHub Actions) que parsea los Excel/PDF y regenera `analisis_financiero_datos.js` solo. Mientras tanto, podés cargar los archivos a la carpeta y avisarme — yo lo regenero al toque.
-
-Si algún archivo te falta (ej. resumen Santander que cierra el 26 del mes siguiente), no pasa nada: subís lo que tengas y completás el resto cuando llegue.
+Cuando subís archivos a cualquier subcarpeta de un mes, GitHub Actions corre `scripts/build_analisis_financiero.py` que regenera `analisis_financiero_datos.js`. El dashboard refresca solo en 1-2 min.
