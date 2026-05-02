@@ -1,0 +1,5 @@
+{
+  "sueldos_fabrica": 3000000,
+  "materia_prima_extra": 0,
+  "notas": "Sueldos fábrica abril: Nacho $1.120.000 + Wilber $1.080.000 + Lucas $800.000 = $3.000.000. La materia prima sale automatica del cruce con gastos_bs.xlsx + gastos_excel.xlsx (J L Metales, Cerminaro, Billordo, Alumina, Argon, etc.). Si falta algun gasto de fabrica, agregalo en 'materia_prima_extra'."
+}
