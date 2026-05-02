@@ -255,11 +255,17 @@ def parse_facturacion_xlsx(path, ano_mes):
 
 
 def parse_gastos_excel_xlsx(path, ano_mes):
-    """Parsea el Excel propio del user con las 3 secciones.
-    Estructura conocida de 'Gastos Reales':
-      cols 4-8:  Fecha | Concepto | Monto | Monto USD | Pague?  (Gastos Fijos)
-      cols 10-13: Fecha | Proveedor | Facturado? | Importe       (Compras Mercadería)
-      cols 15-18: Fecha | Concepto | Facturado? | Importe        (Otros Gastos)
+    """Parsea el Excel personal del user. Soporta 2 formatos:
+
+    A) Formato flat (4 columnas):
+         Fecha | Concepto | Importe | Tipo
+       donde Tipo ∈ {Sueldos, GFijos, Mercaderia, GVarios}
+
+    B) Formato 3-secciones (legacy):
+         cols 4-8:   Fecha | Concepto | Monto | Monto USD | Pague?  (GFijos)
+         cols 10-13: Fecha | Proveedor | Facturado? | Importe        (Mercaderia)
+         cols 15-18: Fecha | Concepto | Facturado? | Importe         (GVarios)
+
     Devuelve: (resumen_categorias, gastos_lista, top_conceptos)
     """
     try:
@@ -272,7 +278,7 @@ def parse_gastos_excel_xlsx(path, ano_mes):
         log(f"  gastos_excel: error abriendo: {e}")
         return None
 
-    # Buscar la hoja: si solo tiene una hoja, usa esa; si tiene 'Gastos Reales' o similar, usa esa
+    # Buscar la hoja
     ws = None
     for name in wb.sheetnames:
         if "real" in name.lower() or "gasto" in name.lower():
@@ -281,61 +287,120 @@ def parse_gastos_excel_xlsx(path, ano_mes):
     if ws is None:
         ws = wb[wb.sheetnames[0]]
 
+    # Detectar formato leyendo headers en filas 1-3
+    rows = list(ws.iter_rows(min_row=1, max_row=3, values_only=True))
+    headers_str = " | ".join(s(c).lower() for r in rows for c in r if c)
+    is_flat = ("tipo" in headers_str and "concepto" in headers_str and "importe" in headers_str)
+
     fijos = mercaderia = varios = sueldos = 0
     lista = []
     conceptos_count = Counter()
 
-    EXTRAS_GFIJOS_TAGS = {"prestamo", "préstamo", "alquiler", "tarjeta", "monotributo",
-                          "autonomo", "autónomo", "iva", "iibb", "cargas sociales",
-                          "seguro", "movistar", "personal flow", "contador"}
+    if is_flat:
+        # Detectar header row
+        header_row = None
+        for i, r in enumerate(rows):
+            cells = [s(c).lower() for c in r if c]
+            if "fecha" in cells and "concepto" in cells and "tipo" in cells:
+                header_row = i
+                break
+        if header_row is None:
+            header_row = 0
+        headers = [s(c).lower() for c in rows[header_row]]
+        col_fecha = next((i for i, h in enumerate(headers) if h == "fecha"), None)
+        col_concepto = next((i for i, h in enumerate(headers) if h == "concepto"), None)
+        col_importe = next((i for i, h in enumerate(headers) if h in ("importe", "monto")), None)
+        col_tipo = next((i for i, h in enumerate(headers) if h == "tipo"), None)
 
-    for r in ws.iter_rows(min_row=3, values_only=True):
-        if not r:
-            continue
+        if col_fecha is None or col_concepto is None or col_importe is None or col_tipo is None:
+            log(f"  gastos_excel (flat): faltan columnas")
+            return None
 
-        # Sección 1: Gastos Fijos (cols 4-8)
-        if len(r) > 6:
-            f = parse_date(r[4])
-            conc = s(r[5])
-            monto = num(r[6])
-            if f and f.strftime("%Y-%m") == ano_mes and conc and monto > 0:
-                tipo = "Sueldos" if "sueldo" in conc.lower() else "GFijos"
-                if tipo == "Sueldos":
-                    sueldos += monto
-                else:
-                    fijos += monto
-                lista.append({
-                    "Fecha": f.strftime("%Y-%m-%d"),
-                    "Concepto": conc, "Importe": monto,
-                    "Tipo": tipo, "AnoMes": ano_mes,
-                })
-                conceptos_count[conc] += 1
+        for r in ws.iter_rows(min_row=header_row + 2, values_only=True):
+            if len(r) <= max(col_fecha, col_concepto, col_importe, col_tipo):
+                continue
+            f = parse_date(r[col_fecha])
+            if not f or f.strftime("%Y-%m") != ano_mes:
+                continue
+            conc = s(r[col_concepto])
+            monto = num(r[col_importe])
+            tipo_raw = s(r[col_tipo])
+            if not conc or monto <= 0:
+                continue
 
-        # Sección 2: Compras Mercadería (cols 10-13)
-        if len(r) > 13:
-            f = parse_date(r[10])
-            prov = s(r[11])
-            imp = num(r[13])
-            if f and f.strftime("%Y-%m") == ano_mes and prov and imp > 0:
-                mercaderia += imp
-                lista.append({
-                    "Fecha": f.strftime("%Y-%m-%d"),
-                    "Concepto": prov, "Importe": imp,
-                    "Tipo": "Mercaderia", "AnoMes": ano_mes,
-                })
+            tipo = tipo_raw  # mantener como vino
+            t_low = tipo_raw.lower()
+            if "sueldo" in t_low:
+                sueldos += monto
+                tipo = "Sueldos"
+            elif "merc" in t_low:
+                mercaderia += monto
+                tipo = "Mercaderia"
+            elif "fijo" in t_low or "gfijo" in t_low:
+                fijos += monto
+                tipo = "GFijos"
+            elif "vario" in t_low or "gvario" in t_low:
+                varios += monto
+                tipo = "GVarios"
+            else:
+                varios += monto  # default
+                tipo = "GVarios"
 
-        # Sección 3: Otros Gastos (cols 15-18)
-        if len(r) > 18:
-            f = parse_date(r[15])
-            conc = s(r[16])
-            imp = num(r[18])
-            if f and f.strftime("%Y-%m") == ano_mes and conc and imp > 0:
-                varios += imp
-                lista.append({
-                    "Fecha": f.strftime("%Y-%m-%d"),
-                    "Concepto": conc, "Importe": imp,
-                    "Tipo": "GVarios", "AnoMes": ano_mes,
-                })
+            lista.append({
+                "Fecha": f.strftime("%Y-%m-%d"),
+                "Concepto": conc, "Importe": monto,
+                "Tipo": tipo, "AnoMes": ano_mes,
+            })
+            conceptos_count[conc] += 1
+
+    else:
+        # Formato 3-secciones (legacy)
+        for r in ws.iter_rows(min_row=3, values_only=True):
+            if not r:
+                continue
+            # Sección 1: GFijos (cols 4-8)
+            if len(r) > 6:
+                f = parse_date(r[4])
+                conc = s(r[5])
+                monto = num(r[6])
+                if f and f.strftime("%Y-%m") == ano_mes and conc and monto > 0:
+                    tipo = "Sueldos" if "sueldo" in conc.lower() else "GFijos"
+                    if tipo == "Sueldos":
+                        sueldos += monto
+                    else:
+                        fijos += monto
+                    lista.append({
+                        "Fecha": f.strftime("%Y-%m-%d"),
+                        "Concepto": conc, "Importe": monto,
+                        "Tipo": tipo, "AnoMes": ano_mes,
+                    })
+                    conceptos_count[conc] += 1
+
+            # Sección 2: Mercaderia (cols 10-13)
+            if len(r) > 13:
+                f = parse_date(r[10])
+                prov = s(r[11])
+                imp = num(r[13])
+                if f and f.strftime("%Y-%m") == ano_mes and prov and imp > 0:
+                    mercaderia += imp
+                    lista.append({
+                        "Fecha": f.strftime("%Y-%m-%d"),
+                        "Concepto": prov, "Importe": imp,
+                        "Tipo": "Mercaderia", "AnoMes": ano_mes,
+                    })
+
+            # Sección 3: GVarios (cols 15-18)
+            if len(r) > 18:
+                f = parse_date(r[15])
+                conc = s(r[16])
+                imp = num(r[18])
+                if f and f.strftime("%Y-%m") == ano_mes and conc and imp > 0:
+                    varios += imp
+                    lista.append({
+                        "Fecha": f.strftime("%Y-%m-%d"),
+                        "Concepto": conc, "Importe": imp,
+                        "Tipo": "GVarios", "AnoMes": ano_mes,
+                    })
 
     resumen = {
         "mercaderia": round(mercaderia, 2),
@@ -364,8 +429,8 @@ def parse_gastos_bs_xlsx(path, ano_mes):
     header_row = None
     for i, r in enumerate(rows[:10]):
         cells = [s(c).lower() for c in r]
-        if any("concepto" in c or "detalle" in c for c in cells) and \
-           any("importe" in c or "total" in c for c in cells):
+        if any("concepto" in c or "detalle" in c or "referencia" in c or "descripcion" in c for c in cells) and \
+           any("importe" in c or "total" in c or "monto" in c for c in cells):
             header_row = i
             break
     if header_row is None:
@@ -373,12 +438,14 @@ def parse_gastos_bs_xlsx(path, ano_mes):
 
     headers = [s(c).lower() for c in rows[header_row]]
     col_fecha = next((i for i, h in enumerate(headers) if "fecha" in h), None)
+    # Concepto puede estar en "concepto", "detalle", "descripcion" o "referencia"
     col_concepto = next((i for i, h in enumerate(headers)
-                         if "concepto" in h or "detalle" in h or "descripcion" in h), None)
+                         if "concepto" in h or "detalle" in h or "descripcion" in h
+                         or "referencia" in h), None)
     col_importe = next((i for i, h in enumerate(headers)
                         if "importe" in h or "total" in h or "monto" in h), None)
 
-    if col_fecha is None or col_concepto is None or col_importe is None:
+    if col_fecha is None or col_importe is None:
         return 0
 
     total_comisiones = 0
@@ -386,8 +453,9 @@ def parse_gastos_bs_xlsx(path, ano_mes):
         f = parse_date(r[col_fecha]) if col_fecha < len(r) else None
         if not f or f.strftime("%Y-%m") != ano_mes:
             continue
-        conc = s(r[col_concepto]).lower() if col_concepto < len(r) else ""
-        if "comisión" in conc or "comision" in conc:
+        # Buscar "comision" en CUALQUIER columna de texto (referencia/concepto/etc)
+        text_all = " ".join(s(v) for v in r if isinstance(v, str)).lower()
+        if "comisión" in text_all or "comision" in text_all:
             total_comisiones += num(r[col_importe])
 
     return round(total_comisiones, 2)
