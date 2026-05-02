@@ -3,6 +3,22 @@ RESUMEN VISA SANTANDER - Próximo cierre (vence ~28/05/2026)
 Tarjeta principal: VISA-2857 (Maximiliano Marco Gordillo)
 Adicionales: Nadia (2881), Nora (5318), Victor (5326)
 
+DETALLE MOVIMIENTOS (sin línea por línea — agregado por sub-tarjeta):
+VISA-2857 (Maxi):
+  30/04/2026  Resumen mes - varios consumos           $ 518.921,83
+  30/04/2026  Resumen mes - suscripciones USD         USD 25,77
+
+VISA-2881 (Nadia):
+  30/04/2026  Resumen mes - varios (mayoría Pedidos Ya) $ 1.014.927,09
+  30/04/2026  Resumen mes - suscripciones USD         USD 26,43
+
+VISA-5318 (Nora):
+  30/04/2026  Resumen mes                             $ 95.517,30
+
+VISA-5326 (Victor):
+  30/04/2026  Resumen mes                             $ 149.270,00
+  30/04/2026  Resumen mes USD                         USD 445,60
+
 TOTALES POR SUB-TARJETA (consumos a pagar 28/05):
   VISA-2857 (Maxi):    $518.921,83  + USD 25,77
   VISA-2881 (Nadia):   $1.014.927,09 + USD 26,43
@@ -28,3 +44,5 @@ PAGOS REGISTRADOS EN ABRIL (extracto Santander):
 
 NOTA: estos son los consumos del próximo cierre (no afectan abril).
 La cifra a pagar el 28/05 será: ~$1.778.636 + dólares al cambio.
+Los movimientos detallados arriba son los TOTALES por sub-tarjeta
+(no hay línea por línea disponible — solo el resumen agregado).
