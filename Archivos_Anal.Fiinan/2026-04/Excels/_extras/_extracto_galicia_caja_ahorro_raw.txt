@@ -1,0 +1,14 @@
+Banco Galicia - Caja Ahorro Pesos
+Nro. de Cuenta: ...5101747
+Fecha Actual: 2/5/2026
+Intervalo: 01/04/2026 al 30/04/2026
+
+Saldo final al 30/04: $2,14 (último movimiento 24/04)
+
+Movimientos clave del mes:
+- 24/04: Transf. propias salida $-692.100 → saldo final $2,14
+- 23/04: Transferencia recibida $735.594 (Silva Fernandez Diego)
+- 22/04: Interés capitalizado $0,54
+- 13/04: Compra débito PedidosYa McDonalds $-29.369
+- 08/04: Multiples movimientos (transferencias propias, terceros, compras debito)
+- 06/04: Multiples PedidosYa, propinas, transferencias

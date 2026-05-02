@@ -1,5 +1,5 @@
 galicia_principal: 1413239
-galicia_caja_ahorro: 2
+galicia_caja_ahorro: 2.14
 galicia_plus: 0
 santander: -178024
 usd: 2.20
