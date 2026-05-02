@@ -1,12 +1,12 @@
-# Abril 2026 — Checklist
+# Mes — Checklist
 
 Tirá los archivos en sus carpetas correspondientes:
 
 ## 📂 Excels/
-- [ ] `facturacion.xlsx` — BS Gestión, comprobantes emitidos 01/04 al 30/04
-- [ ] `gastos_excel.xlsx` — Hoja abril del Gastos_2026.xlsx
-- [ ] `gastos_bs.xlsx` — BS Gestión, gastos 01/04 al 30/04
-- [ ] `extracto_galicia.xlsx` — 3 cuentas Galicia consolidadas (movimientos día x día)
+- [ ] `facturacion.xlsx` — BS Gestión, comprobantes emitidos del mes
+- [ ] `gastos_excel.xlsx` — Hoja del mes del Gastos_2026.xlsx
+- [ ] `gastos_bs.xlsx` — BS Gestión, gastos del mes
+- [ ] `extracto_galicia.xlsx` — 3-4 cuentas Galicia consolidadas (movimientos día x día)
 - [ ] `extracto_santander.xlsx` — Cuentas Santander Río (movimientos día x día)
 
 ## 📂 Galicia/ (PDFs de tarjeta — solo las que usaste)
@@ -18,13 +18,13 @@ Tirá los archivos en sus carpetas correspondientes:
 
 ## 📂 Santander/
 - [ ] `resumen_visa.pdf` — Santander VISA-2857
-- [ ] `resumen_amex.pdf` — Santander AMEX-62044
+- [ ] `resumen_amex.pdf` — Santander AMEX-2044
 
 ## 📂 ICBC/
 - [ ] `resumen_visa.pdf` — ICBC VISA-7406
 
 ## 📄 En la raíz del mes
 - [ ] `cobranzas.txt` — total_cobrado / cantidad / cobrado_papa
-- [ ] `saldos.txt` — galicia_principal / galicia_caja_ahorro / galicia_plus / santander / usd
+- [ ] `saldos.txt` — 6 datos: galicia_principal / galicia_caja_ahorro / galicia_plus / galicia_caja_ahorro_plus / santander / usd
 
 Detalle completo en `../README.md`. Si te falta algún archivo, no pasa nada — subís lo que tengas.

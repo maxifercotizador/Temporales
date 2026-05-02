@@ -59,7 +59,8 @@ cobrado_papa: 1200000
 ```
 galicia_principal: 2738.61
 galicia_caja_ahorro: 2.14
-galicia_plus: 0
+galicia_plus: -309.69
+galicia_caja_ahorro_plus: 0
 santander: -411739.31
 usd: 2.20
 ```

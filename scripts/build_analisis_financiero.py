@@ -869,11 +869,13 @@ def process_month(month_dir, data):
             from calendar import monthrange
             last_day = monthrange(yr, mo)[1]
             fecha = f"{ano_mes}-{last_day:02d}"
-            # Soporta tanto formato viejo (galicia/santander/usd) como nuevo (galicia_principal/galicia_caja_ahorro/galicia_plus/santander/usd)
+            # Soporta 4 cuentas Galicia (principal, caja_ahorro, plus, caja_ahorro_plus)
+            # más santander + usd. Compatible con formato viejo (galicia/santander/usd).
             galicia_total = (
                 sal.get("galicia_principal", 0) +
                 sal.get("galicia_caja_ahorro", 0) +
                 sal.get("galicia_plus", 0) +
+                sal.get("galicia_caja_ahorro_plus", 0) +
                 sal.get("galicia", 0)  # backwards compat
             )
             entry = {
@@ -883,12 +885,14 @@ def process_month(month_dir, data):
                 "usd": sal.get("usd", 0),
             }
             entry["total"] = entry["galicia"] + entry["santander"]
-            # Detalle de cuentas (si vino con el nuevo formato)
-            if any(k in sal for k in ("galicia_principal", "galicia_caja_ahorro", "galicia_plus")):
+            # Detalle de las 4 cuentas Galicia (si vienen)
+            if any(k in sal for k in ("galicia_principal", "galicia_caja_ahorro",
+                                      "galicia_plus", "galicia_caja_ahorro_plus")):
                 entry["detalle"] = {
                     "galicia_principal": sal.get("galicia_principal", 0),
                     "galicia_caja_ahorro": sal.get("galicia_caja_ahorro", 0),
                     "galicia_plus": sal.get("galicia_plus", 0),
+                    "galicia_caja_ahorro_plus": sal.get("galicia_caja_ahorro_plus", 0),
                 }
             sb = data.get("saldos_bancarios", [])
             sb = [e for e in sb if e.get("fecha") != fecha]
