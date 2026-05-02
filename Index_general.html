@@ -120,8 +120,31 @@
   .card.red::before    { background: var(--red); }
   .card:hover { transform: translateY(-2px); background: var(--card-hover); border-color: var(--accent); }
   .card .icon { font-size: 1.5rem; line-height: 1; margin-bottom: 4px; }
-  .card .name { font-weight: 700; font-size: 1rem; }
+  .card .name { font-weight: 700; font-size: 1rem; padding-right: 22px; }
   .card .desc { font-size: .78rem; color: var(--text-mute); line-height: 1.35; }
+
+  /* Estrella de favorito sobre cada card */
+  .star-btn {
+    position: absolute; top: 6px; right: 6px;
+    background: transparent; border: none; cursor: pointer;
+    padding: 4px 6px; line-height: 1;
+    font-size: 1.15rem; color: #475569;
+    transition: color .15s, transform .1s;
+    user-select: none; -webkit-user-select: none;
+    z-index: 2; font-family: inherit;
+  }
+  .star-btn:hover { color: var(--accent); transform: scale(1.18); }
+  .star-btn.fav { color: var(--accent); text-shadow: 0 0 6px rgba(245,158,11,.45); }
+  .star-btn:active { transform: scale(.9); }
+
+  /* Estado vacío de favoritos */
+  .empty-favs {
+    text-align: center; padding: 50px 20px; color: var(--text-mute);
+    background: var(--card); border: 1px dashed var(--border);
+    border-radius: 12px; line-height: 1.5;
+  }
+  .empty-favs .big { font-size: 2.4rem; margin-bottom: 10px; }
+  .empty-favs .hint { font-size: .8rem; margin-top: 6px; opacity: .8; }
 
   /* Archivos */
   .file-row {
@@ -245,85 +268,24 @@
 <div class="panels-wrap" id="panelsWrap">
 
 <nav class="tabs" role="tablist" id="tabs">
+  <button data-tab="favoritos">⭐ Favoritos <span class="count" id="countFavs">0</span></button>
   <button class="active" data-tab="apps">📋 Apps gestión <span class="count">5</span></button>
   <button data-tab="presupuestador">💼 Presupuestador <span class="count">4</span></button>
   <button data-tab="privado">🔒 Proyecto privado <span class="count">5</span></button>
   <button data-tab="archivos">📂 Archivos <span class="count" id="countArchivos">…</span></button>
 </nav>
 
+<!-- ======== FAVORITOS ======== -->
+<section class="panel" id="panel-favoritos"></section>
+
 <!-- ======== APPS DE GESTIÓN ======== -->
-<section class="panel active" id="panel-apps">
-  <div class="grid">
-    <a class="card green" href="./Prospectos.html?from=menu">
-      <div class="icon">🔥</div><div class="name">Prospectos</div>
-      <div class="desc">CRM Monday: contactos, leads y seguimientos</div>
-    </a>
-    <a class="card blue" href="./VIAJE_SUR.html?from=menu">
-      <div class="icon">🚗</div><div class="name">Viaje Sur</div>
-      <div class="desc">Itinerario, clientes, gastos y recorrido</div>
-    </a>
-    <a class="card purple" href="./postventa_monday.html?from=menu">
-      <div class="icon">📞</div><div class="name">Postventa</div>
-      <div class="desc">Pedidos y seguimiento postventa</div>
-    </a>
-    <a class="card pink" href="./Notas_Pendientes.html?from=menu">
-      <div class="icon">📝</div><div class="name">Notas / Pendientes</div>
-      <div class="desc">Lista de pendientes con grupos e historial</div>
-    </a>
-    <a class="card" href="./analisis_financiero.html?from=menu">
-      <div class="icon">📊</div><div class="name">Análisis Financiero</div>
-      <div class="desc">Reportes y métricas mensuales</div>
-    </a>
-  </div>
-</section>
+<section class="panel active" id="panel-apps"><div class="grid"></div></section>
 
 <!-- ======== PRESUPUESTADOR ======== -->
-<section class="panel" id="panel-presupuestador">
-  <div class="grid">
-    <a class="card green" href="https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu">
-      <div class="icon">💰</div><div class="name">Presupuestador</div>
-      <div class="desc">Generador de cotizaciones</div>
-    </a>
-    <a class="card purple" href="https://maxifercotizador.github.io/Presupuestador/compras.html?from=menu">
-      <div class="icon">🛒</div><div class="name">Compras</div>
-      <div class="desc">Pedidos a proveedores con historial</div>
-    </a>
-    <a class="card pink" href="https://maxifercotizador.github.io/Presupuestador/3en1.html?from=menu">
-      <div class="icon">🔁</div><div class="name">3 en 1</div>
-      <div class="desc">Comparador y conversor de listas</div>
-    </a>
-    <a class="card" href="https://maxifercotizador.github.io/Presupuestador/listas.html?from=menu">
-      <div class="icon">📑</div><div class="name">Listas</div>
-      <div class="desc">PDF y Excel de listas de precios</div>
-    </a>
-  </div>
-</section>
+<section class="panel" id="panel-presupuestador"><div class="grid"></div></section>
 
 <!-- ======== PROYECTO PRIVADO ======== -->
-<section class="panel" id="panel-privado">
-  <div class="grid">
-    <a class="card green" href="https://maxifercotizador.github.io/Proyecto-Privado/Venta_Surtidos_Monday.html?from=menu">
-      <div class="icon">📈</div><div class="name">Venta Surtidos Monday</div>
-      <div class="desc">Margen real de cada venta cruzando Monday + costos</div>
-    </a>
-    <a class="card blue" href="https://maxifercotizador.github.io/Proyecto-Privado/Analisis_de_Costos.html?from=menu">
-      <div class="icon">💸</div><div class="name">Análisis de Costos</div>
-      <div class="desc">Costos por proveedor y por producto</div>
-    </a>
-    <a class="card purple" href="https://maxifercotizador.github.io/Proyecto-Privado/Analisis_de_Gastos.html?from=menu">
-      <div class="icon">🧾</div><div class="name">Análisis de Gastos</div>
-      <div class="desc">Gastos fijos, mercadería y otros del mes</div>
-    </a>
-    <a class="card red" href="https://maxifercotizador.github.io/Proyecto-Privado/Pedidos_a_Fabrica.html?from=menu">
-      <div class="icon">📦</div><div class="name">Pedidos a Fábrica</div>
-      <div class="desc">Pedidos pendientes y deudas a proveedores</div>
-    </a>
-    <a class="card pink" href="https://maxifercotizador.github.io/Proyecto-Privado/surtidos.html?from=menu">
-      <div class="icon">🧰</div><div class="name">Surtidos</div>
-      <div class="desc">Rentabilidad y completitud por surtido</div>
-    </a>
-  </div>
-</section>
+<section class="panel" id="panel-privado"><div class="grid"></div></section>
 
 <!-- ======== ARCHIVOS ======== -->
 <section class="panel" id="panel-archivos">
@@ -369,7 +331,7 @@ tickHora(); setInterval(tickHora, 30000);
 // ============================================================
 // Tabs
 // ============================================================
-const TAB_LIST = ['apps', 'presupuestador', 'privado', 'archivos'];
+const TAB_LIST = ['favoritos', 'apps', 'presupuestador', 'privado', 'archivos'];
 const TAB_KEY = 'maxifer_hub_tab';
 
 function activarTab(name) {
@@ -447,23 +409,102 @@ function fmtMoney(n) {
 
 const APPS_INDEX = [
   // Apps gestión
-  { type:'app', icon:'🔥', name:'Prospectos', desc:'CRM Monday', url:'./Prospectos.html?from=menu', tab:'apps' },
-  { type:'app', icon:'🚗', name:'Viaje Sur', desc:'Itinerario y clientes', url:'./VIAJE_SUR.html?from=menu', tab:'apps' },
-  { type:'app', icon:'📞', name:'Postventa', desc:'Seguimiento postventa', url:'./postventa_monday.html?from=menu', tab:'apps' },
-  { type:'app', icon:'📝', name:'Notas / Pendientes', desc:'Pendientes con grupos', url:'./Notas_Pendientes.html?from=menu', tab:'apps' },
-  { type:'app', icon:'📊', name:'Análisis Financiero', desc:'Reportes mensuales', url:'./analisis_financiero.html?from=menu', tab:'apps' },
+  { type:'app', icon:'🔥', name:'Prospectos',           desc:'CRM Monday: contactos, leads y seguimientos',         url:'./Prospectos.html?from=menu',         tab:'apps', color:'green' },
+  { type:'app', icon:'🚗', name:'Viaje Sur',            desc:'Itinerario, clientes, gastos y recorrido',            url:'./VIAJE_SUR.html?from=menu',          tab:'apps', color:'blue' },
+  { type:'app', icon:'📞', name:'Postventa',            desc:'Pedidos y seguimiento postventa',                     url:'./postventa_monday.html?from=menu',   tab:'apps', color:'purple' },
+  { type:'app', icon:'📝', name:'Notas / Pendientes',   desc:'Lista de pendientes con grupos e historial',          url:'./Notas_Pendientes.html?from=menu',   tab:'apps', color:'pink' },
+  { type:'app', icon:'📊', name:'Análisis Financiero',  desc:'Reportes y métricas mensuales',                       url:'./analisis_financiero.html?from=menu', tab:'apps', color:'' },
   // Presupuestador
-  { type:'app', icon:'💰', name:'Presupuestador', desc:'Cotizaciones', url:'https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu', tab:'presupuestador' },
-  { type:'app', icon:'🛒', name:'Compras', desc:'Pedidos a proveedores', url:'https://maxifercotizador.github.io/Presupuestador/compras.html?from=menu', tab:'presupuestador' },
-  { type:'app', icon:'🔁', name:'3 en 1', desc:'Comparador de listas', url:'https://maxifercotizador.github.io/Presupuestador/3en1.html?from=menu', tab:'presupuestador' },
-  { type:'app', icon:'📑', name:'Listas', desc:'PDFs y Excel de listas', url:'https://maxifercotizador.github.io/Presupuestador/listas.html?from=menu', tab:'presupuestador' },
+  { type:'app', icon:'💰', name:'Presupuestador',       desc:'Generador de cotizaciones',                           url:'https://maxifercotizador.github.io/Presupuestador/index_presupuestador.html?from=menu', tab:'presupuestador', color:'green' },
+  { type:'app', icon:'🛒', name:'Compras',              desc:'Pedidos a proveedores con historial',                 url:'https://maxifercotizador.github.io/Presupuestador/compras.html?from=menu',              tab:'presupuestador', color:'purple' },
+  { type:'app', icon:'🔁', name:'3 en 1',               desc:'Comparador y conversor de listas',                    url:'https://maxifercotizador.github.io/Presupuestador/3en1.html?from=menu',                 tab:'presupuestador', color:'pink' },
+  { type:'app', icon:'📑', name:'Listas',               desc:'PDF y Excel de listas de precios',                    url:'https://maxifercotizador.github.io/Presupuestador/listas.html?from=menu',               tab:'presupuestador', color:'' },
   // Privado
-  { type:'app', icon:'📈', name:'Venta Surtidos Monday', desc:'Margen real cruzando Monday + costos', url:'https://maxifercotizador.github.io/Proyecto-Privado/Venta_Surtidos_Monday.html?from=menu', tab:'privado' },
-  { type:'app', icon:'💸', name:'Análisis de Costos', desc:'Costos por proveedor y producto', url:'https://maxifercotizador.github.io/Proyecto-Privado/Analisis_de_Costos.html?from=menu', tab:'privado' },
-  { type:'app', icon:'🧾', name:'Análisis de Gastos', desc:'Gastos fijos, mercadería y otros', url:'https://maxifercotizador.github.io/Proyecto-Privado/Analisis_de_Gastos.html?from=menu', tab:'privado' },
-  { type:'app', icon:'📦', name:'Pedidos a Fábrica', desc:'Pedidos pendientes y deudas', url:'https://maxifercotizador.github.io/Proyecto-Privado/Pedidos_a_Fabrica.html?from=menu', tab:'privado' },
-  { type:'app', icon:'🧰', name:'Surtidos', desc:'Rentabilidad por surtido', url:'https://maxifercotizador.github.io/Proyecto-Privado/surtidos.html?from=menu', tab:'privado' },
+  { type:'app', icon:'📈', name:'Venta Surtidos Monday',desc:'Margen real de cada venta cruzando Monday + costos',  url:'https://maxifercotizador.github.io/Proyecto-Privado/Venta_Surtidos_Monday.html?from=menu', tab:'privado', color:'green' },
+  { type:'app', icon:'💸', name:'Análisis de Costos',   desc:'Costos por proveedor y por producto',                 url:'https://maxifercotizador.github.io/Proyecto-Privado/Analisis_de_Costos.html?from=menu',    tab:'privado', color:'blue' },
+  { type:'app', icon:'🧾', name:'Análisis de Gastos',   desc:'Gastos fijos, mercadería y otros del mes',            url:'https://maxifercotizador.github.io/Proyecto-Privado/Analisis_de_Gastos.html?from=menu',    tab:'privado', color:'purple' },
+  { type:'app', icon:'📦', name:'Pedidos a Fábrica',    desc:'Pedidos pendientes y deudas a proveedores',           url:'https://maxifercotizador.github.io/Proyecto-Privado/Pedidos_a_Fabrica.html?from=menu',     tab:'privado', color:'red' },
+  { type:'app', icon:'🧰', name:'Surtidos',             desc:'Rentabilidad y completitud por surtido',              url:'https://maxifercotizador.github.io/Proyecto-Privado/surtidos.html?from=menu',              tab:'privado', color:'pink' },
 ];
+
+// ============================================================
+// Favoritos
+// ============================================================
+const FAVS_KEY = 'maxifer_hub_favs';
+let favs = new Set();
+try {
+  const saved = JSON.parse(localStorage.getItem(FAVS_KEY) || '[]');
+  if (Array.isArray(saved)) favs = new Set(saved);
+} catch(e) {}
+
+function saveFavs() {
+  try { localStorage.setItem(FAVS_KEY, JSON.stringify(Array.from(favs))); } catch(e) {}
+}
+
+function toggleFav(url) {
+  if (!url) return;
+  if (favs.has(url)) favs.delete(url);
+  else favs.add(url);
+  saveFavs();
+  // Re-render todo lo que muestre estrellas
+  renderAppsPanel('apps');
+  renderAppsPanel('presupuestador');
+  renderAppsPanel('privado');
+  renderFavoritosPanel();
+}
+
+function cardHtml(app) {
+  const colorClass = app.color ? ' ' + app.color : '';
+  const fav = favs.has(app.url);
+  const star = fav ? '★' : '☆';
+  const title = fav ? 'Quitar de favoritos' : 'Marcar como favorito';
+  return `<a class="card${colorClass}" href="${app.url}">
+    <span class="star-btn ${fav ? 'fav' : ''}" data-fav-url="${escapeHtml(app.url)}" role="button" aria-pressed="${fav}" title="${title}" aria-label="${title}">${star}</span>
+    <div class="icon">${app.icon}</div>
+    <div class="name">${escapeHtml(app.name)}</div>
+    <div class="desc">${escapeHtml(app.desc)}</div>
+  </a>`;
+}
+
+function renderAppsPanel(tab) {
+  const grid = document.querySelector('#panel-' + tab + ' .grid');
+  if (!grid) return;
+  const apps = APPS_INDEX.filter(a => a.tab === tab);
+  grid.innerHTML = apps.map(cardHtml).join('');
+}
+
+function renderFavoritosPanel() {
+  const cont = document.getElementById('panel-favoritos');
+  if (!cont) return;
+  // Mantener el orden original de APPS_INDEX entre los favoritos
+  const apps = APPS_INDEX.filter(a => favs.has(a.url));
+  if (apps.length === 0) {
+    cont.innerHTML = `<div class="empty-favs">
+      <div class="big">⭐</div>
+      <div>Todavía no marcaste favoritos.</div>
+      <div class="hint">Tocá la estrella ☆ en cualquier app para verla acá.</div>
+    </div>`;
+  } else {
+    cont.innerHTML = '<div class="grid">' + apps.map(cardHtml).join('') + '</div>';
+  }
+  const cnt = document.getElementById('countFavs');
+  if (cnt) cnt.textContent = favs.size;
+}
+
+// Click delegation en estrellas: cancela la navegación del <a> contenedor
+document.addEventListener('click', e => {
+  const star = e.target.closest('.star-btn');
+  if (!star) return;
+  e.preventDefault();
+  e.stopPropagation();
+  toggleFav(star.dataset.favUrl);
+}, true);
+
+// Render inicial de paneles dinámicos
+renderAppsPanel('apps');
+renderAppsPanel('presupuestador');
+renderAppsPanel('privado');
+renderFavoritosPanel();
 
 // Catálogos: cargados perezosos en memoria
 let catalogs = { productos: [], surtidos: [], ventas: [], loaded: false };
