@@ -1,0 +1,23 @@
+RESUMEN AMEX SANTANDER - Próximo cierre 28/05/2026
+==================================================
+Tarjeta: AMEX terminada en 2044 (Maximiliano Marco Gordillo)
+Adicional: Nadia Denise Uldokat (AMEX-2069)
+
+CONSUMIDO HASTA EL MOMENTO (próximo cierre):
+  Pesos: $40.749,63
+  USD:   U$S 0,00
+
+LÍMITE: $10.800.000
+DISPONIBLE: $10.591.691,85
+
+PAGOS REGISTRADOS:
+  09/04/2026 - Su pago en pesos: -$41.238,63 (pago del cierre marzo)
+
+DETALLE CONSUMOS NUEVOS (a pagar 28/05):
+  AMEX titular Maxi: $0,00 (subtotal)
+  AMEX adicional Nadia (2069):
+    09/10/2025 - dloel outlet abertu (cuota 7/12) - $40.749,63
+  Subtotal: $40.749,63
+
+NOTA: el único consumo del próximo cierre es la cuota 7/12 de un consumo
+de octubre 2025 ($40.749,63). No hubo nuevos consumos en abril.

@@ -1,0 +1,188 @@
+Fecha	Concepto	Importe	Tipo
+01/04/26	Sueldos	3261850	Sueldos
+01/04/26	Tarjeta Galicia - VISA	717341	GFijos
+01/04/26	Tarjeta ICBC	364040	GFijos
+01/04/26	Autonomo	90342	GFijos
+01/04/26	Monotributo IVAN	52280	GFijos
+01/04/26	Monotributo Mayeski	52280	GFijos
+01/04/26	Monotributo David	42246	GFijos
+01/04/26	Movistar	10350	GFijos
+01/04/26	Victoria Seguros	123878	GFijos
+01/04/26	Surplas	252000	Mercaderia
+01/04/26	Fader Plastic	1339600	Mercaderia
+01/04/26	ROBER	400000	Mercaderia
+01/04/26	ROBER	139044	Mercaderia
+01/04/26	REGAPLAS	104000	Mercaderia
+01/04/26	Walter Gavetas	215872	Mercaderia
+01/04/26	ArgenBroker	244779	Mercaderia
+01/04/26	Bateria Moura Parnet	220000	GVarios
+01/04/26	Embolsado de Carbones	34000	GVarios
+01/04/26	Gabi consumibles	11200	GVarios
+01/04/26	GNC Corsa	9000	GVarios
+02/04/26	Aseg. Motovehicular	141513	GFijos
+02/04/26	Naza Obra	300000	GVarios
+02/04/26	Naza Obra	150000	GVarios
+03/04/26	Endosado ALNAT	400000	Mercaderia
+03/04/26	Naza Obra	200000	GVarios
+04/04/26	Endosado ALU-MAQ	302332	Mercaderia
+05/04/26	Endosado ALU-MAQ	306041	Mercaderia
+06/04/26	Tarjeta Galicia + MASTER	40000	GFijos
+06/04/26	GNC Corsa	10856	GVarios
+06/04/26	Gabi consumibles	5099	GVarios
+07/04/26	Alnat	360569	Mercaderia
+07/04/26	Cincado	66000	Mercaderia
+07/04/26	ALU-MAQ	266253	Mercaderia
+08/04/26	Tarjeta Santander Rio - VISA	1358054	GFijos
+08/04/26	Endosado METALGRAB	1680047	Mercaderia
+08/04/26	Neplastic	425000	Mercaderia
+08/04/26	Walter Gavetas	400000	Mercaderia
+08/04/26	Claudio Resortes	550680	Mercaderia
+08/04/26	Juan Regatones	131300	Mercaderia
+08/04/26	MetalGrab	1680047	Mercaderia
+08/04/26	Naza Obra	300000	GVarios
+08/04/26	Hotel Expo	280000	GVarios
+08/04/26	Papelera	110900	GVarios
+08/04/26	Mecanico Corsa	650000	GVarios
+08/04/26	GNC Corsa	8000	GVarios
+09/04/26	Tarjeta Santander Rio - AMEX	41239	GFijos
+09/04/26	ALU-MAQ	440850	Mercaderia
+10/04/26	Sueldos	1740000	Sueldos
+10/04/26	Alquiler Distribuidora	600000	GFijos
+10/04/26	Alquiler Casa	350000	GFijos
+10/04/26	Mel diseño grafico	430000	GFijos
+10/04/26	Contador	165000	GFijos
+10/04/26	Cargas Sociales	831762	GFijos
+10/04/26	Endosado ALNAT	400000	Mercaderia
+10/04/26	Walter Gavetas	200000	Mercaderia
+10/04/26	Jorge Carbon	211500	Mercaderia
+10/04/26	Rober	273400	Mercaderia
+10/04/26	Carccione	93000	Mercaderia
+10/04/26	GNC Corsa	8400	GVarios
+10/04/26	Gabi consumibles	14000	GVarios
+10/04/26	Naza Obra	300000	GVarios
+10/04/26	Combustible Corsa	40000	GVarios
+11/04/26	Naza Obra	500000	GVarios
+13/04/26	Combustible Parnet	160000	GVarios
+14/04/26	Prestamo Galicia - SGR	1582000	GFijos
+14/04/26	Ruben Listones	48000	Mercaderia
+14/04/26	Otia	137347	Mercaderia
+14/04/26	Chavetas Kaz	70727	Mercaderia
+14/04/26	ALU-MAQ	75811	Mercaderia
+14/04/26	ArgenBroker	300000	Mercaderia
+14/04/26	Toner - Cian y magenta	210000	GVarios
+14/04/26	GNC Corsa	7565	GVarios
+14/04/26	Gabi consumibles	8000	GVarios
+14/04/26	GNC Corsa	8500	GVarios
+15/04/26	Endosado ALNAT	400000	Mercaderia
+15/04/26	Alcides	1020504	Mercaderia
+15/04/26	Cincado	66000	Mercaderia
+15/04/26	Regatones OyR	128300	Mercaderia
+15/04/26	Argon	33500	Mercaderia
+15/04/26	Gabi consumibles	12000	GVarios
+15/04/26	GNC Corsa	8000	GVarios
+16/04/26	Cuota Facilidades IVA	446304	GFijos
+16/04/26	Cuota Facilidades IVA	410336	GFijos
+16/04/26	Personal Flow	89083	GFijos
+16/04/26	Rober	91500	Mercaderia
+16/04/26	Dahe Piazze	277816	Mercaderia
+16/04/26	Kloster	298000	Mercaderia
+16/04/26	Rober	47500	Mercaderia
+16/04/26	Selladores Regitak	80441	Mercaderia
+16/04/26	Jorge Carbon	220000	Mercaderia
+16/04/26	Pedro Insertos	480000	Mercaderia
+16/04/26	Naza Obra	250000	GVarios
+16/04/26	GNC Corsa	10000	GVarios
+16/04/26	GNC Corsa	7800	GVarios
+16/04/26	Gabi consumibles	13000	GVarios
+17/04/26	Sueldos	3468465	Sueldos
+17/04/26	Tarjeta Galicia + VISA	1213387	GFijos
+17/04/26	MetalGrab	264395	Mercaderia
+17/04/26	Neplastic	441045	Mercaderia
+17/04/26	Endosado ALNAT	612801	Mercaderia
+17/04/26	Walter Gavetas	200000	Mercaderia
+17/04/26	Getres	59000	GVarios
+17/04/26	Naza Obra	300000	GVarios
+17/04/26	Naza Obra	500000	GVarios
+17/04/26	Naza Obra	300000	GVarios
+17/04/26	Gabi consumibles	8500	GVarios
+18/04/26	Walter Gavetas	161059	Mercaderia
+18/04/26	Walter Gavetas	80000	Mercaderia
+19/04/26	Prestamo Galicia +	1311629	GFijos
+20/04/26	BS Gestion	382511	GFijos
+20/04/26	Tarjeta Galicia - BUSINESS	848160	GFijos
+20/04/26	Endosado ALNAT	845479	Mercaderia
+20/04/26	MetalGrab	103941	Mercaderia
+20/04/26	GNC Corsa	4000	GVarios
+20/04/26	Combustible Corsa	70000	GVarios
+20/04/26	Gabi consumibles	11000	GVarios
+21/04/26	Alumina	146318	Mercaderia
+21/04/26	Otia	162432	Mercaderia
+21/04/26	Cincado	44000	Mercaderia
+21/04/26	Regatones OyR	75600	Mercaderia
+21/04/26	Tobar	253200	Mercaderia
+21/04/26	Regaplas	239000	Mercaderia
+21/04/26	Neplastic	394763	Mercaderia
+21/04/26	Vía cargo	16000	GVarios
+21/04/26	Embolsado de Carbones	63000	GVarios
+21/04/26	GNC Corsa	13200	GVarios
+21/04/26	Gabi consumibles	12300	GVarios
+22/04/26	Seguros Rivadavía	93593	GFijos
+22/04/26	Fader Plastic	250000	Mercaderia
+22/04/26	LCT	328467	Mercaderia
+22/04/26	Jucap	517400	Mercaderia
+22/04/26	Kloster	52000	Mercaderia
+22/04/26	Jorge Carbon	600000	Mercaderia
+22/04/26	Walter Gavetas	676831	Mercaderia
+22/04/26	Surplas	129200	Mercaderia
+22/04/26	Pedro Oring	110000	Mercaderia
+22/04/26	GNC Corsa	10000	GVarios
+22/04/26	Gabi consumibles	9000	GVarios
+23/04/26	Rober	180180	Mercaderia
+23/04/26	Neplastic	419265	Mercaderia
+23/04/26	GNC Corsa	8087	GVarios
+23/04/26	Gabi consumibles	10400	GVarios
+24/04/26	Sueldos	2172000	Sueldos
+24/04/26	Prestamo Santander Rio	872520	GFijos
+24/04/26	Endosado Metalgrab	389726	Mercaderia
+24/04/26	Argon	75375	Mercaderia
+24/04/26	METALGRAB	152000	Mercaderia
+24/04/26	Juan Regatones	108000	Mercaderia
+24/04/26	Argon	40800	Mercaderia
+24/04/26	Walter Gavetas	154530	Mercaderia
+24/04/26	Dahe Piazze	201496	Mercaderia
+24/04/26	Walter Gavetas	400000	Mercaderia
+24/04/26	Jorge Carbon	350000	Mercaderia
+24/04/26	Fader Plastic	233881	Mercaderia
+24/04/26	Combustible Corsa	80000	GVarios
+24/04/26	Naza Obra	300000	GVarios
+24/04/26	Naza Obra	512853	GVarios
+27/04/26	Prestamo Galicia +	299449	GFijos
+27/04/26	Endosado ALNAT	919720	Mercaderia
+27/04/26	InyectGas	490000	Mercaderia
+27/04/26	Alcides	868000	Mercaderia
+27/04/26	Marblas	125000	Mercaderia
+28/04/26	Endosado Metalgrab	200000	Mercaderia
+28/04/26	Regaplas	176200	Mercaderia
+28/04/26	Baigorria	263695	Mercaderia
+28/04/26	Alemites	289000	Mercaderia
+28/04/26	Pedro Insertos	162504	Mercaderia
+28/04/26	Jorge Carbon	450000	Mercaderia
+28/04/26	Jorge Carbon	100000	Mercaderia
+28/04/26	Combustible Parnet	137000	GVarios
+28/04/26	Mat. Obra - Rollo Aislante	290000	GVarios
+28/04/26	GNC Corsa	10000	GVarios
+29/04/26	Goma	61600	Mercaderia
+29/04/26	Alnora Maderas	84313	Mercaderia
+29/04/26	Alumina	156630	Mercaderia
+29/04/26	Kloster	165000	Mercaderia
+29/04/26	Jorge Carbon	600000	Mercaderia
+29/04/26	Jorge Carbon	500000	Mercaderia
+29/04/26	Claudio Resortes	210000	Mercaderia
+29/04/26	Limpieza	34000	GVarios
+29/04/26	GNC Corsa	5097	GVarios
+29/04/26	Gabi consumibles	9400	GVarios
+30/04/26	Jorge Plasticos	50000	Mercaderia
+30/04/26	Tudanca	120097	Mercaderia
+30/04/26	Daniel CODIGO	28000	Mercaderia
+30/04/26	Walter Gavetas	100000	Mercaderia
+30/04/26	Naza Obra	300000	GVarios

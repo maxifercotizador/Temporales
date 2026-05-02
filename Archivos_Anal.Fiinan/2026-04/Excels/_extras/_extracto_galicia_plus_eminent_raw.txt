@@ -1,0 +1,17 @@
+Banco Galicia - Cuenta Corriente Pesos (Eminent/Plus)
+Nro. de Cuenta: ...7237071
+Fecha Actual: 2/5/2026
+Intervalo: 01/04/2026 al 30/04/2026
+
+Saldo final al 30/04: -$309,69 (último movimiento 27/04)
+
+Movimientos clave:
+- 27/04: Cuota préstamo N°6 -$299,449 + cobro IIBB cuota 6 + impuestos
+- 27/04: Transferencia recibida desde cuenta propia $299,000 (para cubrir préstamo)
+- 09/04: Transferencia recibida desde cuenta propia $80,000
+- 08/04: Comisión Servicio EMINENT -$61,570
+- 08/04: Cargas IVA, ING.BRUTOS, IMP.DEB
+- 01/04: IVA marzo, sello, intereses
+
+NOTA: cuenta del paquete Eminent (tiene comisión mensual ~$60k).
+Tiene 1 préstamo asociado en cuotas (la 6 del 27/04 fue $299,449).

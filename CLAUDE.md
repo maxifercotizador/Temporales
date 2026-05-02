@@ -1,16 +1,16 @@
-# Seguimiento_Prospectos.html — App CRM móvil MAXIFER
+# Prospectos.html — App CRM móvil MAXIFER
 
 ## Contexto
 
-App standalone que vive dentro del repo `Temporales` (cuenta `maxifercotizador`), junto a otras apps HTML como `VIAJE_SUR.html` y `postventa_maxifer.html`.
+App standalone que vive dentro del repo `Temporales` (cuenta `maxifercotizador`), junto a otras apps HTML como `VIAJE_SUR.html` y `postventa_monday.html`.
 
 Es un CRM mobile-first para Maxi (dueño de MAXIFER). Lee y escribe sobre el board de Monday "Seguimiento Prospectos" vía API. Diseñada para usar desde el celular.
 
-URL de producción: `https://maxifercotizador.github.io/Temporales/Seguimiento_Prospectos.html`
+URL de producción: `https://maxifercotizador.github.io/Temporales/Prospectos.html`
 
 ## Stack
 
-- HTML/CSS/JS puro, single-file (`Seguimiento_Prospectos.html`).
+- HTML/CSS/JS puro, single-file (`Prospectos.html`).
 - Sin frameworks, sin build, sin npm.
 - API: Monday.com v2024-10 vía fetch.
 - Storage: `localStorage` para token y caché de contactos.
@@ -121,8 +121,9 @@ Si vas a tocar la lógica de Monday API o el parseo, **probá primero con un con
 ## Convivencia con otras apps del repo
 
 Este archivo convive en el repo `Temporales` con:
-- `postventa_maxifer.html`
+- `postventa_monday.html`
 - `VIAJE_SUR.html`
+- `Notas_Pendientes.html`
 - (otros que Maxi pueda agregar)
 
 Cada uno es independiente, no hay archivos compartidos. No tocar los otros archivos.
