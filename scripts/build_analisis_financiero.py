@@ -38,7 +38,8 @@ JS_OUT = ROOT / "analisis_financiero_datos.js"
 
 # Configuracion de proveedores/vendedores conocidos
 VENDEDOR_PAPA = "Gordillo, Victor"
-TIPOS_NC = {"NCA", "NCB", "NCC", "NCM", "NC"}
+PAPA_CLIENTE_CODIGO = "00669"  # Maxifer Victor Distribuidor
+TIPOS_NC = {"NCA", "NCB", "NCC", "NCM", "NC", "NCVA", "NCVB"}
 
 # Tarjetas: matcheo por últimos dígitos (más confiable que palabras clave).
 # El concepto en el extracto suele incluir los últimos 4 dígitos.
@@ -210,7 +211,8 @@ def parse_facturacion_xlsx(path, ano_mes):
         items = int(num(r[col_items])) if col_items is not None and col_items < len(r) else 0
 
         es_nc = any(t in tipo for t in TIPOS_NC)
-        es_papa = vendedor == VENDEDOR_PAPA
+        # Detectar ventas papá: por vendedor explícito O por código de cliente "(00669)"
+        es_papa = (vendedor == VENDEDOR_PAPA) or (PAPA_CLIENTE_CODIGO and PAPA_CLIENTE_CODIGO in cliente)
 
         if es_nc:
             notas_credito += -abs(total) if total > 0 else total
