@@ -1,0 +1,43 @@
+RESUMEN VISA GALICIA - Vencimiento 04-May-26
+============================================================
+Tarjeta principal: VISA-2884 (Maximiliano Gordillo)
+Tarjeta adicional: VISA-8017 (Nadia Denis Uldokat)
+Total a pagar: $572.116,25 + USD 0,00
+Saldo anterior: $717.341,36 (pagado 01-04-26)
+
+DETALLE MOVIMIENTOS:
+VISA-2884 (Maxi):
+  17/05/2025  MERPAGO*BIDCOM (cuota 12/12)              $ 152.199,91
+  05/07/2025  MERPAGO*SUONO (cuota 10/12)               $ 28.676,25
+  11/12/2025  MERPAGO*BIDCOM (cuota 5/6)                $ 6.976,51
+  06/01/2026  MERPAGO*FERRETERIA (cuota 4/6)            $ 5.445,00
+  27/03/2026  MERPAGO*FACTURAN                          $ 30.586,38
+  27/03/2026  MERPAGO*MELI                              $ 3.490,00
+  06/04/2026  MERPAGO*MERCADOPAGO (cuota 1/3)           $ 17.838,56
+  17/04/2026  DLO*PEDIDOSYA PROPINA                     $ 700,00
+  17/04/2026  PEDIDOSYA*MARKET                          $ 24.135,00
+  17/04/2026  PEDIDOSYA*MARKET (devolución)             $ -1.978,85
+  18/04/2026  DLO*PEDIDOSYA PROPINA                     $ 700,00
+  18/04/2026  PEDIDOSYA*NUTRIVIANDAS                    $ 18.060,00
+
+VISA-8017 (Nadia):
+  09/04/2026  MERPAGO*GABRIEL ALEJANDRO                 $ 53.495,00
+  14/04/2026  MERPAGO*SOFIAMAR                          $ 35.000,00
+  15/04/2026  MERPAGO*PIETRUSZKA DIANA MY               $ 56.704,70
+  16/04/2026  MERPAGO*GUSTAVO JAVIER ALEJ               $ 8.024,25
+  16/04/2026  MERPAGO*ZEXINYE                           $ 7.382,31
+  16/04/2026  MERPAGO*VIRGINIA ARAMAYO TA               $ 4.814,55
+  16/04/2026  MERPAGO*AMIKINOSRL                        $ 21.398,00
+
+Otros (sin sub-tarjeta):
+  09/04/2026  GASTOS DE SERVICIO EMINENT                $ 61.570,25
+  23/04/2026  DB IVA 21% sobre Eminent                  $ 12.929,75
+
+TOTALES POR SUB-TARJETA:
+  VISA-2884 (Maxi):  $ 286.828,76
+  VISA-8017 (Nadia): $ 210.787,49
+  Servicio Eminent:  $ 74.500,00
+  ────────────────────────────────
+  TOTAL:             $ 572.116,25 + USD 0,00
+
+NOTA: extracto del cierre 23-Abr-26, vence 04-May-26.

@@ -763,7 +763,14 @@ def parse_consumos_txt(path):
         )
         if m:
             fecha, concepto, moneda, monto_str = m.groups()
-            monto = num(monto_str)
+            # Formato argentino: "53.495,00" o "100,00" → puntos como miles, coma decimal
+            ms = monto_str.strip()
+            if "," in ms:
+                ms = ms.replace(".", "").replace(",", ".")
+            try:
+                monto = float(ms)
+            except ValueError:
+                monto = 0
             txns.append({
                 "fecha": fecha,
                 "concepto": concepto.strip(),
@@ -834,9 +841,14 @@ def parse_ventas_detalle_tsv(path):
             pt = float(preciototal.replace(".", "").replace(",", "."))
         except ValueError:
             continue
+        try:
+            cant_v = float(str(cant).replace(".", "").replace(",", "."))
+        except ValueError:
+            cant_v = 0
         rows.append({
             "fecha": fecha, "producto": producto, "numero": numero,
-            "precio_total": pt, "cliente": cliente, "vendedor": vendedor,
+            "precio_total": pt, "cantidad": cant_v,
+            "cliente": cliente, "vendedor": vendedor,
         })
     return rows
 
@@ -846,9 +858,16 @@ def cargar_listas_maxifer():
     Devuelve dicts para mapear (Producto, Descripcion) -> Fabrica.
     """
     import unicodedata
-    listas_path = ROOT / ".." / "Presupuestador" / "Listas Maxifer.xlsx"
-    if not listas_path.exists():
-        log(f"  victor: no encuentro Listas Maxifer en {listas_path}")
+    # Buscar Listas Maxifer en orden:
+    #   1. scripts/data/Listas_Maxifer.xlsx (versión committeada para CI)
+    #   2. ../Presupuestador/Listas Maxifer.xlsx (entorno local del user)
+    candidatos = [
+        ROOT / "scripts" / "data" / "Listas_Maxifer.xlsx",
+        ROOT / ".." / "Presupuestador" / "Listas Maxifer.xlsx",
+    ]
+    listas_path = next((p for p in candidatos if p.exists()), None)
+    if listas_path is None:
+        log(f"  victor: no encuentro Listas Maxifer en {[str(p) for p in candidatos]}")
         return None
     try:
         import openpyxl
@@ -865,9 +884,12 @@ def cargar_listas_maxifer():
         s = strip_accents(s).strip().upper().replace("'", "").replace('"', "")
         return ' '.join(s.split())
 
-    prod_pos = {}    # (producto, str(numero_pos)) -> fabrica
-    prod_desc = {}   # (producto, descripcion_norm) -> fabrica
+    # Headers: ID, Producto, Codigo BS GESTION, Precio, Numero, Descripción,
+    #          Cant. Minima, Fabrica, Codigo, COSTO
+    prod_pos = {}    # (producto, str(numero_pos)) -> {fabrica, costo}
+    prod_desc = {}   # (producto, descripcion_norm) -> {fabrica, costo}
     prod_fabricas = {}  # producto -> Counter de fabricas
+    prod_costos = {}    # producto -> [costos] (para promedio si no se encuentra exacto)
     for row in ws.iter_rows(min_row=2, values_only=True):
         if not row[1]:
             continue
@@ -875,12 +897,16 @@ def cargar_listas_maxifer():
         numero = row[4]
         desc = norm(row[5])
         fabrica = str(row[7]).strip().upper() if row[7] else "?"
+        costo = float(row[9]) if row[9] is not None and isinstance(row[9], (int, float)) else 0
+        info = {"fabrica": fabrica, "costo": costo}
         if numero is not None:
-            prod_pos[(producto, str(numero).strip())] = fabrica
+            prod_pos[(producto, str(numero).strip())] = info
         if desc:
-            prod_desc[(producto, desc)] = fabrica
+            prod_desc[(producto, desc)] = info
         prod_fabricas.setdefault(producto, Counter())[fabrica] += 1
-    return {"pos": prod_pos, "desc": prod_desc, "fabricas": prod_fabricas, "norm": norm}
+        prod_costos.setdefault(producto, []).append(costo)
+    return {"pos": prod_pos, "desc": prod_desc, "fabricas": prod_fabricas,
+            "costos_avg": prod_costos, "norm": norm}
 
 
 # Aliases de productos: nombre en ventas -> nombre en Listas Maxifer
@@ -894,28 +920,86 @@ PRODUCTO_ALIAS = {
 }
 
 
+def lookup_fabrica_costo(v, listas):
+    """Para una línea de venta, devuelve (fabrica, costo_unitario).
+    Si no se puede determinar el producto, devuelve (None, 0).
+    """
+    norm = listas["norm"]
+    pn = norm(v["producto"])
+    pn = PRODUCTO_ALIAS.get(pn, pn)
+    nn_desc = norm(v["numero"])
+    info = listas["desc"].get((pn, nn_desc))
+    if info is None:
+        info = listas["pos"].get((pn, str(v["numero"]).strip()))
+    if info is not None:
+        return info["fabrica"], info["costo"]
+    # Sin match exacto: usar fabrica mayoritaria de la categoría + costo promedio
+    fs = listas["fabricas"].get(pn)
+    if not fs:
+        return None, 0
+    fabrica = list(fs.keys())[0] if len(fs) == 1 else fs.most_common(1)[0][0]
+    costos = listas["costos_avg"].get(pn, [])
+    avg = sum(costos) / len(costos) if costos else 0
+    return fabrica, avg
+
+
+def es_cliente_victor_distribuidor(cliente):
+    """True si el cliente es la distribuidora interna de Víctor."""
+    if not cliente:
+        return False
+    c = cliente.lower()
+    # "Maxifer Victor Distribuidor" o "Maxifer, Victor Distribuidor" (con o sin coma)
+    return "maxifer" in c and "victor" in c and "distribuidor" in c
+
+
+def es_vendedor_victor(vendedor):
+    """True si el vendedor es Víctor (papá)."""
+    if not vendedor:
+        return False
+    return vendedor.strip().lower().startswith("gordillo, victor") or \
+           vendedor.strip().lower() == "gordillo victor"
+
+
 def calcular_ventas_maxifer(ventas, listas):
-    """Devuelve total de ventas con Fabrica == MAXIFER cruzando productos."""
+    """Total de ventas con Fabrica == MAXIFER que VENDIÓ Maxi
+    (excluyendo ventas a 'Maxifer Víctor Distribuidor' que son cross-sale interno).
+    """
     if not listas or not ventas:
         return 0.0
     total = 0.0
-    norm = listas["norm"]
     for v in ventas:
-        pn = norm(v["producto"])
-        pn = PRODUCTO_ALIAS.get(pn, pn)
-        nn_desc = norm(v["numero"])
-        fabrica = listas["desc"].get((pn, nn_desc))
-        if fabrica is None:
-            fabrica = listas["pos"].get((pn, str(v["numero"]).strip()))
-        if fabrica is None:
-            fabricas = listas["fabricas"].get(pn)
-            if fabricas and len(fabricas) == 1:
-                fabrica = list(fabricas.keys())[0]
-            elif fabricas:
-                fabrica = fabricas.most_common(1)[0][0]
+        if es_cliente_victor_distribuidor(v.get("cliente", "")):
+            continue
+        fabrica, _ = lookup_fabrica_costo(v, listas)
         if fabrica == "MAXIFER":
             total += v["precio_total"]
     return round(total, 2)
+
+
+def calcular_costo_no_fabrica_victor(ventas, listas):
+    """Suma el COSTO de productos no-MAXIFER que pasaron por la red de Víctor.
+    Se considera 'red de Víctor':
+      - Vendedor = 'Gordillo, Victor', O
+      - Cliente contiene 'Maxifer Víctor Distribuidor' (cross-sale a su distribuidora).
+    Se valúa al COSTO (lo que a Maxi le costó comprar los productos a sus proveedores).
+    """
+    if not listas or not ventas:
+        return 0.0
+    total_costo = 0.0
+    for v in ventas:
+        if not (es_cliente_victor_distribuidor(v.get("cliente", "")) or
+                es_vendedor_victor(v.get("vendedor", ""))):
+            continue
+        fabrica, costo_unit = lookup_fabrica_costo(v, listas)
+        if fabrica == "MAXIFER":
+            continue  # Los de fábrica no se cuentan acá (van por sueldos+materia prima)
+        try:
+            cant = float(str(v.get("cantidad", "0")).replace(",", "."))
+        except Exception:
+            cant = 0
+        if cant > 0 and costo_unit > 0:
+            total_costo += cant * costo_unit
+    return round(total_costo, 2)
 
 
 # Materia prima fábrica: keywords que identifican proveedores/conceptos
@@ -1146,10 +1230,7 @@ def process_month(month_dir, data):
         txns = parse_consumos_txt(fpath)
         if not txns:
             continue
-        # Solo agregar si no hay detalle por PDF ya cargado
-        existing = data.get("tarjetas_detalle", {}).get(tarjeta_nombre, {}).get(ano_mes)
-        if existing:
-            continue
+        # Sobrescribir el detalle del mes (el .txt es la fuente de verdad reciente)
         data.setdefault("tarjetas_detalle", {}) \
             .setdefault(tarjeta_nombre, {})[ano_mes] = txns
         consumos_procesados += 1
@@ -1223,18 +1304,25 @@ def process_month(month_dir, data):
             data["deudores"] = d
             cambios.append(f"deudores ({len(d['lista'])} clientes, ${d['total']:,.0f})")
 
-    # 9. _ventas_detalle_raw.tsv -> Cierre con Víctor del mes
+    # 9. _ventas_detalle_raw.tsv -> Cierre con Víctor del mes.
+    # Lógica del cálculo:
+    #   PUSISTE = sueldos fábrica + materia prima fábrica + costo_no_fabrica_victor
+    #     · costo_no_fabrica_victor = costo de productos NO-MAXIFER vendidos por
+    #       Víctor (vendedor) o a su distribuidora (cliente). Es lo que vos pagaste
+    #       a tus proveedores por mercadería que después él se quedó.
+    #   RECIBISTE = ventas a precio retail de productos MAXIFER que vendiste vos
+    #     (excluye ventas a 'Maxifer Víctor Distribuidor' = cross-sale interno).
     fpath = find("Excels", "_ventas_detalle_raw.tsv")
     if fpath:
         ventas = parse_ventas_detalle_tsv(fpath)
         listas = cargar_listas_maxifer()
         if ventas and listas:
             ventas_maxifer = calcular_ventas_maxifer(ventas, listas)
+            costo_no_fab_victor = calcular_costo_no_fabrica_victor(ventas, listas)
             bs_path = find("Excels", "gastos_bs.xlsx") or find("", "gastos_bs.xlsx")
             sueldos, materia_prima = calcular_pusiste(data.get("gastos_lista", []), ano_mes, bs_path)
 
             # Override manual: _victor_overrides.json en Excels/
-            # Formato: {"sueldos_fabrica": 3000000, "materia_prima_extra": 0, "notas": "..."}
             ov_path = find("Excels", "_victor_overrides.json")
             if ov_path:
                 try:
@@ -1243,14 +1331,16 @@ def process_month(month_dir, data):
                         sueldos = float(ov["sueldos_fabrica"])
                     if "materia_prima_extra" in ov:
                         materia_prima += float(ov["materia_prima_extra"])
+                    if "costo_no_fabrica_extra" in ov:
+                        costo_no_fab_victor += float(ov["costo_no_fabrica_extra"])
                 except Exception as e:
                     log(f"  victor: error leyendo overrides: {e}")
-            pusiste = round(sueldos + materia_prima, 2)
+            pusiste = round(sueldos + materia_prima + costo_no_fab_victor, 2)
             # Detectar mes parcial: si última fecha < día 28
             ultimas = sorted({v["fecha"] for v in ventas if v.get("fecha")})
             parcial = False
             if ultimas:
-                ult = ultimas[-1]  # formato "DD/MM/YY"
+                ult = ultimas[-1]
                 try:
                     dia = int(ult.split("/")[0])
                     parcial = dia < 28
@@ -1259,12 +1349,13 @@ def process_month(month_dir, data):
             data.setdefault("cierre_victor", {}).setdefault("por_mes", {})[ano_mes] = {
                 "sueldos": sueldos,
                 "materia_prima": materia_prima,
+                "costo_no_fabrica_victor": round(costo_no_fab_victor, 2),
                 "pusiste": pusiste,
                 "ventas_maxifer": ventas_maxifer,
                 "recibiste": ventas_maxifer,
                 "parcial": parcial,
             }
-            cambios.append(f"victor: puso ${pusiste:,.0f} / recibió ${ventas_maxifer:,.0f}")
+            cambios.append(f"victor: puso ${pusiste:,.0f} (sueldos+mp+costoVic) / recibió ${ventas_maxifer:,.0f}")
 
     if cambios and ano_mes not in data.get("meses", []):
         data.setdefault("meses", []).append(ano_mes)
