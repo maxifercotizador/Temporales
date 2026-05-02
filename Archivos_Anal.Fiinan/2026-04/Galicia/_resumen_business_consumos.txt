@@ -1,0 +1,26 @@
+RESUMEN BUSINESS GALICIA - Consumos abril 2026 (de imagen)
+============================================================
+Tarjeta: VISA-9091 BUSINESS
+
+DETALLE MOVIMIENTOS (todos en USD):
+  29/04/2026  CLAUDE.AI SUBSCR in1TRKuWBjlQrRQnux       USD 100,00
+  28/04/2026  FACEBK *6G9E5ND3U2                         USD 57,84
+  25/04/2026  FACEBK *YPTJNNH3U2                         USD 58,49
+  23/04/2026  Microsoft-G154271396                       USD 26,26
+  22/04/2026  FACEBK *9W59TM93U2                         USD 59,26
+  15/04/2026  GOOGLE *Google O P1koR4fr                  USD 19,99
+  13/04/2026  LINKTREE* LINKTR                           USD 144,00
+
+TOTALES:
+  Pesos: $0
+  USD:   USD 465,84
+
+CATEGORÍAS:
+  Publicidad Facebook (3 cargos):     USD 175,59  ← lo más alto
+  Linktree (suscripción):             USD 144,00
+  Claude.AI (suscripción):            USD 100,00
+  Microsoft:                           USD  26,26
+  Google:                              USD  19,99
+
+NOTA: tarjeta usada solo para herramientas digitales (publicidad,
+suscripciones AI, productividad). Sin gastos en pesos.
