@@ -961,45 +961,118 @@ def es_vendedor_victor(vendedor):
 
 
 def calcular_ventas_maxifer(ventas, listas):
-    """Total de ventas con Fabrica == MAXIFER que VENDIÓ Maxi
-    (excluyendo ventas a 'Maxifer Víctor Distribuidor' que son cross-sale interno).
+    """Total + breakdown de ventas con Fabrica == MAXIFER que VENDIÓ Maxi.
+    Devuelve dict: {total, por_categoria: [{categoria, monto, count}],
+                    por_cliente: [{cliente, monto, count}],
+                    items: [{fecha, producto, numero, cliente, cantidad, monto}]}
+    Excluye ventas a 'Maxifer Víctor Distribuidor' (cross-sale interno).
     """
     if not listas or not ventas:
-        return 0.0
+        return {"total": 0.0, "por_categoria": [], "por_cliente": [], "items": []}
     total = 0.0
+    por_cat = defaultdict(lambda: {"total": 0.0, "count": 0})
+    por_cli = defaultdict(lambda: {"total": 0.0, "count": 0})
+    items = []
+    norm = listas["norm"]
     for v in ventas:
         if es_cliente_victor_distribuidor(v.get("cliente", "")):
             continue
         fabrica, _ = lookup_fabrica_costo(v, listas)
-        if fabrica == "MAXIFER":
-            total += v["precio_total"]
-    return round(total, 2)
+        if fabrica != "MAXIFER":
+            continue
+        monto = v["precio_total"]
+        total += monto
+        cat = norm(v["producto"])
+        por_cat[cat]["total"] += monto
+        por_cat[cat]["count"] += 1
+        cli = (v.get("cliente") or "").strip()
+        por_cli[cli]["total"] += monto
+        por_cli[cli]["count"] += 1
+        items.append({
+            "fecha": v.get("fecha", ""),
+            "producto": v.get("producto", ""),
+            "numero": v.get("numero", ""),
+            "cliente": cli,
+            "cantidad": v.get("cantidad", 0),
+            "monto": round(monto, 2),
+        })
+    return {
+        "total": round(total, 2),
+        "por_categoria": sorted(
+            [{"categoria": k, "monto": round(d["total"], 2), "count": d["count"]}
+             for k, d in por_cat.items()],
+            key=lambda x: -x["monto"]),
+        "por_cliente": sorted(
+            [{"cliente": k, "monto": round(d["total"], 2), "count": d["count"]}
+             for k, d in por_cli.items()],
+            key=lambda x: -x["monto"]),
+        "items": items,
+    }
 
 
 def calcular_costo_no_fabrica_victor(ventas, listas):
-    """Suma el COSTO de productos no-MAXIFER que pasaron por la red de Víctor.
-    Se considera 'red de Víctor':
-      - Vendedor = 'Gordillo, Victor', O
-      - Cliente contiene 'Maxifer Víctor Distribuidor' (cross-sale a su distribuidora).
-    Se valúa al COSTO (lo que a Maxi le costó comprar los productos a sus proveedores).
+    """Total + breakdown del COSTO de productos no-MAXIFER que pasaron por la red de Víctor.
+    Devuelve dict similar a calcular_ventas_maxifer, valuado al COSTO.
     """
     if not listas or not ventas:
-        return 0.0
+        return {"total": 0.0, "por_categoria": [], "por_cliente": [], "items": []}
     total_costo = 0.0
+    por_cat = defaultdict(lambda: {"total": 0.0, "count": 0})
+    por_cli = defaultdict(lambda: {"total": 0.0, "count": 0})
+    por_fab = defaultdict(lambda: {"total": 0.0, "count": 0})
+    items = []
+    norm = listas["norm"]
     for v in ventas:
         if not (es_cliente_victor_distribuidor(v.get("cliente", "")) or
                 es_vendedor_victor(v.get("vendedor", ""))):
             continue
         fabrica, costo_unit = lookup_fabrica_costo(v, listas)
         if fabrica == "MAXIFER":
-            continue  # Los de fábrica no se cuentan acá (van por sueldos+materia prima)
+            continue
         try:
             cant = float(str(v.get("cantidad", "0")).replace(",", "."))
         except Exception:
             cant = 0
-        if cant > 0 and costo_unit > 0:
-            total_costo += cant * costo_unit
-    return round(total_costo, 2)
+        if cant <= 0 or costo_unit <= 0:
+            continue
+        costo_total = cant * costo_unit
+        total_costo += costo_total
+        cat = norm(v["producto"])
+        por_cat[cat]["total"] += costo_total
+        por_cat[cat]["count"] += 1
+        cli = (v.get("cliente") or "").strip()
+        por_cli[cli]["total"] += costo_total
+        por_cli[cli]["count"] += 1
+        if fabrica:
+            por_fab[fabrica]["total"] += costo_total
+            por_fab[fabrica]["count"] += 1
+        items.append({
+            "fecha": v.get("fecha", ""),
+            "producto": v.get("producto", ""),
+            "numero": v.get("numero", ""),
+            "cliente": cli,
+            "vendedor": v.get("vendedor", ""),
+            "fabrica": fabrica or "?",
+            "cantidad": cant,
+            "costo_unit": round(costo_unit, 2),
+            "monto": round(costo_total, 2),
+        })
+    return {
+        "total": round(total_costo, 2),
+        "por_categoria": sorted(
+            [{"categoria": k, "monto": round(d["total"], 2), "count": d["count"]}
+             for k, d in por_cat.items()],
+            key=lambda x: -x["monto"]),
+        "por_cliente": sorted(
+            [{"cliente": k, "monto": round(d["total"], 2), "count": d["count"]}
+             for k, d in por_cli.items()],
+            key=lambda x: -x["monto"]),
+        "por_fabrica": sorted(
+            [{"fabrica": k, "monto": round(d["total"], 2), "count": d["count"]}
+             for k, d in por_fab.items()],
+            key=lambda x: -x["monto"]),
+        "items": items,
+    }
 
 
 # Materia prima fábrica: keywords que identifican proveedores/conceptos
@@ -1317,10 +1390,13 @@ def process_month(month_dir, data):
         ventas = parse_ventas_detalle_tsv(fpath)
         listas = cargar_listas_maxifer()
         if ventas and listas:
-            ventas_maxifer = calcular_ventas_maxifer(ventas, listas)
-            costo_no_fab_victor = calcular_costo_no_fabrica_victor(ventas, listas)
+            recibido = calcular_ventas_maxifer(ventas, listas)
+            puesto_costo = calcular_costo_no_fabrica_victor(ventas, listas)
             bs_path = find("Excels", "gastos_bs.xlsx") or find("", "gastos_bs.xlsx")
             sueldos, materia_prima = calcular_pusiste(data.get("gastos_lista", []), ano_mes, bs_path)
+
+            ventas_maxifer_total = recibido["total"]
+            costo_no_fab_total = puesto_costo["total"]
 
             # Override manual: _victor_overrides.json en Excels/
             ov_path = find("Excels", "_victor_overrides.json")
@@ -1332,10 +1408,10 @@ def process_month(month_dir, data):
                     if "materia_prima_extra" in ov:
                         materia_prima += float(ov["materia_prima_extra"])
                     if "costo_no_fabrica_extra" in ov:
-                        costo_no_fab_victor += float(ov["costo_no_fabrica_extra"])
+                        costo_no_fab_total += float(ov["costo_no_fabrica_extra"])
                 except Exception as e:
                     log(f"  victor: error leyendo overrides: {e}")
-            pusiste = round(sueldos + materia_prima + costo_no_fab_victor, 2)
+            pusiste = round(sueldos + materia_prima + costo_no_fab_total, 2)
             # Detectar mes parcial: si última fecha < día 28
             ultimas = sorted({v["fecha"] for v in ventas if v.get("fecha")})
             parcial = False
@@ -1349,13 +1425,26 @@ def process_month(month_dir, data):
             data.setdefault("cierre_victor", {}).setdefault("por_mes", {})[ano_mes] = {
                 "sueldos": sueldos,
                 "materia_prima": materia_prima,
-                "costo_no_fabrica_victor": round(costo_no_fab_victor, 2),
+                "costo_no_fabrica_victor": round(costo_no_fab_total, 2),
                 "pusiste": pusiste,
-                "ventas_maxifer": ventas_maxifer,
-                "recibiste": ventas_maxifer,
+                "ventas_maxifer": ventas_maxifer_total,
+                "recibiste": ventas_maxifer_total,
                 "parcial": parcial,
+                # Detalle para que el dashboard pueda mostrar el desglose
+                "detalle_recibido": {
+                    "por_categoria": recibido["por_categoria"],
+                    "por_cliente": recibido["por_cliente"],
+                    # Top 200 items para que el JSON no explote
+                    "items": sorted(recibido["items"], key=lambda x: -x["monto"])[:200],
+                },
+                "detalle_costo_victor": {
+                    "por_categoria": puesto_costo["por_categoria"],
+                    "por_cliente": puesto_costo["por_cliente"],
+                    "por_fabrica": puesto_costo["por_fabrica"],
+                    "items": sorted(puesto_costo["items"], key=lambda x: -x["monto"])[:200],
+                },
             }
-            cambios.append(f"victor: puso ${pusiste:,.0f} (sueldos+mp+costoVic) / recibió ${ventas_maxifer:,.0f}")
+            cambios.append(f"victor: puso ${pusiste:,.0f} (sueldos+mp+costoVic) / recibió ${ventas_maxifer_total:,.0f}")
 
     if cambios and ano_mes not in data.get("meses", []):
         data.setdefault("meses", []).append(ano_mes)
