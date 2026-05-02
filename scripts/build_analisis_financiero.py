@@ -758,7 +758,7 @@ def parse_consumos_txt(path):
         # '  29/04/2026  CONCEPTO ...  USD 100,00'
         # '  09/10/2025 - dloel outlet abertu (cuota 7/12) - $40.749,63'
         m = re.match(
-            r'^\s*(\d{1,2}/\d{1,2}/\d{2,4})\s*[-–]?\s*(.*?)\s+(USD|U\$S|\$)\s*([\d\.,]+)\s*$',
+            r'^\s*(\d{1,2}/\d{1,2}/\d{2,4})\s*[-–]?\s*(.*?)\s+(USD|U\$S|\$)\s*(-?[\d\.,]+)\s*$',
             line.replace('\xa0', ' ')
         )
         if m:
@@ -841,13 +841,20 @@ def parse_ventas_detalle_tsv(path):
             pt = float(preciototal.replace(".", "").replace(",", "."))
         except ValueError:
             continue
+        # Neto (sin IVA): columna "$ Neto"
+        try:
+            neto_v = float(str(neto).replace(".", "").replace(",", "."))
+        except ValueError:
+            neto_v = 0
         try:
             cant_v = float(str(cant).replace(".", "").replace(",", "."))
         except ValueError:
             cant_v = 0
         rows.append({
             "fecha": fecha, "producto": producto, "numero": numero,
-            "precio_total": pt, "cantidad": cant_v,
+            "precio_total": pt,    # con IVA (lo que figura en factura)
+            "neto": neto_v,        # sin IVA — usar para cálculos contables
+            "cantidad": cant_v,
             "cliente": cliente, "vendedor": vendedor,
         })
     return rows
@@ -980,7 +987,9 @@ def calcular_ventas_maxifer(ventas, listas):
         fabrica, _ = lookup_fabrica_costo(v, listas)
         if fabrica != "MAXIFER":
             continue
-        monto = v["precio_total"]
+        # NETO sin IVA — para que el Cierre con Víctor sea consistente con costo
+        # (la columna COSTO de Listas Maxifer también es neto sin IVA)
+        monto = v.get("neto", 0)
         total += monto
         cat = norm(v["producto"])
         por_cat[cat]["total"] += monto
@@ -1012,16 +1021,53 @@ def calcular_ventas_maxifer(ventas, listas):
 
 def calcular_costo_no_fabrica_victor(ventas, listas):
     """Total + breakdown del COSTO de productos no-MAXIFER que pasaron por la red de Víctor.
-    Devuelve dict similar a calcular_ventas_maxifer, valuado al COSTO.
+    INCLUYE devoluciones (cantidad negativa) — restan al total porque son notas
+    de crédito que anulan ventas previas.
+    Para items sin costo cargado en Listas Maxifer, se ESTIMA usando el ratio
+    promedio costo/retail del mismo proveedor (o 50% como fallback).
+    Devuelve dict con total, breakdowns y items, marcando los estimados.
     """
     if not listas or not ventas:
-        return {"total": 0.0, "por_categoria": [], "por_cliente": [], "items": []}
+        return {"total": 0.0, "por_categoria": [], "por_cliente": [],
+                "por_fabrica": [], "items": [], "estimados_count": 0,
+                "estimados_total": 0.0}
+    norm = listas["norm"]
+
+    # Primero: armar ratios costo/retail por fábrica usando items que SÍ tienen costo
+    ratio_por_fabrica = {}
+    suma_costo_fab = defaultdict(float)
+    suma_retail_fab = defaultdict(float)
+    for v in ventas:
+        if not (es_cliente_victor_distribuidor(v.get("cliente", "")) or
+                es_vendedor_victor(v.get("vendedor", ""))):
+            continue
+        fabrica, costo_unit = lookup_fabrica_costo(v, listas)
+        if fabrica == "MAXIFER" or not fabrica:
+            continue
+        try:
+            cant = float(str(v.get("cantidad", "0")).replace(",", "."))
+        except Exception:
+            continue
+        if cant <= 0 or costo_unit <= 0:
+            continue
+        suma_costo_fab[fabrica] += cant * costo_unit
+        suma_retail_fab[fabrica] += v.get("neto", 0)
+    for fab, costo_acum in suma_costo_fab.items():
+        retail_acum = suma_retail_fab[fab]
+        if retail_acum > 0:
+            ratio_por_fabrica[fab] = costo_acum / retail_acum
+    # Ratio promedio global (fallback)
+    total_costo_glob = sum(suma_costo_fab.values())
+    total_retail_glob = sum(suma_retail_fab.values())
+    ratio_global = (total_costo_glob / total_retail_glob) if total_retail_glob else 0.45
+
     total_costo = 0.0
     por_cat = defaultdict(lambda: {"total": 0.0, "count": 0})
     por_cli = defaultdict(lambda: {"total": 0.0, "count": 0})
     por_fab = defaultdict(lambda: {"total": 0.0, "count": 0})
     items = []
-    norm = listas["norm"]
+    estimados_count = 0
+    estimados_total = 0.0
     for v in ventas:
         if not (es_cliente_victor_distribuidor(v.get("cliente", "")) or
                 es_vendedor_victor(v.get("vendedor", ""))):
@@ -1033,32 +1079,52 @@ def calcular_costo_no_fabrica_victor(ventas, listas):
             cant = float(str(v.get("cantidad", "0")).replace(",", "."))
         except Exception:
             cant = 0
-        if cant <= 0 or costo_unit <= 0:
+        retail_line = v.get("neto", 0)  # neto sin IVA, consistente con COSTO
+
+        # Determinar costo del item:
+        #  1. Si hay costo_unit definido → cant * costo_unit (incluye negativos por devoluciones)
+        #  2. Si no hay costo_unit pero sí fábrica → estimar con ratio costo/retail de la fábrica
+        #  3. Si tampoco hay fábrica → estimar con ratio global
+        estimado = False
+        if costo_unit > 0 and cant != 0:
+            costo_total_item = cant * costo_unit
+        else:
+            ratio = ratio_por_fabrica.get(fabrica, ratio_global)
+            costo_total_item = retail_line * ratio
+            estimado = True
+            estimados_count += 1
+            estimados_total += costo_total_item
+
+        if costo_total_item == 0:
             continue
-        costo_total = cant * costo_unit
-        total_costo += costo_total
+        total_costo += costo_total_item
         cat = norm(v["producto"])
-        por_cat[cat]["total"] += costo_total
+        por_cat[cat]["total"] += costo_total_item
         por_cat[cat]["count"] += 1
         cli = (v.get("cliente") or "").strip()
-        por_cli[cli]["total"] += costo_total
+        por_cli[cli]["total"] += costo_total_item
         por_cli[cli]["count"] += 1
-        if fabrica:
-            por_fab[fabrica]["total"] += costo_total
-            por_fab[fabrica]["count"] += 1
+        fab_label = fabrica or "?"
+        por_fab[fab_label]["total"] += costo_total_item
+        por_fab[fab_label]["count"] += 1
         items.append({
             "fecha": v.get("fecha", ""),
             "producto": v.get("producto", ""),
             "numero": v.get("numero", ""),
             "cliente": cli,
             "vendedor": v.get("vendedor", ""),
-            "fabrica": fabrica or "?",
+            "fabrica": fab_label,
             "cantidad": cant,
             "costo_unit": round(costo_unit, 2),
-            "monto": round(costo_total, 2),
+            "monto": round(costo_total_item, 2),
+            "estimado": estimado,
         })
     return {
         "total": round(total_costo, 2),
+        "estimados_count": estimados_count,
+        "estimados_total": round(estimados_total, 2),
+        "ratio_por_fabrica": {f: round(r, 4) for f, r in ratio_por_fabrica.items()},
+        "ratio_global": round(ratio_global, 4),
         "por_categoria": sorted(
             [{"categoria": k, "monto": round(d["total"], 2), "count": d["count"]}
              for k, d in por_cat.items()],
@@ -1441,7 +1507,13 @@ def process_month(month_dir, data):
                     "por_categoria": puesto_costo["por_categoria"],
                     "por_cliente": puesto_costo["por_cliente"],
                     "por_fabrica": puesto_costo["por_fabrica"],
-                    "items": sorted(puesto_costo["items"], key=lambda x: -x["monto"])[:200],
+                    # Ordeno por |monto| desc para que devoluciones grandes (negativas)
+                    # también aparezcan arriba
+                    "items": sorted(puesto_costo["items"], key=lambda x: -abs(x["monto"]))[:300],
+                    "estimados_count": puesto_costo.get("estimados_count", 0),
+                    "estimados_total": puesto_costo.get("estimados_total", 0),
+                    "ratio_por_fabrica": puesto_costo.get("ratio_por_fabrica", {}),
+                    "ratio_global": puesto_costo.get("ratio_global", 0),
                 },
             }
             cambios.append(f"victor: puso ${pusiste:,.0f} (sueldos+mp+costoVic) / recibió ${ventas_maxifer_total:,.0f}")
