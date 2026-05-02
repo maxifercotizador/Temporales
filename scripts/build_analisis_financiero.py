@@ -461,11 +461,19 @@ def parse_gastos_bs_xlsx(path, ano_mes):
     return round(total_comisiones, 2)
 
 
-def parse_extracto_bancario(path, ano_mes, banco_filtro):
-    """Parsea un extracto bancario (todas sus hojas). Detecta pagos de tarjetas
-    usando los últimos dígitos. Devuelve dict {tarjeta: monto_mes}.
+def _norm_txt(t):
+    """Normaliza texto: minúsculas + sin acentos."""
+    import unicodedata
+    if not t: return ""
+    nfkd = unicodedata.normalize('NFKD', str(t))
+    return ''.join(c for c in nfkd if not unicodedata.combining(c)).lower()
 
-    banco_filtro: 'galicia' o 'santander' para limitar las tarjetas a buscar.
+
+def parse_extracto_bancario(path, ano_mes, banco_filtro):
+    """Parsea un extracto bancario. Detecta pagos de tarjetas por últimos dígitos.
+    Soporta múltiples formatos:
+    - Galicia: Fecha | Movimiento | Débito | Crédito | Saldo
+    - Santander: Fecha | Descripción | Caja de Ahorro | Cuenta Corriente | Saldo
     """
     try:
         import openpyxl
@@ -479,7 +487,6 @@ def parse_extracto_bancario(path, ano_mes, banco_filtro):
 
     pagos = defaultdict(float)
 
-    # Filtrar tarjetas relevantes para este banco
     tarjetas_relevantes = {
         nombre: digitos for nombre, digitos in TARJETAS_DIGITOS.items()
         if banco_filtro.lower() in nombre.lower()
@@ -489,31 +496,38 @@ def parse_extracto_bancario(path, ano_mes, banco_filtro):
         if banco_filtro.lower() in nombre.lower()
     }
 
+    KEYS_CONCEPT = {"concepto","detalle","descripcion","movimiento","operacion","referencia"}
+    KEYS_DEBE    = {"debe","debito","egreso","salida"}
+    KEYS_IMPORTE = {"importe","monto","caja de ahorro","cuenta corriente","cta corriente","cta. corriente","ahorro"}
+    KEYS_SALDO   = {"saldo"}
+
     for sheet_name in wb.sheetnames:
         ws = wb[sheet_name]
         rows = list(ws.iter_rows(values_only=True))
         if not rows:
             continue
 
-        # Detectar header
+        # Detectar header — la fila debe tener "fecha" + algun "concepto/movimiento/detalle"
         header_row = None
-        for i, r in enumerate(rows[:15]):
-            cells = [s(c).lower() for c in r]
-            if any("fecha" in c for c in cells):
+        for i, r in enumerate(rows[:30]):
+            cells = [_norm_txt(c) for c in r]
+            has_fecha = any("fecha" in c for c in cells)
+            has_concept = any(any(k in c for k in KEYS_CONCEPT) for c in cells)
+            if has_fecha and has_concept:
                 header_row = i
                 break
         if header_row is None:
             continue
 
-        headers = [s(c).lower() for c in rows[header_row]]
-        col_fecha = next((i for i, h in enumerate(headers) if "fecha" in h), None)
-        col_concepto = next((i for i, h in enumerate(headers)
-                             if "concepto" in h or "detalle" in h or "descripcion" in h
-                             or "movimiento" in h or "operacion" in h), None)
-        col_debe = next((i for i, h in enumerate(headers)
-                         if "debe" in h or "debito" in h or "egreso" in h or "salida" in h), None)
-        col_importe = next((i for i, h in enumerate(headers)
-                            if "importe" in h or "monto" in h), None)
+        norm_headers = [_norm_txt(c) for c in rows[header_row]]
+
+        col_fecha = next((i for i, h in enumerate(norm_headers) if "fecha" in h), None)
+        col_concepto = next((i for i, h in enumerate(norm_headers)
+                             if any(k in h for k in KEYS_CONCEPT)), None)
+        cols_debe = [i for i, h in enumerate(norm_headers)
+                     if any(k in h for k in KEYS_DEBE)]
+        cols_importe = [i for i, h in enumerate(norm_headers)
+                        if any(k in h for k in KEYS_IMPORTE) and not any(k in h for k in KEYS_SALDO)]
 
         if col_fecha is None or col_concepto is None:
             continue
@@ -523,16 +537,46 @@ def parse_extracto_bancario(path, ano_mes, banco_filtro):
             if not f or f.strftime("%Y-%m") != ano_mes:
                 continue
             conc = s(r[col_concepto]) if col_concepto < len(r) else ""
-            conc_low = conc.lower()
+            conc_norm = _norm_txt(conc)
+
+            # Importe: probar columnas debe primero, después columnas importe
             importe = 0
-            if col_debe is not None and col_debe < len(r):
-                importe = abs(num(r[col_debe]))
-            if importe == 0 and col_importe is not None and col_importe < len(r):
-                importe = abs(num(r[col_importe]))
+            for c in cols_debe:
+                if c < len(r):
+                    v = abs(num(r[c]))
+                    if v > 0:
+                        importe = v
+                        break
+            if importe == 0:
+                for c in cols_importe:
+                    if c < len(r):
+                        v = abs(num(r[c]))
+                        if v > 0:
+                            importe = v
+                            break
             if importe <= 0:
                 continue
 
-            # 1) Match por últimos dígitos (más confiable)
+            # Solo cargos negativos (pagos): si hay col_debe (Galicia) usamos esa.
+            # Para Santander los importes vienen con signo: si el original es negativo, es egreso.
+            # Re-chequeamos signo en columnas importe (que también pueden tener positivos):
+            sign_neg = False
+            for c in cols_debe + cols_importe:
+                if c < len(r):
+                    raw = num(r[c])
+                    if raw < 0:
+                        sign_neg = True
+                        break
+            if not sign_neg and not cols_debe:
+                # Para Santander si no detectamos negativo, no es pago
+                continue
+
+            # ESTRICTO: el concepto debe contener "TARJETA" para considerar pago de tarjeta
+            # (evita falsos matches con CBUs que tengan los dígitos)
+            if "tarjeta" not in conc_norm and "tarj." not in conc_norm:
+                continue
+
+            # Match por dígitos (más específico)
             matched = False
             for tarjeta, digitos in tarjetas_relevantes.items():
                 if any(d in conc for d in digitos):
@@ -542,11 +586,16 @@ def parse_extracto_bancario(path, ano_mes, banco_filtro):
             if matched:
                 continue
 
-            # 2) Fallback: match por palabras clave
+            # Fallback: palabras clave (genéricas tipo "PAGO TARJETA VISA")
+            # Si el extracto no diferencia (ej. "PAGO TARJETA VISA" sin dígitos),
+            # no asignamos a tarjeta específica → la asignación correcta viene del Excel personal.
+            # Solo asignamos si hay match único.
+            candidatos = []
             for tarjeta, palabras in palabras_relevantes.items():
-                if any(p in conc_low for p in palabras):
-                    pagos[tarjeta] += importe
-                    break
+                if any(p in conc_norm for p in palabras):
+                    candidatos.append(tarjeta)
+            if len(candidatos) == 1:
+                pagos[candidatos[0]] += importe
 
     return {k: round(v, 2) for k, v in pagos.items()}
 
@@ -735,23 +784,26 @@ def process_month(month_dir, data):
             data["gastos_por_mes"][ano_mes] = existing
             cambios.append(f"comisiones_reales ${comisiones:,.0f}")
 
-    # 4a. extracto_galicia.xlsx (en Excels/) — todas las cuentas Galicia consolidadas
-    fpath = find("Excels", "extracto_galicia.xlsx") or find("", "extracto_galicia.xlsx")
-    if fpath:
-        pagos = parse_extracto_bancario(fpath, ano_mes, 'galicia')
-        if pagos:
-            for tarjeta, monto in pagos.items():
+    # 4a/b. Extractos bancarios (Galicia + Santander)
+    # IMPORTANTE: gastos_excel.xlsx ya cargó las tarjetas con la asignación correcta
+    # del user. El extracto solo COMPLEMENTA tarjetas que no estén ya cargadas
+    # (porque el extracto suele decir "PAGO TARJETA VISA" sin dígitos y no permite
+    # distinguir entre VISA-2884 y VISA-3394, etc).
+    for nombre_arch, banco in [("extracto_galicia.xlsx", "galicia"),
+                                ("extracto_santander.xlsx", "santander")]:
+        fpath = find("Excels", nombre_arch) or find("", nombre_arch)
+        if not fpath:
+            continue
+        pagos = parse_extracto_bancario(fpath, ano_mes, banco)
+        sumados = 0
+        for tarjeta, monto in pagos.items():
+            existing = data["tarjetas_pagos"].get(tarjeta, {}).get(ano_mes)
+            # Solo agregar si NO había valor previo o si era 0
+            if existing is None or existing == 0:
                 data["tarjetas_pagos"].setdefault(tarjeta, {})[ano_mes] = monto
-            cambios.append(f"galicia tarjetas ({len(pagos)})")
-
-    # 4b. extracto_santander.xlsx (en Excels/)
-    fpath = find("Excels", "extracto_santander.xlsx") or find("", "extracto_santander.xlsx")
-    if fpath:
-        pagos = parse_extracto_bancario(fpath, ano_mes, 'santander')
-        if pagos:
-            for tarjeta, monto in pagos.items():
-                data["tarjetas_pagos"].setdefault(tarjeta, {})[ano_mes] = monto
-            cambios.append(f"santander tarjetas ({len(pagos)})")
+                sumados += 1
+        if sumados:
+            cambios.append(f"{banco} tarjetas ({sumados} desde extracto)")
 
     # 5. PDFs de tarjetas (Galicia/, Santander/, ICBC/)
     pdf_specs = [
