@@ -917,37 +917,56 @@ def cargar_listas_maxifer():
 
 
 # Aliases de productos: nombre en ventas -> nombre en Listas Maxifer
+# Aliases con tupla: (producto_destino, hint_descripcion). El hint se usa para
+# matchear más finamente cuando la descripción del item de venta no coincide
+# con la descripción cargada en Listas Maxifer.
 PRODUCTO_ALIAS = {
-    "CONECTORES PARA COMBUSTIBLE": "CONECTORES DE COMBUSTIBLE",
-    "GAVETA CH": "GAVETAS",
-    "GAVETA GR": "GAVETAS",
-    "GAVETA ME": "GAVETAS",
-    "PLASTICOS IMPORTADOS": "PLASTICOS",
-    "TORNILLOS Y BULONES ESPECIALES": "TORNILLERIA ESPECIAL",
+    "CONECTORES PARA COMBUSTIBLE": ("CONECTORES DE COMBUSTIBLE", None),
+    # "Gaveta Me/Ch/Gr" en ventas → "Gaveta" (singular) en Listas, donde la
+    # descripción exacta es "Gaveta me/ch/gr" → match perfecto de costo
+    "GAVETA CH": ("GAVETA", "GAVETA CH"),
+    "GAVETA ME": ("GAVETA", "GAVETA ME"),
+    "GAVETA GR": ("GAVETA", "GAVETA GR"),
+    "PLASTICOS IMPORTADOS": ("PLASTICOS", None),
+    "TORNILLOS Y BULONES ESPECIALES": ("TORNILLERIA ESPECIAL", None),
 }
 
 
 def lookup_fabrica_costo(v, listas):
-    """Para una línea de venta, devuelve (fabrica, costo_unitario).
-    Si no se puede determinar el producto, devuelve (None, 0).
+    """Para una línea de venta, devuelve (fabrica, costo_unitario, fuente):
+    - fuente = 'exacto'      → match exacto en Listas (alta confianza)
+    - fuente = 'promedio'    → promedio de la categoría (BAJA confianza, marcar como estimado)
+    - fuente = 'sin_match'   → nada encontrado, costo=0
     """
     norm = listas["norm"]
     pn = norm(v["producto"])
-    pn = PRODUCTO_ALIAS.get(pn, pn)
+    alias = PRODUCTO_ALIAS.get(pn)
+    desc_hint = None
+    if alias:
+        pn, desc_hint = alias
     nn_desc = norm(v["numero"])
+
+    # Match exacto por descripción
     info = listas["desc"].get((pn, nn_desc))
+    if info is None and desc_hint:
+        # Si el alias trae un hint de descripción, intentar con eso
+        info = listas["desc"].get((pn, desc_hint))
     if info is None:
+        # Match por número de posición
         info = listas["pos"].get((pn, str(v["numero"]).strip()))
-    if info is not None:
-        return info["fabrica"], info["costo"]
-    # Sin match exacto: usar fabrica mayoritaria de la categoría + costo promedio
+    if info is not None and info["costo"] > 0:
+        return info["fabrica"], info["costo"], "exacto"
+    if info is not None:  # match exacto pero sin costo cargado
+        return info["fabrica"], 0, "sin_costo"
+
+    # Sin match exacto: usar fábrica mayoritaria + costo promedio (estimado)
     fs = listas["fabricas"].get(pn)
     if not fs:
-        return None, 0
+        return None, 0, "sin_match"
     fabrica = list(fs.keys())[0] if len(fs) == 1 else fs.most_common(1)[0][0]
-    costos = listas["costos_avg"].get(pn, [])
+    costos = [c for c in listas["costos_avg"].get(pn, []) if c > 0]
     avg = sum(costos) / len(costos) if costos else 0
-    return fabrica, avg
+    return fabrica, avg, "promedio"
 
 
 def es_cliente_victor_distribuidor(cliente):
@@ -984,7 +1003,7 @@ def calcular_ventas_maxifer(ventas, listas):
     for v in ventas:
         if es_cliente_victor_distribuidor(v.get("cliente", "")):
             continue
-        fabrica, _ = lookup_fabrica_costo(v, listas)
+        fabrica, _, _ = lookup_fabrica_costo(v, listas)
         if fabrica != "MAXIFER":
             continue
         # NETO sin IVA — para que el Cierre con Víctor sea consistente con costo
@@ -1041,8 +1060,11 @@ def calcular_costo_no_fabrica_victor(ventas, listas):
         if not (es_cliente_victor_distribuidor(v.get("cliente", "")) or
                 es_vendedor_victor(v.get("vendedor", ""))):
             continue
-        fabrica, costo_unit = lookup_fabrica_costo(v, listas)
+        fabrica, costo_unit, fuente = lookup_fabrica_costo(v, listas)
         if fabrica == "MAXIFER" or not fabrica:
+            continue
+        # Solo usar items con costo EXACTO para calcular ratios (datos limpios)
+        if fuente != "exacto":
             continue
         try:
             cant = float(str(v.get("cantidad", "0")).replace(",", "."))
@@ -1072,7 +1094,7 @@ def calcular_costo_no_fabrica_victor(ventas, listas):
         if not (es_cliente_victor_distribuidor(v.get("cliente", "")) or
                 es_vendedor_victor(v.get("vendedor", ""))):
             continue
-        fabrica, costo_unit = lookup_fabrica_costo(v, listas)
+        fabrica, costo_unit, fuente = lookup_fabrica_costo(v, listas)
         if fabrica == "MAXIFER":
             continue
         try:
@@ -1082,11 +1104,12 @@ def calcular_costo_no_fabrica_victor(ventas, listas):
         retail_line = v.get("neto", 0)  # neto sin IVA, consistente con COSTO
 
         # Determinar costo del item:
-        #  1. Si hay costo_unit definido → cant * costo_unit (incluye negativos por devoluciones)
-        #  2. Si no hay costo_unit pero sí fábrica → estimar con ratio costo/retail de la fábrica
-        #  3. Si tampoco hay fábrica → estimar con ratio global
+        #  - fuente='exacto'    → match exacto en Listas → cant × costo_unit (real)
+        #  - fuente='promedio'  → costo es promedio de categoría → ESTIMADO
+        #  - fuente='sin_costo' → match exacto pero sin costo cargado → ESTIMADO con ratio
+        #  - fuente='sin_match' → producto no encontrado → ESTIMADO con ratio global
         estimado = False
-        if costo_unit > 0 and cant != 0:
+        if fuente == "exacto" and costo_unit > 0 and cant != 0:
             costo_total_item = cant * costo_unit
         else:
             ratio = ratio_por_fabrica.get(fabrica, ratio_global)
