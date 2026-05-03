@@ -1016,13 +1016,20 @@ def calcular_ventas_maxifer(ventas, listas):
         cli = (v.get("cliente") or "").strip()
         por_cli[cli]["total"] += monto
         por_cli[cli]["count"] += 1
+        # Calcular precio unitario neto si hay cantidad
+        try:
+            cant_num = float(str(v.get("cantidad", "0")).replace(",", "."))
+        except Exception:
+            cant_num = 0
+        unit = round(monto / cant_num, 2) if cant_num else 0
         items.append({
             "fecha": v.get("fecha", ""),
             "producto": v.get("producto", ""),
             "numero": v.get("numero", ""),
             "cliente": cli,
-            "cantidad": v.get("cantidad", 0),
-            "monto": round(monto, 2),
+            "cantidad": cant_num,
+            "neto_unit": unit,           # precio unitario neto sin IVA
+            "monto": round(monto, 2),    # neto total línea sin IVA
         })
     return {
         "total": round(total, 2),
@@ -1139,8 +1146,10 @@ def calcular_costo_no_fabrica_victor(ventas, listas):
             "fabrica": fab_label,
             "cantidad": cant,
             "costo_unit": round(costo_unit, 2),
-            "monto": round(costo_total_item, 2),
+            "neto_venta": round(retail_line, 2),    # neto facturado
+            "monto": round(costo_total_item, 2),    # costo
             "estimado": estimado,
+            "fuente": fuente,                        # exacto/promedio/sin_costo/sin_match
         })
     return {
         "total": round(total_costo, 2),
@@ -1523,8 +1532,8 @@ def process_month(month_dir, data):
                 "detalle_recibido": {
                     "por_categoria": recibido["por_categoria"],
                     "por_cliente": recibido["por_cliente"],
-                    # Top 200 items para que el JSON no explote
-                    "items": sorted(recibido["items"], key=lambda x: -x["monto"])[:200],
+                    # Todos los items para auditoría completa (orden por monto desc)
+                    "items": sorted(recibido["items"], key=lambda x: -abs(x["monto"])),
                 },
                 "detalle_costo_victor": {
                     "por_categoria": puesto_costo["por_categoria"],
@@ -1532,7 +1541,8 @@ def process_month(month_dir, data):
                     "por_fabrica": puesto_costo["por_fabrica"],
                     # Ordeno por |monto| desc para que devoluciones grandes (negativas)
                     # también aparezcan arriba
-                    "items": sorted(puesto_costo["items"], key=lambda x: -abs(x["monto"]))[:300],
+                    # Todos los items para auditoría completa
+                    "items": sorted(puesto_costo["items"], key=lambda x: -abs(x["monto"])),
                     "estimados_count": puesto_costo.get("estimados_count", 0),
                     "estimados_total": puesto_costo.get("estimados_total", 0),
                     "ratio_por_fabrica": puesto_costo.get("ratio_por_fabrica", {}),
