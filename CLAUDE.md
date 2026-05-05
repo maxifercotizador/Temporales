@@ -17,10 +17,28 @@ URL de producción: `https://maxifercotizador.github.io/Temporales/Prospectos.ht
 
 ## Workflow Maxi (regla del repo)
 
-- **Push directo a `main`**, sin PRs ni branches.
+- **Push directo a `main`**, sin PRs ni branches. Si el harness te asigna una feature branch, igual mergeala (fast-forward) a `main` y empujá `main` antes de terminar — Maxi prueba sobre el sitio en GitHub Pages que sirve desde `main`.
 - **Español Argentina** en todo (UI, comentarios, commits).
 - Commits descriptivos y cortos (ej: "agrega filtro por provincia").
 - No uses emojis en commits.
+
+## StatiCrypt (archivos cifrados)
+
+- HTMLs cifrados con StatiCrypt: `VIAJE_SUR.html`, `Prospectos.html`, `Notas_Pendientes.html`, `Index_general.html`, `analisis_financiero.html`, `postventa_monday.html`.
+- **Password**: `maxifer847`.
+- **Salt** (embebido en cada archivo, no el de `.staticrypt.json`): mirar el campo `staticryptSaltUniqueVariableName` del HTML antes de descifrar (p.ej. en `VIAJE_SUR.html` es `cc5a1a7142676e8a40368a16e858f1de`).
+- **Workflow obligatorio cuando edites un HTML cifrado**:
+  1. Descifrar: `npx --yes staticrypt <archivo> --decrypt -p 'maxifer847' --salt '<salt-del-archivo>'` → `decrypted/<archivo>`.
+  2. Editar el HTML descifrado.
+  3. Re-cifrar con los mismos flags de template para no romper la pantalla de login (título "Maxifer - Acceso restringido", instrucciones "Acceso restringido. Si no tenés la contraseña, no estás autorizado.", placeholder "Contraseña", remember "Recordarme 30 días", botón "ENTRAR", error "Contraseña incorrecta", primary `#f59e0b`, secondary `#0f172a`, `--remember 30`, `--short`, mismo `--salt`).
+  4. Post-procesar el archivo cifrado:
+     - `staticrypt_expiration` → `staticrypt_expiration_maxi`
+     - `staticrypt_passphrase` → `staticrypt_passphrase_maxi`
+     - Re-agregar `<meta name="robots" content="noindex, nofollow">` después del `<meta charset>`.
+     - Re-insertar antes de `</head>`: `<link rel="stylesheet" href="maxifer-branding.css">` y `<script defer src="maxifer-branding.js"></script>`.
+  5. Verificar roundtrip (descifrar el resultado y diff contra el descifrado original).
+  6. Reemplazar el archivo en el repo, commitear y pushear a `main`.
+- **Nunca** dejes el archivo descifrado en el repo. El que se commitea es siempre el cifrado.
 
 ## Datos clave (NO TOCAR sin avisar)
 
