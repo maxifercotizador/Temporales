@@ -4,8 +4,9 @@
 
    Soporte staticrypt: intercepta document.write(plainHTML) (que es como
    staticrypt monta la página descifrada) y le inyecta el <link>+<script>
-   en su <head> antes de escribirla, para que el branding sobreviva al
-   reemplazo de documento. */
+   en su <head> antes de escribirla. En la pantalla de bloqueo NO se
+   inyecta el topbar (queda limpia); el header aparece recién en la app
+   descifrada. */
 (function(){
     var LOGO = 'https://maxifercotizador.github.io/Presupuestador/img/favicon-192.png';
     var LOGO_FALLBACK = 'https://maxifercotizador.github.io/Presupuestador/LOGO_1080PX-100.jpg';
@@ -22,6 +23,12 @@
         var raw = (document.title || '').trim();
         var clean = raw.replace(/^MAXIFER\s*[·\-|:]+\s*/i, '').trim();
         return clean || raw || 'App';
+    }
+
+    function isStaticryptLock(){
+        return (document.documentElement && document.documentElement.classList.contains('staticrypt-html'))
+            || (document.body && document.body.classList && document.body.classList.contains('staticrypt-body'))
+            || !!document.getElementById('staticrypt-form');
     }
 
     /* Hook document.write para sobrevivir a staticrypt */
@@ -41,6 +48,7 @@
     function init(){
         if (!document.body) return;
         if (document.querySelector('.mxb-topbar, .topbar')) return;
+        if (isStaticryptLock()) return; /* la app real recarga via document.write */
 
         var appName = document.body.getAttribute('data-mxb-app') || appNameFromTitle();
 
